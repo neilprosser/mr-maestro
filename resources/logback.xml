@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <!-- Suppress messages that may cause deadlock -->
+  <logger name="org.eclipse.jetty.webapp.WebAppClassLoader" level="off" />
+
+  <!-- Properties should be provided as environment variables or the defaults will be used -->
+
+  <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>${SERVICE_LOGGING_FILETHRESHOLD:-info}</level>
+    </filter>
+    <file>${SERVICE_LOGGING_PATH:-/tmp}/exploud.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${SERVICE_LOGGING_PATH:-/tmp}/exploud.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%d{dd/MM/yyyy HH:mm:ss.SSS} [%thread] %-5level %X{logItemId} %logger{36} - %msg%n %X{stack}</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>${SERVICE_LOGGING_CONSOLETHRESHOLD:-info}</level>
+    </filter>
+    <encoder>
+      <pattern>%d{dd/MM/yyyy HH:mm:ss.SSS} [%thread] %-5level %X{logItemId} %logger{36} - %msg%n %X{stack}</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="service" class="com.ovi.common.logging.LoggingServiceAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>${SERVICE_LOGGING_SERVICETHRESHOLD:-warn}</level>
+    </filter>
+    <filter class="com.ovi.common.logging.GraphiteReporterFilter" />
+    <LoggingServiceUrl>${ENVIRONMENT_MUSIC_ERRORLOGGING1JAVA_BASEURL:-http://errorlogging.music.cq1.brislabs.com:8080/ErrorLogging/1.x}/logitems</LoggingServiceUrl>
+    <ServiceName>exploud</ServiceName>
+    <DefaultCategory>Service</DefaultCategory>
+    <FailureLoggerName>failure</FailureLoggerName>
+  </appender>
+
+  <logger name="failure" level="WARN" additivity="false">
+    <appender-ref ref="file" />
+  </logger>
+
+  <root level="${SERVICE_LOGGING_LEVEL:-debug}">
+    <appender-ref ref="file" />
+    <appender-ref ref="console" />
+    <appender-ref ref="service" />
+  </root>
+</configuration>
