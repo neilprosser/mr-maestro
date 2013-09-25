@@ -3,6 +3,7 @@ target/*
 lib*
 *.orig
 *jar
+*.log
 .idea
 .lein-failures
 .nrepl-port

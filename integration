@@ -10,5 +10,5 @@ if [ "$1" != "wait" ]
 then
     run_test "exploud.integration" $TIMEOUT
 else
-    lein ring server-headless
+    lein embongo ring server-headless
 fi

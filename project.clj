@@ -39,7 +39,8 @@
                              [lein-midje "3.0.1"]
                              [jonase/kibit "0.0.8"]]}}
 
-  :plugins [[lein-ring "0.8.6"]
+  :plugins [[lein-embongo "0.2.1"]
+            [lein-ring "0.8.6"]
             [lein-environ "0.4.0"]
             [lein-release "1.0.73"]]
 
@@ -63,6 +64,9 @@
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
+  
+  :embongo {:port ~(Integer.  (get (System/getenv) "MONGO_PORT" "27017"))
+            :version "2.4.3"}
 
   :ring {:handler exploud.web/app
          :main exploud.setup
