@@ -1,7 +1,7 @@
 /bin/echo "preremove script started [$1]"
 
 prefixDir=/usr/local/jetty
-identifier=Exploud.jar
+identifier=exploud.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
 if [ $isJettyRunning -eq 0 ]

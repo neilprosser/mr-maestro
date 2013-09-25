@@ -1,4 +1,4 @@
-(defproject exploud "1.0.0-SNAPSHOT"
+(defproject exploud "0.1-SNAPSHOT"
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
@@ -99,7 +99,7 @@
                     :username "jetty"
                     :groupname "jetty"
                     :sources {:source [{:location "scripts/bin"}]}}
-                   {:directory "/usr/local/deployment/Exploud1/bin"
+                   {:directory "/usr/local/deployment/exploud/bin"
                     :filemode "744"
                     :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
