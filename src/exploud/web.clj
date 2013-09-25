@@ -50,7 +50,7 @@
    (GET "/tasks/:task-id"
         [task-id] (store/get-task task-id))
 
-   (POST "/:application/deploy"
+   (POST "/applications/:application/deploy"
          [application environment ami] (exp/deploy default-region application {:ami ami
                                                                                :environment environment
                                                                                :user default-user})))
