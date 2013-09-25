@@ -12,7 +12,6 @@ dc-sdk.log
 .lein-deps-sum
 .lein-plugins/
 .project
-bin/
 docs/
 .lein-env
 .lein-repl-history
