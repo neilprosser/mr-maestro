@@ -5,12 +5,14 @@ lib*
 *jar
 .idea
 .lein-failures
+.nrepl-port
 dc-sdk.log
 .classpath
 .lein-deps-sum
 .lein-plugins/
 .project
 bin/
+docs/
 .lein-env
 .lein-repl-history
 .midje.clj

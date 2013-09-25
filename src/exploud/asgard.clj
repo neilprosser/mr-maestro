@@ -1,8 +1,8 @@
 (ns exploud.asgard
   (:require [cheshire.core :as json]
-            [clj-http.client :as http]
             [environ.core :refer [env]]
-            [monger.collection :as mc]
+            [exploud.http :as http]
+            [exploud.store :as store]
             [overtone.at-at :as at-at]))
 
 (def tp (at-at/mk-pool))
@@ -16,37 +16,60 @@
 (defn- cluster-url [region cluster-name]
   (str asgard-url "/" region "/cluster/show/" cluster-name ".json"))
 
+(defn- launch-configuration-url [region launch-configuration-name]
+  (str asgard-url "/" region "/launchConfiguration/show/" launch-configuration-name ".json"))
+
 (defn- task-url [region run-id workflow-id]
   (str asgard-url "/" region "/task/show.json" {:query-params {"runId" run-id "workflowId" workflow-id}}))
 
 (defn- region-deploy-url [region]
   (str asgard-url "/" region "/cluster/deploy"))
 
-(defn- simple-get [url]
-  (http/get url {:throw-exceptions false}))
-
-(defn- simple-post [url params]
-  (http/post url (merge-with + params) {:throw-exceptions false}))
+(defn- image-list-url [region application-name]
+  (str asgard-url "/" region "/image/list/" application-name ".json"))
 
 (defn application
   "Retrieves information about an application from Asgard"
   [application-name]
-  (let [response (simple-get (application-url application-name))
-        status (:status response)]
+  (let [response (http/simple-get (application-url application-name))
+        {:keys [status]} response]
     (when (= status 200)
       (json/parse-string (:body response) true))))
 
 (defn cluster
   "Retrieves information about a cluster from Asgard"
   [region cluster-name]
-  (let [response (simple-get (cluster-url region cluster-name))
-        status (:status response)]
+  (let [{:keys [body status]} (http/simple-get (cluster-url region cluster-name))]
     (when (= status 200)
-      (json/parse-string (:body response) true))))
+      (json/parse-string body true))))
+
+(defn image-list
+  "Retrives the list of images associated with an application."
+  [region application-name]
+  (let [{:keys [body status]} (http/simple-get (image-list-url region application-name))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn launch-configuration
+  "Retrieves information about a launch configuration from Asgard"
+  [region launch-configuration-name]
+  (let [{:keys [body status]} (http/simple-get (launch-configuration-url region launch-configuration-name))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn last-launch-configuration-name
+  "Gets the name of the last launch configuration for an application"
+  [region application-name]
+  (:launchConfigurationName (last (cluster region application-name))))
+
+(defn last-security-groups
+  "Gets the names of the last security groups an application was launched with"
+  [region application-name]
+  (:securityGroups (:lc (launch-configuration region (last-launch-configuration-name region application-name)))))
 
 (defn task [region run-id workflow-id]
   "Retrives information about a task from Asgard"
-  (let [{:keys [body status]} (simple-get (task-url region run-id workflow-id))]
+  (let [{:keys [body status]} (http/simple-get (task-url region run-id workflow-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -65,77 +88,35 @@
 
 (declare track-task)
 
-(defn- schedule-track-task [region run-id workflow-id]
-  (at-at/after 1000 #(track-task region run-id workflow-id) tp :desc (task-tracking-desc region run-id workflow-id)))
+(defn- schedule-track-task [region run-id workflow-id count]
+  (at-at/after 1000 #(track-task region run-id workflow-id count) tp :desc (task-tracking-desc region run-id workflow-id)))
 
-(defn- track-task [region run-id workflow-id]
+(defn- track-task [region run-id workflow-id count]
   (let [desc (task-tracking-desc region run-id workflow-id)]
     (when-let [task (task region run-id workflow-id)]
-      (mc/update "tasks" {:region region :run-id run-id :workflow-id workflow-id} (merge-with + {:region region :run-id run-id :workflow-id workflow-id} task) :upsert true)
-      (when-not (finished? task)
-        (schedule-track-task region run-id workflow-id)))))
-
-(defn- email [application]
-  (:email (:app application)))
-
-(def ami-id "ami-df8f95ab")
-
-(def vpc-id "vpc-7bc88713")
+      (store/store-task (merge-with + :region region :run-id run-id :workflow-id workflow-id task))
+      (when (and (not (finished? task))
+                 (pos? count))
+        (schedule-track-task region run-id workflow-id (dec count))))))
 
 (defn- task-info-from-url [url]
-  (into {} (map #(let [[k v] %] {(keyword k) v}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
+  (into {} (map (fn [k v] {(keyword k) v}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
 
-(defn deploy-for-great-success
-  "Kicks off an automated red/black deployment with some standard parameters
-  (for now). If successful, the task information will be tracked until the task
-  has completed. This function returns a map containing the task information
-  which can be used to retrieve the task and track the deployment."
-  [region application-name]
+(defn deploy
+  "Kicks off an automated red/black deployment. If successful, the task
+  information will be tracked until the task has completed. This function
+  returns a map containing the task information which can be used to
+  retrieve the task and track the deployment."
+  [region application-name params]
   (when-let [application (application application-name)]
-    (let [params [["azRebalance" "enabled"]
-                  ["canaryAssessmentDurationMinutes" 60]
-                  ["canaryCapacity" 1]
-                  ["canaryStartUpTimeoutMinutes" 30]
-                  ["clusterName" "skeleton"]
-                  ["defaultCooldown" 10]
-                  ["delayDurationMinutes" 0]
-                  ["deletePreviousAsg" "Ask"]
-                  ["desiredCapacity" 1]
-                  ["desiredCapacityAssesmentDurationMinutes" 5]
-                  ["desiredCapacityStartUpTimeoutMinutes" 5]
-                  ["disablePreviousAsg" "Ask"]
-                  ["doCanary" false]
-                  ["fullTrafficAssessmentDurationMinutes" 5]
-                  ["healthCheckGracePeriod" 600]
-                  ["healthCheckType" "EC2"]
-                  ["iamInstanceProfile" application-name]
-                  ["imageId" ami-id]
-                  ["instanceType" "t1.micro"]
-                  ["kernelId" ""]
-                  ["keyName" "nprosser-key"]
-                  ["max" 1]
-                  ["min" 1]
-                  ["name" application-name]
-                  ["noOptionalDefaults" true]
-                  ["notificationDestination" (email application)]
-                  ["pricing" "ON_DEMAND"]
-                  ["ramdiskId" ""]
-                  ["region" region]
-                  ["scaleUp" "Ask"]
-                  [(str "selectedLoadBalancersForVpcId" vpc-id) application-name]
-                  ["selectedSecurityGroups" "sg-c453b4ab"]
-                  ["selectedSecurityGroups" "sg-ef9e7680"]
-                  ["selectedZones" (str region "a")]
-                  ["selectedZones" (str region "b")]
-                  ["subnetPurpose" "internal"]
-                  ["terminationPolicy" "Default"]
-                  ["ticket" ""]]
-          {:keys [headers status]} (simple-post (region-deploy-url region) {:query-params params :follow-redirects false})]
+    (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:query-params params :follow-redirects false})]
       (when (= 302 status)
         (let [{:strs [location]} headers
               task-info (task-info-from-url location)
               {:keys [runId workflowId]} task-info]
-          (schedule-track-task region runId workflowId)
+          (schedule-track-task region runId workflowId (* 1 60 60))
           task-info)))))
 
-;(deploy-for-great-success "eu-west-1" "skeleton")
+;(deploy "eu-west-1" "skeleton")
+;(last-launch-configuration-name "eu-west-1" "skeleton")
+;(last-security-groups "eu-west-1" "skeleton")

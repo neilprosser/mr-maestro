@@ -4,7 +4,9 @@
               [compojure.route :as route]
               [compojure.handler :as handler]
               [exploud.actions :as exp]
+              [exploud.store :as store]
               [ring.middleware.format-response :refer [wrap-json-response]]
+              [ring.middleware.json-params :refer [wrap-json-params]]
               [ring.middleware.params :refer [wrap-params]]
               [ring.middleware.keyword-params :refer [wrap-keyword-params]]
               [clojure.string :refer [split]]
@@ -28,8 +30,12 @@
 
 (defn status
   [] (response (json/generate-string {:name "exploud"
-                                   :version *version*
-                                   :status true}) "application/json"))
+                                      :version *version*
+                                      :status true}) "application/json"))
+
+(def default-region "eu-west-1")
+
+(def default-user "exploud")
 
 (defroutes routes
   (context
@@ -41,17 +47,22 @@
    (GET "/status"
         [] (status))
 
+   (GET "/tasks/:task-id"
+        [task-id] (store/get-task task-id))
+
    (POST "/:application/deploy"
-         [application] (exp/deploy application)))
+         [application environment ami] (exp/deploy default-region application {:ami ami
+                                                                               :environment environment
+                                                                               :user default-user})))
 
   (route/not-found (error-response "Resource not found" 404)))
-
 
 (def app
   (-> routes
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
+      (wrap-json-params)
       (wrap-keyword-params)
       (wrap-params)
       (wrap-json-response)

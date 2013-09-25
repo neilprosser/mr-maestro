@@ -3,6 +3,7 @@
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
   :dependencies [[compojure "1.1.5" :exclusions [javax.servlet/servlet-api]]
+                 [ring-json-params "0.1.3"]
                  [ring-middleware-format "0.3.0"]
                  [ring/ring-jetty-adapter "1.2.0"]
                  [org.clojure/clojure "1.5.1"]
@@ -55,6 +56,8 @@
         :service-graphite-enabled "ENABLED"
         :service-production "false"
         :service-asgard-url "http://asgard.brislabs.com:8080"
+        :service-onix-url "http://internal-onix-83016714.eu-west-1.elb.amazonaws.com:8080"
+        :service-tyranitar-url "http://internal-tyranitar-680289871.eu-west-1.elb.amazonaws.com:8080"
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"}
 
