@@ -1,5 +1,6 @@
 (ns exploud.web
   (:require   [cheshire.core :as json]
+              [clojure.tools.logging :as log]
               [compojure.core :refer [defroutes context GET PUT POST DELETE]]
               [compojure.route :as route]
               [compojure.handler :as handler]
@@ -23,16 +24,6 @@
 (defn set-version! [version]
   (alter-var-root #'*version* (fn [_] version)))
 
-(defn response [data content-type & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" content-type}
-   :body data})
-
-(defn status
-  [] (response (json/generate-string {:name "exploud"
-                                      :version *version*
-                                      :status true}) "application/json"))
-
 (def default-region "eu-west-1")
 
 (def default-user "exploud")
@@ -42,16 +33,21 @@
    "/1.x" []
 
    (GET "/ping"
-        [] "pong")
+        [] {:status 200 :body "pong"})
 
    (GET "/status"
-        [] (status))
+        [] {:status 200 :body {:name "exploud"
+                               :version *version*
+                               :status true}})
 
    (GET "/tasks/:task-id"
         [task-id] (store/get-task task-id))
 
+   (GET "/configurations/:configuration-id"
+        [configuration-id] (store/get-configuration configuration-id))
+
    (POST "/applications/:application/deploy"
-         [application environment ami] (exp/deploy default-region application {:ami ami
+         [application ami environment] (exp/deploy default-region application {:ami ami
                                                                                :environment environment
                                                                                :user default-user})))
 

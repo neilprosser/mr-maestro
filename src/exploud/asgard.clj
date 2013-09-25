@@ -1,5 +1,6 @@
 (ns exploud.asgard
   (:require [cheshire.core :as json]
+            [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [exploud.http :as http]
             [exploud.store :as store]
@@ -97,6 +98,7 @@
       (store/store-task (merge-with + :region region :run-id run-id :workflow-id workflow-id task))
       (when (and (not (finished? task))
                  (pos? count))
+        (log/debug "Rescheduling task tracking for" region run-id workflow-id)
         (schedule-track-task region run-id workflow-id (dec count))))))
 
 (defn- task-info-from-url [url]
@@ -108,6 +110,7 @@
   returns a map containing the task information which can be used to
   retrieve the task and track the deployment."
   [region application-name params]
+  (log/info "Application" application-name "is being deployed in" region "with params" params)
   (when-let [application (application application-name)]
     (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:query-params params :follow-redirects false})]
       (when (= 302 status)
@@ -117,6 +120,5 @@
           (schedule-track-task region runId workflowId (* 1 60 60))
           task-info)))))
 
-;(deploy "eu-west-1" "skeleton")
 ;(last-launch-configuration-name "eu-west-1" "skeleton")
 ;(last-security-groups "eu-west-1" "skeleton")

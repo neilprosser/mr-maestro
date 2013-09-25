@@ -17,13 +17,14 @@
 
 (defn store-configuration
   "Inserts a new deployment configuration into Mongo and returns the ID of that deployment."
-  [application-name {:keys [ami environment hash user]}]
+  [application-name {:keys [ami environment hash region user]}]
   (let [inserted (mc/insert-and-return "deployments"
                                        {:ami ami
                                         :application application-name
                                         :date (fmt/unparse formatter (time/now))
                                         :environment environment
                                         :hash hash
+                                        :region region
                                         :user user})]
     {:_id inserted}))
 

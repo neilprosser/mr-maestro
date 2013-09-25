@@ -15,7 +15,7 @@
 (defn- get-file-content [environment application-name commit-hash file-name]
   (let [{:keys [body status]} (http/simple-get (file-url environment application-name commit-hash file-name))]
     (if (= status 200)
-      (json/parse-string body true))))
+      (json/parse-string body))))
 
 (defn application-properties [environment application-name commit-hash]
   (if-let [content (get-file-content environment application-name commit-hash "application-properties")]
@@ -40,7 +40,7 @@
 (defn last-commit-hash [environment application-name]
   (:hash (first (:commits (commits environment application-name)))))
 
-;(application-properties "prod" "skeleton" "hash")
-;(deployment-params "prod" "skeleton" "hash")
-;(launch-data "prod" "skeleton" "hash")
-;(last-commit-hash "prod" "skeleton")
+;(application-properties "dev" "skeleton" "HEAD")
+;(deployment-params "dev" "skeleton" "HEAD")
+;(launch-data "dev" "skeleton" "HEAD")
+;(last-commit-hash "dev" "skeleton")
