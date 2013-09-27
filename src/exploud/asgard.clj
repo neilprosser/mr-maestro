@@ -107,7 +107,9 @@
   (at-at/after 1000 #(track-task region run-id workflow-id count) tp :desc (task-tracking-desc region run-id workflow-id)))
 
 (defn- track-task [region run-id workflow-id count]
+  (log/info "Generating task description")
   (let [desc (task-tracking-desc region run-id workflow-id)]
+    (log/info "Getting task")
     (if-let [task (task region run-id workflow-id)]
       (do
         (log/info "Storing information for" region run-id workflow-id)
