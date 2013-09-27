@@ -10,6 +10,7 @@
 (def tp (at-at/mk-pool))
 
 (def asgard-date-formatter (fmt/formatter "YYYY-MM-dd_HH:mm:ss"))
+(def date-formatter (fmt/formatters :date-time))
 
 (def asgard-url
   (env :service-asgard-url))
@@ -73,11 +74,11 @@
 
 (defn- split-log-message [log]
   (let [[date message] (clojure.string/split log #" " 2)]
-    {:date (fmt/parse asgard-date-formatter date) :message message}))
+    {:date (fmt/unparse date-formatter (fmt/parse asgard-date-formatter date)) :message message}))
 
-(defn- munge-task [{:keys [log] :as task}]
+(defn- munge-task [task]
   "Converts an Asgard task to a desired form"
-  (merge task {:log (map #(split-log-message %) log)}))
+  (update-in task [:log] (map #(split-log-message %))))
 
 (defn task [region run-id workflow-id]
   "Retrives information about a task from Asgard"
