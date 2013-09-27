@@ -41,15 +41,15 @@
                                :status true}})
 
    (GET "/tasks/:task-id"
-        [task-id] (store/get-task task-id))
+        [task-id] {:status 200 :body (store/get-task task-id)})
 
    (GET "/configurations/:configuration-id"
-        [configuration-id] (store/get-configuration configuration-id))
+        [configuration-id] {:status 200 :body (store/get-configuration configuration-id)})
 
    (POST "/applications/:application/deploy"
-         [application ami environment] (exp/deploy default-region application {:ami ami
-                                                                               :environment environment
-                                                                               :user default-user})))
+         [application ami environment] {:status 200 :body (exp/deploy default-region application {:ami ami
+                                                                                                  :environment environment
+                                                                                                  :user default-user})}))
 
   (route/not-found (error-response "Resource not found" 404)))
 

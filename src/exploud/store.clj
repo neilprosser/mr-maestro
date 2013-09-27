@@ -1,19 +1,26 @@
 (ns exploud.store
   (:require [clj-time.core :as time]
             [clj-time.format :as fmt]
+            [clojure.tools.logging :as log]
             [monger.collection :as mc])
   (:import org.bson.types.ObjectId))
 
 (def formatter (fmt/formatters :date-time))
 
 (defn get-task [id]
-  (mc/find-map-by-id "tasks" (ObjectId. id)))
+  (if-let [task (mc/find-map-by-id "tasks" (ObjectId. id))]
+    (merge task {:_id (str (:_id task))})))
 
-(defn store-task [{:keys [region run-id workflow-id] :as task}]
-  (mc/update "tasks" {:region region :run-id run-id :workflow-id workflow-id} task) :upsert true)
+(defn store-task [{:keys [region runId workflowId] :as task}]
+  (let [find-criteria {:region region :runId runId :workflowId workflowId}]
+    (log/info "Storing task" task)
+    (mc/upsert "tasks" find-criteria task)
+    (log/info "Done storing task")
+    (str (:_id (mc/find-one-as-map "tasks" find-criteria)))))
 
 (defn get-configuration [id]
-  (mc/find-map-by-id "deployments" (ObjectId. id)))
+  (if-let [configuration (mc/find-map-by-id "deployments" (ObjectId. id))]
+    (merge configuration {:_id (str (:_id configuration))})))
 
 (defn store-configuration
   "Inserts a new deployment configuration into Mongo and returns the ID of that deployment."
@@ -26,8 +33,10 @@
                                         :hash hash
                                         :region region
                                         :user user})]
-    {:_id inserted}))
+    (str (:_id inserted))))
 
-;(store-configuration "skeleton" {:ami "ami-223addf1" :hash "whatever" :user "nprosser"})
-;(get-configuration "524033854e080ca4f533f095")
+;(store-configuration "skeleton" {:ami "ami-223addf1" :environment "dev" :hash "whatever" :region "eu-west-1" :user "nprosser"})
+;(get-configuration "524331b94e08331c0378ccda")
 ;(get-task "522f06741ea55d2d3aa437e6")
+;(get-configuration "524324234e08331c0378ccd3")
+;(store-task {:region "eu-west-1" :run-id "runid" :workflow-id "workflowid" :something "hello"})

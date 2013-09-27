@@ -30,10 +30,10 @@
           (log/info "Configuration is" configuration)
           (if-let [deploy-id (store/store-configuration application-name configuration)]
             (if-let [deployment-params (get (tyr/deployment-params environment application-name hash) "data")]
-              (asg/deploy region application-name (create-params region application-name {"imageId" ami
-                                                                                          "region" region
-                                                                                          "selectedZones" [(str region "a") (str region "b")]
-                                                                                          "ticket" deploy-id}))
+              (asg/deploy region application-name (create-params deployment-params {"imageId" ami
+                                                                                    "selectedZones" [(str region "a") (str region "b")]
+                                                                                    "ticket" deploy-id
+                                                                                    "_action_deploy" ""}))
               {:status 500 :body "Could not retrieve deployment parameters."})
             {:status 500 :body "Could not store deployment information."}))
         {:status 500 :body "Could not retrieve last commit hash."}))
