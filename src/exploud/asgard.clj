@@ -107,22 +107,27 @@
   (at-at/after 1000 #(track-task region run-id workflow-id count) tp :desc (task-tracking-desc region run-id workflow-id)))
 
 (defn- track-task [region run-id workflow-id count]
-  (log/info "Generating task description")
-  (let [desc (task-tracking-desc region run-id workflow-id)]
-    (log/info "Getting task")
-    (if-let [task (task region run-id workflow-id)]
-      (do
-        (log/info "Storing information for" region run-id workflow-id)
-        (log/info "Task is" task)
-        (store/store-task (merge task {:region region :runId run-id :workflowId workflow-id}))
-        (log/info "Should we be done already? Finished" (finished? task) "Count" count)
-        (if (and (not (finished? task))
-                 (pos? count))
+  (letfn [(reschedule [] (schedule-track-task region run-id workflow-id (dec count)))]
+    (try
+      (log/info "Generating task description")
+      (let [desc (task-tracking-desc region run-id workflow-id)]
+        (log/info "Getting task")
+        (if-let [task (task region run-id workflow-id)]
           (do
-            (log/info "Rescheduling task tracking for" region run-id workflow-id)
-            (schedule-track-task region run-id workflow-id (dec count)))
-          (log/info "Task" region run-id workflow-id "is stopping being tracked")))
-      (log/info "No task information for" region run-id workflow-id))))
+            (log/info "Storing information for" region run-id workflow-id)
+            (log/info "Task is" task)
+            (store/store-task (merge task {:region region :runId run-id :workflowId workflow-id}))
+            (log/info "Should we be done already? Finished" (finished? task) "Count" count)
+            (if (and (not (finished? task))
+                     (pos? count))
+              (do
+                (log/info "Rescheduling task tracking for" region run-id workflow-id)
+                (reschedule))
+              (log/info "Task" region run-id workflow-id "is stopping being tracked")))
+          (log/info "No task information for" region run-id workflow-id)))
+      (catch Exception e
+        (log/warn e)
+        (reschedule)))))
 
 (defn- task-info-from-url [url]
   (into {} (map (fn [[k v]] {(keyword k) (ring.util.codec/url-decode v)}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
