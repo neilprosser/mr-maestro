@@ -78,7 +78,7 @@
 
 (defn- munge-task [task]
   "Converts an Asgard task to a desired form"
-  (update-in task [:log] (map #(split-log-message %))))
+  (update-in task [:log] (fn [log] (map #(split-log-message %) log))))
 
 (defn task [region run-id workflow-id]
   "Retrives information about a task from Asgard"
