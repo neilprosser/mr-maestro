@@ -44,5 +44,4 @@
 ;(deployment-params "dev" "skeleton" "HEAD")
 ;(launch-data "dev" "skeleton" "HEAD")
 ;(last-commit-hash "dev" "skeleton")
-
-(get (application-properties "dev" "skeleton" "HEAD") "data")
+;(get (application-properties "dev" "skeleton" "HEAD") "data")
