@@ -21,6 +21,11 @@
 (defn applications []
   {:names (asg/applications)})
 
+(defn application [application-name]
+  (if-let [full-application (asg/application application-name)]
+    (merge {:name application-name}
+           (select-keys (:app full-application) [:description :email :owner]))))
+
 (defn deploy [region application-name details]
   (if (onix/application-exists? application-name)
     (let [{:keys [ami environment user]} details]
@@ -43,3 +48,5 @@
     {:status 404 :body "Application does not exist."}))
 
 ;(deploy "eu-west-1" "skeleton" {:ami "ami-5431d523" :environment "dev" :user "nprosser"})
+;(asg/application "skeleton")
+;(application "skeleton")

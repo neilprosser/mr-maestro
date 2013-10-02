@@ -59,6 +59,9 @@
    (GET "/applications"
         [] {:status 200 :body (exp/applications)})
 
+   (GET "/applications/:application"
+        [application] {:status 200 :body (exp/application application)})
+
    (POST "/applications/:application/deploy"
          [application ami environment] {:status 200 :body (exp/deploy default-region application {:ami ami
                                                                                                   :environment environment
