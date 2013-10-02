@@ -18,6 +18,9 @@
 (defn- application-url [application-name]
   (str asgard-url "/application/show/" application-name ".json"))
 
+(defn- upsert-application-url []
+  (str asgard-url "/application/index"))
+
 (defn- application-list-url []
   (str asgard-url "/application/list.json"))
 
@@ -180,5 +183,7 @@
 ;(last-launch-configuration-name "eu-west-1" "skeleton")
 ;(last-security-groups "eu-west-1" "skeleton")
 ;(task-info-from-url "http://asgard.brislabs.com:8080/task/show?runId=12lyXMu%2FrpdVtZ%2FpgbUQ7hpuAEzizQ9QKa0fnpj7G8fwE%3D&workflowId=a99a149d-be24-47c8-93c0-d10e00334dee")
+                                        ;(application "missing")
+;(upsert-application "somethingnew" {:description "Updated from Exploud" :email "neil.prosser@gmail.com" :owner "someone"})
 ;(applications)
 ;(application-list)

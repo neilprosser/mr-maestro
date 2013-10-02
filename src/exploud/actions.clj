@@ -26,27 +26,33 @@
     (merge {:name application-name}
            (select-keys (:app full-application) [:description :email :owner]))))
 
+(defn upsert-application [application-name details]
+  (asg/upsert-application application-name details))
+
 (defn deploy [region application-name details]
   (if (onix/application-exists? application-name)
-    (let [{:keys [ami environment user]} details]
-      (if-let [hash (tyr/last-commit-hash environment application-name)]
-        (let [configuration {:ami ami
-                             :environment environment
-                             :hash hash
-                             :region region
-                             :user user}]
-          (log/info "Configuration is" configuration)
-          (if-let [deploy-id (store/store-configuration application-name configuration)]
-            (if-let [deployment-params (get (tyr/deployment-params environment application-name hash) "data")]
-              (asg/deploy region application-name (create-params deployment-params {"imageId" ami
-                                                                                    "selectedZones" [(str region "a") (str region "b")]
-                                                                                    "ticket" deploy-id
-                                                                                    "_action_deploy" ""}))
-              {:status 500 :body "Could not retrieve deployment parameters."})
-            {:status 500 :body "Could not store deployment information."}))
-        {:status 500 :body "Could not retrieve last commit hash."}))
-    {:status 404 :body "Application does not exist."}))
+    (if (asg/application application-name)
+      (let [{:keys [ami environment user]} details]
+        (if-let [hash (tyr/last-commit-hash environment application-name)]
+          (let [configuration {:ami ami
+                               :environment environment
+                               :hash hash
+                               :region region
+                               :user user}]
+            (log/info "Configuration is" configuration)
+            (if-let [deploy-id (store/store-configuration application-name configuration)]
+              (if-let [deployment-params (get (tyr/deployment-params environment application-name hash) "data")]
+                (asg/deploy region application-name (create-params deployment-params {"imageId" ami
+                                                                                      "selectedZones" [(str region "a") (str region "b")]
+                                                                                      "ticket" deploy-id
+                                                                                      "_action_deploy" ""}))
+                {:status 500 :body "Could not retrieve deployment parameters."})
+              {:status 500 :body "Could not store deployment information."}))
+          {:status 500 :body "Could not retrieve last commit hash."}))
+      {:status 404 :body "Application does not exist in Asgard."})
+    {:status 404 :body "Application does not exist in Onix."}))
 
 ;(deploy "eu-west-1" "skeleton" {:ami "ami-5431d523" :environment "dev" :user "nprosser"})
+;(deploy "eu-west-1" "rar" {:ami "ami-2423424" :environment "dev" :user "nprosser"})
 ;(asg/application "skeleton")
 ;(application "skeleton")
