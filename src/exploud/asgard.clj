@@ -18,6 +18,9 @@
 (defn- application-url [application-name]
   (str asgard-url "/application/show/" application-name ".json"))
 
+(defn- application-list-url []
+  (str asgard-url "/application/list.json"))
+
 (defn- cluster-url [region cluster-name]
   (str asgard-url "/" region "/cluster/show/" cluster-name ".json"))
 
@@ -37,6 +40,14 @@
   "Retrieves information about an application from Asgard"
   [application-name]
   (let [response (http/simple-get (application-url application-name))
+        {:keys [status]} response]
+    (when (= status 200)
+      (json/parse-string (:body response) true))))
+
+(defn application-list
+  "Retrieves the list of applications from Asgard"
+  []
+  (let [response (http/simple-get (application-list-url))
         {:keys [status]} response]
     (when (= status 200)
       (json/parse-string (:body response) true))))
@@ -132,6 +143,21 @@
 (defn- task-info-from-url [url]
   (into {} (map (fn [[k v]] {(keyword k) (ring.util.codec/url-decode v)}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
 
+(defn applications []
+  (let [application-list (application-list)]
+    (map (fn [app] (:name app)) application-list)))
+
+(defn upsert-application [application-name {:keys [description email owner]}]
+  (http/simple-post (upsert-application-url) {:form-params {:description description
+                                                            :email email
+                                                            :monitorBucketType "application"
+                                                            :name application-name
+                                                            :owner owner
+                                                            :ticket ""
+                                                            :type "Web Service"
+                                                            :_action_update ""}
+                                              :follow-redirects false}))
+
 (defn deploy
   "Kicks off an automated red/black deployment. If successful, the task
   information will be tracked until the task has completed. This function
@@ -154,3 +180,5 @@
 ;(last-launch-configuration-name "eu-west-1" "skeleton")
 ;(last-security-groups "eu-west-1" "skeleton")
 ;(task-info-from-url "http://asgard.brislabs.com:8080/task/show?runId=12lyXMu%2FrpdVtZ%2FpgbUQ7hpuAEzizQ9QKa0fnpj7G8fwE%3D&workflowId=a99a149d-be24-47c8-93c0-d10e00334dee")
+;(applications)
+;(application-list)

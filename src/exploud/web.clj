@@ -56,6 +56,9 @@
    (GET "/configurations/:configuration-id"
         [configuration-id] {:status 200 :body (store/get-configuration configuration-id)})
 
+   (GET "/applications"
+        [] {:status 200 :body (exp/applications)})
+
    (POST "/applications/:application/deploy"
          [application ami environment] {:status 200 :body (exp/deploy default-region application {:ami ami
                                                                                                   :environment environment

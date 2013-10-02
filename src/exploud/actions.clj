@@ -18,6 +18,9 @@
   (let [image-list (asg/image-list region application-name)]
     (filter (fn [image] (matches-version? image version)) image-list)))
 
+(defn applications []
+  {:names (asg/applications)})
+
 (defn deploy [region application-name details]
   (if (onix/application-exists? application-name)
     (let [{:keys [ami environment user]} details]
