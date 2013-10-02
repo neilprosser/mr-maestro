@@ -5,6 +5,7 @@
               [compojure.route :as route]
               [compojure.handler :as handler]
               [exploud.actions :as exp]
+              [exploud.pokemon :as pokemon]
               [exploud.store :as store]
               [ring.middleware.format-response :refer [wrap-json-response]]
               [ring.middleware.json-params :refer [wrap-json-params]]
@@ -39,6 +40,15 @@
         [] {:status 200 :body {:name "exploud"
                                :version *version*
                                :status true}})
+
+   (GET "/pokemon"
+        [] {:status 200 :body pokemon/pokemon})
+
+   (GET "/icon" []
+        {:status 200
+         :headers {"Content-Type" "image/jpeg"}
+         :body (-> (clojure.java.io/resource "exploud.jpg")
+                   (clojure.java.io/input-stream))})
 
    (GET "/tasks/:task-id"
         [task-id] {:status 200 :body (store/get-task task-id)})
