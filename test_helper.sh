@@ -39,7 +39,7 @@ run_test () {
     type=$1
     timeout=$2
     
-    lein embongo& /dev/null 2>&1
+    lein embongo& 2>&1
     mongo_pid=$!
 
     lein trampoline run&
