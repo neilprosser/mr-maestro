@@ -12,6 +12,34 @@
 (def asgard-date-formatter (fmt/formatter "YYYY-MM-dd_HH:mm:ss"))
 (def date-formatter (fmt/formatters :date-time))
 
+(def default-deploy-params
+  {"azRebalance" "enabled"
+   "canaryAssessmentDurationMinutes" 60
+   "canaryCapacity" 1
+   "canaryStartUpTimeoutMinutes" 30
+   "defaultCooldown" 10
+   "delayDurationMinutes" 0
+   "deletePreviousAsg" "Yes"
+   "desiredCapacity" 1
+   "desiredCapacityAssesmentDurationMinutes" 5
+   "desiredCapacityStartUpTimeoutMinutes" 5
+   "disablePreviousAsg" "Yes"
+   "doCanary" false
+   "fullTrafficAssessmentDurationMinutes" 5
+   "healthCheckGracePeriod" 600
+   "healthCheckType" "EC2"
+   "instanceType" "t1.micro"
+   "kernelId" ""
+   "keyName" "nprosser-key"
+   "max" 1
+   "min" 1
+   "noOptionalDefaults" true
+   "pricing" "ON_DEMAND"
+   "ramdiskId" ""
+   "scaleUp" "Yes"
+   "subnetPurpose" "internal"
+   "terminationPolicy" "Default"})
+
 (def asgard-url
   (env :service-asgard-url))
 
@@ -211,16 +239,22 @@
         required-params (select-keys params required-keys)]
     (merge additional-params required-params)))
 
+(defn- application-params [application-name]
+  {"clusterName" application-name
+   "iamInstanceProfile" application-name
+   "name" application-name})
+
 (defn manual-deploy
   "In the event that an application doesn't have an auto-scaling group for
   us to copy we use a manual creation of that ASG to get going."
   [region application-name params]
-  (log/info "Application" application-name "is being manually deployed in" region "with params" params)
-  (let [merged-params (create-manual-deploy-params params region application-name)]
-    (when-let [application (application region application-name)]
-      (let [{:keys [headers status]} (http/simple-post (auto-scaling-save-url region) {:form-params (create-asgard-params merged-params) :follow-redirects false :socket-timeout 30000})]
-        (when (= 302 status)
-          (log/info "Headers are" headers))))))
+  (let [all-params (merge default-deploy-params (application-params application-name) params)]
+    (log/info "Application" application-name "is being manually deployed in" region "with params" all-params)
+    (let [merged-params (create-manual-deploy-params all-params region application-name)]
+      (when-let [application (application region application-name)]
+        (let [{:keys [headers status]} (http/simple-post (auto-scaling-save-url region) {:form-params (create-asgard-params merged-params) :follow-redirects false :socket-timeout 30000})]
+          (when (= 302 status)
+            (log/info "Headers are" headers)))))))
 
 (defn auto-deploy
   "Kicks off an automated red/black deployment. If successful, the task
@@ -228,17 +262,18 @@
   returns a map containing the task information which can be used to
   retrieve the task and track the deployment."
   [region application-name params]
-  (log/info "Application" application-name "is being automatically deployed in" region "with params" params)
-  (when-let [application (application region application-name)]
-    (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:form-params (create-asgard-params params) :follow-redirects false :socket-timeout 30000})]
-      (when (= 302 status)
-        (log/info "Headers are" headers)
-        (let [{:strs [location]} headers
-              task-info (task-info-from-url location)
-              {:keys [runId workflowId]} task-info
-              task-id (store/store-task {:region region :runId runId :workflowId workflowId})]
-          (schedule-track-task region runId workflowId (* 1 60 60))
-          {:taskId task-id})))))
+  (let [all-params (merge default-deploy-params (application-params application-name) params)]
+    (log/info "Application" application-name "is being automatically deployed in" region "with params" all-params)
+    (when-let [application (application region application-name)]
+      (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:form-params (create-asgard-params all-params) :follow-redirects false :socket-timeout 30000})]
+        (when (= 302 status)
+          (log/info "Headers are" headers)
+          (let [{:strs [location]} headers
+                task-info (task-info-from-url location)
+                {:keys [runId workflowId]} task-info
+                task-id (store/store-task {:region region :runId runId :workflowId workflowId})]
+            (schedule-track-task region runId workflowId (* 1 60 60))
+            {:taskId task-id}))))))
 
 ;(task "eu-west-1" "120DqQWqEBYsOK5Vaj6sK8b4YErobn8sF61FcN7OA63t0=" "b7287ace-cfd3-41b6-9618-189534d9f207")
 ;(last-launch-configuration-name "eu-west-1" "skeleton")
