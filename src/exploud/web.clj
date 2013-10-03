@@ -60,12 +60,12 @@
         [] {:status 200 :body (exp/applications)})
 
    (GET "/applications/:application"
-        [application] {:status 200 :body (exp/application application)})
+        [application] {:status 200 :body (exp/application default-region application)})
 
    (PUT "/applications/:application"
-         [application description email owner] (exp/upsert-application application {:description description
-                                                                                    :email email
-                                                                                    :owner owner}))
+        [application description email owner] {:status 201 :body (exp/upsert-application default-region application {:description description
+                                                                                                                     :email email
+                                                                                                                     :owner owner})})
 
    (POST "/applications/:application/deploy"
          [application ami environment] {:status 200 :body (exp/deploy default-region application {:ami ami

@@ -15,8 +15,8 @@
 (def asgard-url
   (env :service-asgard-url))
 
-(defn- application-url [application-name]
-  (str asgard-url "/application/show/" application-name ".json"))
+(defn- application-url [region application-name]
+  (str asgard-url "/" region "/application/show/" application-name ".json"))
 
 (defn- upsert-application-url []
   (str asgard-url "/application/index"))
@@ -26,6 +26,9 @@
 
 (defn- cluster-url [region cluster-name]
   (str asgard-url "/" region "/cluster/show/" cluster-name ".json"))
+
+(defn- auto-scaling-save-url [region]
+  (str asgard-url "/" region "/autoScaling/save"))
 
 (defn- launch-configuration-url [region launch-configuration-name]
   (str asgard-url "/" region "/launchConfiguration/show/" launch-configuration-name ".json"))
@@ -41,8 +44,8 @@
 
 (defn application
   "Retrieves information about an application from Asgard"
-  [application-name]
-  (let [response (http/simple-get (application-url application-name))
+  [region application-name]
+  (let [response (http/simple-get (application-url region application-name))
         {:keys [status]} response]
     (when (= status 200)
       (json/parse-string (:body response) true))))
@@ -161,15 +164,73 @@
                                                             :_action_update ""}
                                               :follow-redirects false}))
 
-(defn deploy
+(defn auto-scaling-group-exists? [region application-name]
+  (let [application (application region application-name)]
+    (< 0 (count (:groups application)))))
+
+(defn- create-asgard-params [params]
+  (for [[k v] (seq params)
+        vs (flatten (conj [] v))]
+    [k vs]))
+
+(def required-keys
+  ["azRebalance"
+   "defaultCooldown"
+   "desiredCapacity"
+   "healthCheckGracePeriod"
+   "healthCheckType"
+   "iamInstanceProfile"
+   "imageId"
+   "instanceType"
+   "kernelId"
+   "keyName"
+   "max"
+   "min"
+   "pricing"
+   "ramdiskId"
+   "selectedLoadBalancersForVpcIdvpc-7bc88713" ; TODO - not make this hard-coded
+   "selectedSecurityGroups"
+   "selectedZones"
+   "subnetPurpose"
+   "terminationPolicy"
+   "ticket"
+   "_action_save"])
+
+(defn- create-manual-deploy-params [params region application-name]
+  (let [additional-params {"appName" application-name
+                           "appWithClusterOptLevel" false
+                           "countries" ""
+                           "detail" ""
+                           "devPhase" ""
+                           "hardware" ""
+                           "newStack" ""
+                           "partners" ""
+                           "revision" ""
+                           "stack" ""
+                           "region" region}
+        required-params (select-keys params required-keys)]
+    (merge additional-params required-params)))
+
+(defn manual-deploy
+  "In the event that an application doesn't have an auto-scaling group for
+  us to copy we use a manual creation of that ASG to get going."
+  [region application-name params]
+  (log/info "Application" application-name "is being manually deployed in" region "with params" params)
+  (let [merged-params (create-manual-deploy-params params region application-name)]
+    (when-let [application (application region application-name)]
+      (let [{:keys [headers status]} (http/simple-post (auto-scaling-save-url region) {:form-params (create-asgard-params merged-params) :follow-redirects false :socket-timeout 30000})]
+        (when (= 302 status)
+          (log/info "Headers are" headers))))))
+
+(defn auto-deploy
   "Kicks off an automated red/black deployment. If successful, the task
   information will be tracked until the task has completed. This function
   returns a map containing the task information which can be used to
   retrieve the task and track the deployment."
   [region application-name params]
-  (log/info "Application" application-name "is being deployed in" region "with params" params)
-  (when-let [application (application application-name)]
-    (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:form-params params :follow-redirects false})]
+  (log/info "Application" application-name "is being automatically deployed in" region "with params" params)
+  (when-let [application (application region application-name)]
+    (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:form-params (create-asgard-params params) :follow-redirects false :socket-timeout 30000})]
       (when (= 302 status)
         (log/info "Headers are" headers)
         (let [{:strs [location]} headers
@@ -183,7 +244,11 @@
 ;(last-launch-configuration-name "eu-west-1" "skeleton")
 ;(last-security-groups "eu-west-1" "skeleton")
 ;(task-info-from-url "http://asgard.brislabs.com:8080/task/show?runId=12lyXMu%2FrpdVtZ%2FpgbUQ7hpuAEzizQ9QKa0fnpj7G8fwE%3D&workflowId=a99a149d-be24-47c8-93c0-d10e00334dee")
-                                        ;(application "missing")
+;(application "eu-west-1" "missing")
 ;(upsert-application "somethingnew" {:description "Updated from Exploud" :email "neil.prosser@gmail.com" :owner "someone"})
 ;(applications)
 ;(application-list)
+;(application "eu-west-1" "skeleton")
+;(auto-scaling-group-exists? "eu-west-1" "skeleton")
+;(create-asgard-params (create-manual-deploy-params (merge (get (exploud.tyranitar/deployment-params "dev" "skeleton" "HEAD") "data") {"imageId" "woooooo" "selectedZones" ["eu-west-1a" "eu-west-1b"] "ticket" "something" "_action_save" ""}) "eu-west-1" "skeleton"))
+;(auto-scaling-save-url "eu-west-1")
