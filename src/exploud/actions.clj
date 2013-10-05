@@ -22,8 +22,10 @@
            (select-keys (:app full-application) [:description :email :owner]))))
 
 (defn upsert-application [region application-name details]
-  (asg/upsert-application application-name details)
-  (application region application-name))
+  (let [onix-application (onix/upsert-application application-name)
+        tyranitar-application (tyr/upsert-application application-name)]
+    (asg/upsert-application application-name details)
+    (merge (application region application-name) tyranitar-application)))
 
 ; TODO - Think of better names for these *-deploy functions
 (defn- manual-deploy [region application-name deployment-params ami deploy-id]
@@ -39,7 +41,7 @@
                                                                      "_action_deploy" ""})))
 
 (defn deploy [region application-name details]
-  (if (onix/application-exists? application-name)
+  (if (onix/application application-name)
     (if (asg/application region application-name)
       (let [{:keys [ami environment user]} details]
         (if-let [hash (tyr/last-commit-hash environment application-name)]
@@ -63,5 +65,5 @@
 ;(deploy "eu-west-1" "skeleton" {:ami "ami-5431d523" :environment "dev" :user "nprosser"})
 ;(deploy "eu-west-1" "rar" {:ami "ami-2423424" :environment "dev" :user "nprosser"})
 ;(asg/application "skeleton")
-;(application "skeleton")
-;(upsert-application "eu-west-1" "something" {:description "description" :email "email" :owner "owner"})
+;(application "eu-west-1" "skeleton")
+;(upsert-application "eu-west-1" "wooo" {:description "description" :email "email" :owner "owner"})

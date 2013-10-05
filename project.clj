@@ -60,11 +60,12 @@
         :service-onix-url "http://onix.brislabs.com:8080"
         :service-tyranitar-url "http://tyranitar.brislabs.com:8080"
         :mongo-hosts "localhost:27017"
-        :mongo-connections-max "50"}
+        :mongo-connections-max "50"
+        :service-vpc-id "vpc-7bc88713"}
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
-  
+
   :embongo {:port ~(Integer.  (get (System/getenv) "MONGO_PORT" "27017"))
             :version "2.4.3"}
 

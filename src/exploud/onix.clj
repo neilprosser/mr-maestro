@@ -1,13 +1,33 @@
 (ns exploud.onix
-  (:require [environ.core :refer [env]]
+  (:require [cheshire.core :as json]
+            [environ.core :refer [env]]
             [exploud.http :as http]))
 
 (def onix-url
   (env :service-onix-url))
 
-(defn application-exists? [application-name]
-  (let [url (str onix-url "/1.x/applications/" application-name)
-        {:keys [status]} (http/simple-get url)]
-    (= status 200)))
+(defn- applications-url []
+  (str onix-url "/1.x/applications"))
 
-;(application-exists? "skeleton")
+(defn- application-url [application-name]
+  (str onix-url "/1.x/applications/" application-name))
+
+(defn create-application [application-name]
+  (let [body (json/generate-string {:name application-name})
+        {:keys [body status]} (http/simple-post (applications-url) {:content-type :json :body body})]
+    (if (= status 201)
+      (json/parse-string body true)
+      {:status 500 :body "Could not create application in Onix."})))
+
+(defn application [application-name]
+  (let [{ :keys [body status]} (http/simple-get (application-url application-name))]
+    (if (= status 200)
+      (json/parse-string body true))))
+
+(defn upsert-application [application-name]
+  (if-let [application (application application-name)]
+    application
+    (create-application application-name)))
+
+;(upsert-application "skeleton2")
+;(application "skeleton2")

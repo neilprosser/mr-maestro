@@ -4,7 +4,7 @@
 (defn default-params [& [overrides]]
   (merge {:throw-exceptions false
           :conn-timeout 5000
-          :socket-timeout 5000}
+          :socket-timeout 15000}
          overrides))
 
 (defn simple-get [url & [params]]

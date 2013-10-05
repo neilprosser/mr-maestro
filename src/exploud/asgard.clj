@@ -1,6 +1,7 @@
 (ns exploud.asgard
   (:require [cheshire.core :as json]
             [clj-time.format :as fmt]
+            [clojure.set :as set]
             [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [exploud.http :as http]
@@ -8,6 +9,9 @@
             [overtone.at-at :as at-at]))
 
 (def tp (at-at/mk-pool))
+
+(def vpc-id
+  (env :service-vpc-id))
 
 (def asgard-date-formatter (fmt/formatter "YYYY-MM-dd_HH:mm:ss"))
 (def date-formatter (fmt/formatters :date-time))
@@ -39,6 +43,29 @@
    "scaleUp" "Yes"
    "subnetPurpose" "internal"
    "terminationPolicy" "Default"})
+
+(def required-keys
+  ["azRebalance"
+   "defaultCooldown"
+   "desiredCapacity"
+   "healthCheckGracePeriod"
+   "healthCheckType"
+   "iamInstanceProfile"
+   "imageId"
+   "instanceType"
+   "kernelId"
+   "keyName"
+   "max"
+   "min"
+   "pricing"
+   "ramdiskId"
+   "selectedLoadBalancers"
+   "selectedSecurityGroups"
+   "selectedZones"
+   "subnetPurpose"
+   "terminationPolicy"
+   "ticket"
+   "_action_save"])
 
 (def asgard-url
   (env :service-asgard-url))
@@ -201,28 +228,29 @@
         vs (flatten (conj [] v))]
     [k vs]))
 
-(def required-keys
-  ["azRebalance"
-   "defaultCooldown"
-   "desiredCapacity"
-   "healthCheckGracePeriod"
-   "healthCheckType"
-   "iamInstanceProfile"
-   "imageId"
-   "instanceType"
-   "kernelId"
-   "keyName"
-   "max"
-   "min"
-   "pricing"
-   "ramdiskId"
-   "selectedLoadBalancersForVpcIdvpc-7bc88713" ; TODO - not make this hard-coded
-   "selectedSecurityGroups"
-   "selectedZones"
-   "subnetPurpose"
-   "terminationPolicy"
-   "ticket"
-   "_action_save"])
+(defn- replace-load-balancer-param [params]
+  (if (= "internal" (get params "subnetPurpose"))
+    (set/rename-keys params {"selectedLoadBalancers" (str "selectedLoadBalancersForVpcId" vpc-id)})
+    params))
+
+(defn- is-security-group-name? [security-group]
+  (re-find #"^sg-" security-group))
+
+(defn- get-security-group-id [security-group]
+  "hello")
+
+(defn- replace-security-group-names [params]
+  (if-let [security-group-names (get params "selectedSecurityGroups")]
+    (map (fn [sg] (if (is-security-group-name? sg)
+                   (get-security-group-id sg)
+                   sg))
+         security-group-names)
+    params))
+
+(defn- amend-params [params]
+  (comment (-> (replace-load-balancer-param params)
+               (replace-security-group-names params)))
+  params)
 
 (defn- create-manual-deploy-params [params region application-name]
   (let [additional-params {"appName" application-name
@@ -236,7 +264,7 @@
                            "revision" ""
                            "stack" ""
                            "region" region}
-        required-params (select-keys params required-keys)]
+        required-params (amend-params (select-keys params required-keys))]
     (merge additional-params required-params)))
 
 (defn- application-params [application-name]
@@ -287,3 +315,5 @@
 ;(auto-scaling-group-exists? "eu-west-1" "skeleton")
 ;(create-asgard-params (create-manual-deploy-params (merge (get (exploud.tyranitar/deployment-params "dev" "skeleton" "HEAD") "data") {"imageId" "woooooo" "selectedZones" ["eu-west-1a" "eu-west-1b"] "ticket" "something" "_action_save" ""}) "eu-west-1" "skeleton"))
 ;(auto-scaling-save-url "eu-west-1")
+;(set/rename-keys {"selectedLoadBalancers" ["beef" "steak"]} {"selectedLoadBalancers" "selectedLoadBalancersForVpcIdvpc-e23232"})
+;(replace-security-group-names {"selectedSecurityGroups" ["woo" "sg-1234"]})
