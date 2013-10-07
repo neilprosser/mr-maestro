@@ -97,6 +97,9 @@
 (defn- image-list-url [region application-name]
   (str asgard-url "/" region "/image/list/" application-name ".json"))
 
+(defn- security-groups-list-url [region]
+  (str asgard-url "/" region "/security/list.json"))
+
 (defn application
   "Retrieves information about an application from Asgard"
   [region application-name]
@@ -124,6 +127,13 @@
   "Retrives the list of images associated with an application."
   [region application-name]
   (let [{:keys [body status]} (http/simple-get (image-list-url region application-name))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn security-groups
+  "Retrieves the list of security groups in a given region."
+  [region]
+  (let [{:keys [body status]} (http/simple-get (security-groups-list-url region))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -236,21 +246,24 @@
 (defn- is-security-group-name? [security-group]
   (re-find #"^sg-" security-group))
 
-(defn- get-security-group-id [security-group]
-  "hello")
+(defn- get-security-group-id [security-group region]
+  (let [security-groups (:securityGroups (security-groups region))]
+    (if-let [found-group (first (filter (fn [sg] (= security-group (:groupName sg))) security-groups))]
+      (:groupId found-group)
+      (throw (Throwable. (str "Unknown security group with name " security-group))))))
 
-(defn- replace-security-group-names [params]
+(defn- replace-security-group-names [region params]
   (if-let [security-group-names (get params "selectedSecurityGroups")]
     (map (fn [sg] (if (is-security-group-name? sg)
-                   (get-security-group-id sg)
+                   (get-security-group-id sg region)
                    sg))
          security-group-names)
     params))
 
-(defn- amend-params [params]
-  (comment (-> (replace-load-balancer-param params)
-               (replace-security-group-names params)))
-  params)
+(defn- amend-params [region params]
+  (replace-security-group-names
+   region
+   (replace-load-balancer-param params)))
 
 (defn- create-manual-deploy-params [params region application-name]
   (let [additional-params {"appName" application-name
@@ -264,7 +277,7 @@
                            "revision" ""
                            "stack" ""
                            "region" region}
-        required-params (amend-params (select-keys params required-keys))]
+        required-params (amend-params region (select-keys params required-keys))]
     (merge additional-params required-params)))
 
 (defn- application-params [application-name]
@@ -316,4 +329,5 @@
 ;(create-asgard-params (create-manual-deploy-params (merge (get (exploud.tyranitar/deployment-params "dev" "skeleton" "HEAD") "data") {"imageId" "woooooo" "selectedZones" ["eu-west-1a" "eu-west-1b"] "ticket" "something" "_action_save" ""}) "eu-west-1" "skeleton"))
 ;(auto-scaling-save-url "eu-west-1")
 ;(set/rename-keys {"selectedLoadBalancers" ["beef" "steak"]} {"selectedLoadBalancers" "selectedLoadBalancersForVpcIdvpc-e23232"})
-;(replace-security-group-names {"selectedSecurityGroups" ["woo" "sg-1234"]})
+;(replace-security-group-names "eu-west-1" {"selectedSecurityGroups" ["woo" "sg-1234"]})
+;(security-groups "eu-west-1")
