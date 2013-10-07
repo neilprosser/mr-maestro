@@ -150,7 +150,7 @@
 
 (defn- munge-task [task]
   "Converts an Asgard task to a desired form"
-  (update-in task [:log] (fn [log] (map #(split-log-message %) log))))
+  (update-in task [:log] (fn [log] (map split-log-message log))))
 
 (defn task [region run-id workflow-id]
   "Retrives information about a task from Asgard"
@@ -206,7 +206,7 @@
 
 (defn applications []
   (let [application-list (application-list)]
-    (map (fn [app] (:name app)) application-list)))
+    (map :name application-list)))
 
 (defn upsert-application [application-name {:keys [description email owner]}]
   (http/simple-post (upsert-application-url) {:form-params {:description description
@@ -221,7 +221,7 @@
 
 (defn auto-scaling-group-exists? [region application-name]
   (let [application (application region application-name)]
-    (< 0 (count (:groups application)))))
+    (pos? (count (:groups application)))))
 
 (defn- create-asgard-params [params]
   (for [[k v] (seq params)
