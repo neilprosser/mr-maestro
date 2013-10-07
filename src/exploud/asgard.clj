@@ -243,7 +243,7 @@
     (set/rename-keys params {"selectedLoadBalancers" (str "selectedLoadBalancersForVpcId" vpc-id)})
     params))
 
-(defn- is-security-group-name? [security-group]
+(defn- is-security-group-id? [security-group]
   (re-find #"^sg-" security-group))
 
 (defn- get-security-group-id [security-group region]
@@ -252,12 +252,16 @@
       (:groupId found-group)
       (throw (Throwable. (str "Unknown security group with name " security-group))))))
 
+(defn- replace-security-group-name [region security-group]
+  (if (is-security-group-id? security-group)
+    security-group
+    (get-security-group-id security-group region)))
+
 (defn- replace-security-group-names [region params]
   (if-let [security-group-names (get params "selectedSecurityGroups")]
-    (map (fn [sg] (if (is-security-group-name? sg)
-                   (get-security-group-id sg region)
-                   sg))
-         security-group-names)
+    (let [security-group-ids (map (fn [sg] (replace-security-group-name region sg))
+                                  security-group-names)]
+      (assoc params "selectedSecurityGroups" security-group-ids))
     params))
 
 (defn- amend-params [region params]
@@ -277,7 +281,7 @@
                            "revision" ""
                            "stack" ""
                            "region" region}
-        required-params (amend-params region (select-keys params required-keys))]
+        required-params (select-keys params required-keys)]
     (merge additional-params required-params)))
 
 (defn- application-params [application-name]
@@ -290,8 +294,8 @@
   us to copy we use a manual creation of that ASG to get going."
   [region application-name params]
   (let [all-params (merge default-deploy-params (application-params application-name) params)]
-    (log/info "Application" application-name "is being manually deployed in" region "with params" all-params)
-    (let [merged-params (create-manual-deploy-params all-params region application-name)]
+    (let [merged-params (amend-params region (create-manual-deploy-params all-params region application-name))]
+      (log/info "Application" application-name "is being manually deployed in" region "with params" merged-params)
       (when-let [application (application region application-name)]
         (let [{:keys [headers status]} (http/simple-post (auto-scaling-save-url region) {:form-params (create-asgard-params merged-params) :follow-redirects false :socket-timeout 30000})]
           (when (= 302 status)
@@ -303,7 +307,7 @@
   returns a map containing the task information which can be used to
   retrieve the task and track the deployment."
   [region application-name params]
-  (let [all-params (merge default-deploy-params (application-params application-name) params)]
+  (let [all-params (amend-params region (merge default-deploy-params (application-params application-name) params))]
     (log/info "Application" application-name "is being automatically deployed in" region "with params" all-params)
     (when-let [application (application region application-name)]
       (let [{:keys [headers status]} (http/simple-post (region-deploy-url region) {:form-params (create-asgard-params all-params) :follow-redirects false :socket-timeout 30000})]
@@ -326,7 +330,8 @@
 ;(application-list)
 ;(application "eu-west-1" "skeleton")
 ;(auto-scaling-group-exists? "eu-west-1" "skeleton")
-;(create-asgard-params (create-manual-deploy-params (merge (get (exploud.tyranitar/deployment-params "dev" "skeleton" "HEAD") "data") {"imageId" "woooooo" "selectedZones" ["eu-west-1a" "eu-west-1b"] "ticket" "something" "_action_save" ""}) "eu-west-1" "skeleton"))
+;(create-manual-deploy-params (merge (get (exploud.tyranitar/deployment-params "dev" "recommendations" "HEAD") "data") {}) "eu-west-1" "recommendations")
+;(create-asgard-params (create-manual-deploy-params (merge (get (exploud.tyranitar/deployment-params "dev" "recommendations" "HEAD") "data") {}) "eu-west-1" "recommendations"))
 ;(auto-scaling-save-url "eu-west-1")
 ;(set/rename-keys {"selectedLoadBalancers" ["beef" "steak"]} {"selectedLoadBalancers" "selectedLoadBalancersForVpcIdvpc-e23232"})
 ;(replace-security-group-names "eu-west-1" {"selectedSecurityGroups" ["woo" "sg-1234"]})
