@@ -33,7 +33,7 @@
   [name]
   (if-let [body (exp/application default-region name)]
     {:status 200 :body body}
-    (error-response (str "The application '" name "' does not exist.") 404)))
+    (error-response "The requested application does not exist." 404)))
 
 (defroutes routes
   (context
