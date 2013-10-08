@@ -29,6 +29,12 @@
 
 (def default-user "exploud")
 
+(defn get-application
+  [name]
+  (if-let [body (exp/application default-region name)]
+    {:status 200 :body body}
+    (error-response (str "The application '" name "' does not exist.") 404)))
+
 (defroutes routes
   (context
    "/1.x" []
@@ -60,7 +66,7 @@
         [] {:status 200 :body (exp/applications)})
 
    (GET "/applications/:application"
-        [application] {:status 200 :body (exp/application default-region application)})
+        [application] (get-application application))
 
    (PUT "/applications/:application"
         [application description email owner] {:status 201 :body (exp/upsert-application default-region application {:description description
