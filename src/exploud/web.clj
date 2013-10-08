@@ -29,6 +29,11 @@
 
 (def default-user "exploud")
 
+(defn response [data content-type & [status]]
+  {:status (or status 200)
+   :headers {"Content-Type" content-type}
+   :body data})
+
 (defn get-application
   [name]
   (if-let [body (exp/application default-region name)]
@@ -77,6 +82,9 @@
          [application ami environment] {:status 200 :body (exp/deploy default-region application {:ami ami
                                                                                                   :environment environment
                                                                                                   :user default-user})}))
+
+     (GET "/healthcheck" []
+        (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
 
   (route/not-found (error-response "Resource not found" 404)))
 
