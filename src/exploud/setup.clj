@@ -1,20 +1,23 @@
 (ns exploud.setup
-    (:require [exploud.web :as web]
-              [environ.core :refer [env]]
-              [clojure.string :as cs :only (split)]
-              [clojure.tools.logging :refer (info warn error)]
-              [clojure.java.io :as io]
-              [monger.core :as mc :only (connect! mongo-options server-address use-db!)]
-              [ring.adapter.jetty :refer [run-jetty]])
-    (:import (java.lang Integer Throwable)
-             (java.util.logging LogManager)
-             (com.yammer.metrics Metrics)
-             (com.yammer.metrics.core MetricName)
-             (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
-             (com.ovi.common.metrics HostnameFactory)
-             (org.slf4j.bridge SLF4JBridgeHandler)
-             (java.util.concurrent TimeUnit))
-    (:gen-class))
+  (:require [exploud.asgard :as asg]
+            [exploud.store :as store]
+            [exploud.web :as web]
+            [environ.core :refer [env]]
+            [clojure.string :as cs :only (split)]
+            [clojure.tools.logging :refer (info warn error)]
+            [clojure.java.io :as io]
+            [monger.core :as mc :only (connect! mongo-options server-address use-db!)]
+            [monger.collection :as mcol :only (ensure-index)]
+            [ring.adapter.jetty :refer [run-jetty]])
+  (:import (java.lang Integer Throwable)
+           (java.util.logging LogManager)
+           (com.yammer.metrics Metrics)
+           (com.yammer.metrics.core MetricName)
+           (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
+           (com.ovi.common.metrics HostnameFactory)
+           (org.slf4j.bridge SLF4JBridgeHandler)
+           (java.util.concurrent TimeUnit))
+  (:gen-class))
 
 (defn read-file-to-properties [file-name]
   (with-open [^java.io.Reader reader (io/reader file-name)]
@@ -45,6 +48,9 @@
 (defn configure-mongo-db []
   (mc/use-db! "exploud"))
 
+(defn bootstrap-mongo []
+  (mcol/ensure-index "tasks" {:status 1}))
+
 (defn start-graphite-reporting []
   (let [graphite-prefix (new GraphiteName
                              (into-array Object
@@ -59,6 +65,10 @@
      (TimeUnit/valueOf (env :service-graphite-post-unit))
      (ReporterState/valueOf (env :service-graphite-enabled)))))
 
+(defn pick-up-tasks []
+  (doseq [task (store/incomplete-tasks)]
+    (asg/schedule-track-task (:region task) (:runId task) (:workflowId task) (* 1 60 60))))
+
 (def version
   (delay (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/exploud/exploud/pom.properties")]
            ((read-file-to-properties path) "version")
@@ -68,8 +78,10 @@
   (web/set-version! @version)
   (configure-mongo-conn-pool)
   (configure-mongo-db)
+  (bootstrap-mongo)
   (configure-logging)
-  (start-graphite-reporting))
+  (start-graphite-reporting)
+  (pick-up-tasks))
 
 (def server (atom nil))
 

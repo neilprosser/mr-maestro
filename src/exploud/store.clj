@@ -3,6 +3,7 @@
             [clj-time.format :as fmt]
             [clojure.tools.logging :as log]
             [monger.collection :as mc])
+  (:use monger.operators)
   (:import org.bson.types.ObjectId))
 
 (def formatter (fmt/formatters :date-time))
@@ -35,8 +36,14 @@
                                         :user user})]
     (str (:_id inserted))))
 
+(defn incomplete-tasks
+  "Finds any tasks which are not finished"
+  []
+  (mc/find-maps "tasks" {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}))
+
 ;(store-configuration "skeleton" {:ami "ami-223addf1" :environment "dev" :hash "whatever" :region "eu-west-1" :user "nprosser"})
 ;(get-configuration "524331b94e08331c0378ccda")
 ;(get-task "522f06741ea55d2d3aa437e6")
 ;(get-configuration "524324234e08331c0378ccd3")
 ;(store-task {:region "eu-west-1" :run-id "runid" :workflow-id "workflowid" :something "hello"})
+;(incomplete-tasks)

@@ -6,7 +6,8 @@
             [environ.core :refer [env]]
             [exploud.http :as http]
             [exploud.store :as store]
-            [overtone.at-at :as at-at]))
+            [overtone.at-at :as at-at]
+            [ring.util.codec :as codec]))
 
 (def tp (at-at/mk-pool))
 
@@ -184,7 +185,7 @@
 
 (declare track-task)
 
-(defn- schedule-track-task [region run-id workflow-id count]
+(defn schedule-track-task [region run-id workflow-id count]
   (log/info "Scheduling task tracking for" region run-id workflow-id)
   (at-at/after 1000 #(track-task region run-id workflow-id count) tp :desc (task-tracking-desc region run-id workflow-id)))
 
@@ -212,7 +213,7 @@
         (reschedule)))))
 
 (defn- task-info-from-url [url]
-  (into {} (map (fn [[k v]] {(keyword k) (ring.util.codec/url-decode v)}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
+  (into {} (map (fn [[k v]] {(keyword k) (codec/url-decode v)}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
 
 (defn applications []
   (let [application-list (application-list)]
