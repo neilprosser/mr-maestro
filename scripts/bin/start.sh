@@ -2,15 +2,15 @@
 
 SERVICE_NAME=exploud
 
-PIDS=$(pgrep java -lf | grep ditto | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep exploud | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
-  echo "Jetty is already running in process $PIDS";
+  echo "Exploud is already running in process $PIDS";
   exit 1
 fi
 
-JETTY_HOME=/usr/local/jetty
+JETTY_HOME=/usr/local/exploud
 JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
 LOG_FILE=$JETTY_HOME/log/jetty.log
 ERR_FILE=$JETTY_HOME/log/jetty.err
@@ -41,7 +41,7 @@ waitTimeout=$SERVICE_JETTY_START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
 
-echo "Giving Jetty $waitTimeout seconds to start successfully"
+echo "Giving Exploud $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
@@ -50,8 +50,8 @@ until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
-    echo "Jetty didn't start within $waitTimeout seconds."
-    PIDS=$(pgrep java -lf | grep ditto | cut -d" " -f1);
+    echo "Exploud didn't start within $waitTimeout seconds."
+    PIDS=$(pgrep java -lf | grep exploud | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
 	  echo "Killing $PIDS";
@@ -77,9 +77,9 @@ cat $ERR_FILE 1>&2
 
 if [ $retVal -eq 1 ]
 then
-  echo "Starting Jetty failed"
+  echo "Starting Exploud failed"
 else
-  echo "Starting Jetty succeeded"
+  echo "Starting Exploud succeeded"
 fi
 
 exit $retVal

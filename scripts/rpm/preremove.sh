@@ -1,19 +1,19 @@
 /bin/echo "preremove script started [$1]"
 
-prefixDir=/usr/local/jetty
+prefixDir=/usr/local/exploud
 identifier=exploud.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
 if [ $isJettyRunning -eq 0 ]
 then
-  /bin/echo "Jetty is not running"
+  /bin/echo "Exploud is not running"
 else
   sleepCounter=0
   sleepIncrement=2
   waitTimeOut=600
   /bin/echo "Timeout is $waitTimeOut seconds"
-  /bin/echo "Jetty is running, stopping service"
-  /sbin/service jetty stop &
+  /bin/echo "Exploud is running, stopping service"
+  /sbin/service exploud stop &
   myPid=$!
   
   until [ `pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l` -eq 0 ]  
@@ -21,7 +21,7 @@ else
     if [ $sleepCounter -ge $waitTimeOut ]
     then
       /usr/bin/pkill -KILL -f '$identifier'
-      /bin/echo "Killed Jetty"
+      /bin/echo "Killed Exploud"
       break
     fi
     sleep $sleepIncrement
@@ -30,14 +30,14 @@ else
 
   wait $myPid
 
-  /bin/echo "Jetty down"
+  /bin/echo "Exploud down"
 fi
 
 if [ "$1" = 0 ]
 then
-  /sbin/chkconfig --del jetty
+  /sbin/chkconfig --del exploud
 else
-  /sbin/chkconfig --list jetty
+  /sbin/chkconfig --list exploud
 fi
 
 /bin/echo "preremove script finished"

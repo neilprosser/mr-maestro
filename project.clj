@@ -90,23 +90,23 @@
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
         :requires ["jdk >= 2000:1.7.0_25-fcs"]
-        :mappings [{:directory "/usr/local/jetty"
+        :mappings [{:directory "/usr/local/exploud"
                     :filemode "444"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "exploud"
+                    :groupname "exploud"
                     :sources {:source [{:location "target/exploud.jar"}]}}
-                   {:directory "/usr/local/jetty/bin"
+                   {:directory "/usr/local/exploud/bin"
                     :filemode "744"
-                    :username "jetty"
-                    :groupname "jetty"
+                    :username "exploud"
+                    :groupname "exploud"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/usr/local/deployment/exploud/bin"
                     :filemode "744"
                     :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "744"
-                    :username "jetty"
-                    :groupname "jetty"
-                    :sources {:source [{:location "scripts/service/jetty"}]}}]}
+                    :username "exploud"
+                    :groupname "exploud"
+                    :sources {:source [{:location "scripts/service/exploud"}]}}]}
 
   :main exploud.setup)

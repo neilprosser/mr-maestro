@@ -2,18 +2,18 @@
 
 if [ "$1" -le 1 ]
 then
-  /sbin/chkconfig --add jetty
+  /sbin/chkconfig --add exploud
 else
-  /sbin/chkconfig --list jetty
+  /sbin/chkconfig --list exploud
 fi
 
-mkdir -p /var/log/jetty
+mkdir -p /var/log/exploud
 
-chown -R jetty:jetty /var/log/jetty
+chown -R exploud:exploud /var/log/exploud
 
-ln -s /var/log/jetty /usr/local/jetty/log
+ln -s /var/log/exploud /usr/local/exploud/log
 
-chown jetty:jetty /usr/local/jetty
+chown exploud:exploud /usr/local/exploud
 
 /bin/echo "postinstall script finished"
 exit 0

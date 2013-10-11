@@ -1,35 +1,35 @@
 #!/bin/sh
 #
-# Jetty Control Script
+# Exploud Control Script
 #
 # To use this script run it as root - it will switch to the specified user
 #
 # Here is a little (and extremely primitive) startup/shutdown script
-# for RedHat systems. It assumes that Jetty lives in /usr/local/jetty,
-# it's run by user 'jetty' and JDK binaries are in /usr/java/default/bin.
+# for RedHat systems. It assumes that Exploud lives in /usr/local/exploud,
+# it's run by user 'exploud' and JDK binaries are in /usr/java/default/bin.
 # All this can be changed in the script itself. 
 #
 # Either modify this script for your requirements or just ensure that
 # the following variables are set correctly before calling the script.
-# chkconfig: 345 90 05 
-# description: Runs the Jetty Server 
-# processname: jetty 
+# chkconfig: 345 99 05 
+# description: Runs the Exploud Server 
+# processname: exploud 
 
-#define where jetty is
-GIVEN_HOME="/usr/local/jetty"
+#define where exploud is
+GIVEN_HOME="/usr/local/exploud"
 
 JETTY_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
 
-#define the user under which jetty will run, or use 'RUNASIS' to run as the current user
-JETTY_USER=${JETTY_USER:-"jetty"}
+#define the user under which exploud will run, or use 'RUNASIS' to run as the current user
+JETTY_USER=${JETTY_USER:-"exploud"}
 
 #make sure java is in your path
 JAVAPTH=${JAVAPTH:-"/usr/java/default/bin"}
 
 #define property file location
-export SERVICE_JVMARGS="-Dconfig=/usr/local/deployment/Exploud1/config/post_install.properties"
+export SERVICE_JVMARGS="-Dconfig=/etc/exploud.properties"
 
-#define the script to use to start jetty
+#define the script to use to start exploud
 JETTYSH=${JETTYSH:-"$JETTY_HOME/bin/start.sh"}
 
 if [ "$JETTY_USER" = "RUNASIS" ]; then
@@ -54,7 +54,7 @@ fi
 
 case "$1" in
 start)
-    echo Starting Jetty with JETTY_CMD_START=$JETTY_CMD_START
+    echo Starting Exploud with JETTY_CMD_START=$JETTY_CMD_START
     cd $JETTY_HOME
     if [ -z "$SUBIT" ]; then
         eval $JETTY_CMD_START
@@ -63,7 +63,7 @@ start)
     fi
     ;;
 stop)
-    echo Stopping Jetty
+    echo Stopping Exploud
     if [ -z "$SUBIT" ]; then
         $JETTY_CMD_STOP
     else
