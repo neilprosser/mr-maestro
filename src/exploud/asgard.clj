@@ -177,10 +177,19 @@
   "Converts an Asgard task to a desired form"
   (update-in task [:log] (fn [log] (map split-log-message log))))
 
+(defn- break-url [url]
+  (let [split-by-question-mark (clojure.string/split url #"\?" 2)
+        url (str (first split-by-question-mark) ".json")]
+    (if-let [query-part (second split-by-question-mark)]
+      (let [query-params (into {} (map (fn [[k v]] {(keyword k) (codec/url-decode v)}) (map #(clojure.string/split % #"=") (clojure.string/split query-part #"&"))))]
+        {:url url :query-params query-params})
+      {:url url})))
+
 (defn task-by-url
   "Retrieves a task directly from its URL."
-  [url]
-  (let [{:keys [body status]} (http/simple-get url)]
+  [task-url]
+  (let [{:keys [url query-params]} (break-url task-url)
+        {:keys [body status]} (http/simple-get url query-params)]
     (when (= status 200)
       (munge-task (json/parse-string body true)))))
 
@@ -221,9 +230,6 @@
       (catch Exception e
         (log/warn e)
         (reschedule)))))
-
-(defn- task-info-from-url [url]
-  (into {} (map (fn [[k v]] {(keyword k) (codec/url-decode v)}) (map #(clojure.string/split % #"=") (clojure.string/split (nth (clojure.string/split url #"\?" 2) 1) #"&")))))
 
 (defn applications []
   (let [application-list (application-list)]
@@ -339,7 +345,6 @@
 ;(task "eu-west-1" "120DqQWqEBYsOK5Vaj6sK8b4YErobn8sF61FcN7OA63t0=" "b7287ace-cfd3-41b6-9618-189534d9f207")
 ;(last-launch-configuration-name "eu-west-1" "skeleton")
 ;(last-security-groups "eu-west-1" "skeleton")
-;(task-info-from-url "http://asgard.brislabs.com:8080/task/show?runId=12lyXMu%2FrpdVtZ%2FpgbUQ7hpuAEzizQ9QKa0fnpj7G8fwE%3D&workflowId=a99a149d-be24-47c8-93c0-d10e00334dee")
 ;(application "eu-west-1" "missing")
 ;(upsert-application "somethingnew" {:description "Updated from Exploud" :email "neil.prosser@gmail.com" :owner "someone"})
 ;(applications)
