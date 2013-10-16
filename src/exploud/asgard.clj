@@ -96,7 +96,7 @@
   (str asgard-url "/task/show.json"))
 
 (defn- task-by-id-url [region task-id]
-  (str asgard-url "/" region "/task/show/" task-id))
+  (str asgard-url "/" region "/task/show/" task-id ".json"))
 
 (defn- region-deploy-url [region]
   (str asgard-url "/" region "/cluster/deploy"))

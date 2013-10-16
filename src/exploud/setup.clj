@@ -67,7 +67,7 @@
 
 (defn pick-up-tasks []
   (doseq [task (store/incomplete-tasks)]
-    (asg/schedule-track-task (:region task) (:runId task) (:workflowId task) (* 1 60 60))))
+    (asg/schedule-track-task (:region task) (:url task) (* 1 60 60))))
 
 (def version
   (delay (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/exploud/exploud/pom.properties")]
