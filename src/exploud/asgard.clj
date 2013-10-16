@@ -89,8 +89,14 @@
 (defn- launch-configuration-url [region launch-configuration-name]
   (str asgard-url "/" region "/launchConfiguration/show/" launch-configuration-name ".json"))
 
+(defn- tasks-url [region]
+  (str asgard-url "/" region "/task/list.json"))
+
 (defn- task-url []
   (str asgard-url "/task/show.json"))
+
+(defn- task-by-id-url [region task-id]
+  (str asgard-url "/" region "/task/show/" task-id))
 
 (defn- region-deploy-url [region]
   (str asgard-url "/" region "/cluster/deploy"))
@@ -131,6 +137,14 @@
     (when (= status 200)
       (json/parse-string body true))))
 
+(defn tasks
+  "Retrieves a list of tasks in a given region."
+  [region]
+  (let [{:keys [body status]} (http/simple-get (tasks-url region))]
+    (when (= status 200)
+      (let [both (json/parse-string body true)]
+        (concat (:runningTaskList both) (:completedTaskList both))))))
+
 (defn security-groups
   "Retrieves the list of security groups in a given region."
   [region]
@@ -163,14 +177,12 @@
   "Converts an Asgard task to a desired form"
   (update-in task [:log] (fn [log] (map split-log-message log))))
 
-(defn task [region run-id workflow-id]
-  "Retrives information about a task from Asgard"
-  (let [{:keys [body status]} (http/simple-get (task-url) {:query-params {:runId run-id :workflowId workflow-id}})]
+(defn task-by-url
+  "Retrieves a task directly from its URL."
+  [url]
+  (let [{:keys [body status]} (http/simple-get url)]
     (when (= status 200)
       (munge-task (json/parse-string body true)))))
-
-(defn- task-tracking-desc [region run-id workflow-id]
-  (str "task-track-" region "-" run-id "-" workflow-id))
 
 (defn- job-by-desc [desc]
   (filter #(= (:desc %) desc) (at-at/scheduled-jobs tp)))
@@ -185,29 +197,27 @@
 
 (declare track-task)
 
-(defn schedule-track-task [region run-id workflow-id count]
-  (log/info "Scheduling task tracking for" region run-id workflow-id)
-  (at-at/after 1000 #(track-task region run-id workflow-id count) tp :desc (task-tracking-desc region run-id workflow-id)))
+(defn schedule-track-task [region url count]
+  (log/info "Scheduling task tracking for" region url)
+  (at-at/after 1000 #(track-task region url count) tp :desc url))
 
-(defn- track-task [region run-id workflow-id count]
-  (letfn [(reschedule [] (schedule-track-task region run-id workflow-id (dec count)))]
+(defn- track-task [region url count]
+  (letfn [(reschedule [] (schedule-track-task region url (dec count)))]
     (try
-      (log/info "Generating task description")
-      (let [desc (task-tracking-desc region run-id workflow-id)]
-        (log/info "Getting task")
-        (if-let [task (task region run-id workflow-id)]
-          (do
-            (log/info "Storing information for" region run-id workflow-id)
-            (log/info "Task is" task)
-            (store/store-task (merge task {:region region :runId run-id :workflowId workflow-id}))
-            (log/info "Should we be done already? Finished" (finished? task) "Count" count)
-            (if (and (not (finished? task))
-                     (pos? count))
-              (do
-                (log/info "Rescheduling task tracking for" region run-id workflow-id)
-                (reschedule))
-              (log/info "Task" region run-id workflow-id "is stopping being tracked")))
-          (log/info "No task information for" region run-id workflow-id)))
+      (log/info "Getting task")
+      (if-let [task (task-by-url url)]
+        (do
+          (log/info "Storing information for" region url)
+          (log/info "Task is" task)
+          (store/store-task (merge task {:region region :url url}))
+          (log/info "Should we be done already? Finished" (finished? task) "Count" count)
+          (if (and (not (finished? task))
+                   (pos? count))
+            (do
+              (log/info "Rescheduling task tracking for" region url)
+              (reschedule))
+            (log/info "Task" region url "is stopping being tracked")))
+        (log/info "No task information for" region url))
       (catch Exception e
         (log/warn e)
         (reschedule)))))
@@ -298,9 +308,16 @@
     (let [merged-params (amend-params region (create-manual-deploy-params all-params region application-name))]
       (log/info "Application" application-name "is being manually deployed in" region "with params" merged-params)
       (when-let [application (application region application-name)]
-        (let [{:keys [headers status]} (http/simple-post (auto-scaling-save-url region) {:form-params (create-asgard-params merged-params) :follow-redirects false :socket-timeout 30000})]
+        (let [{:keys [status headers]} (http/simple-post (auto-scaling-save-url region) {:form-params (create-asgard-params merged-params) :follow-redirects false :socket-timeout 30000})]
           (when (= 302 status)
-            (log/info "Headers are" headers)))))))
+            (log/info "Headers are" headers)
+            (let [tasks (tasks region)]
+              (when-let [task (first (filter (fn [t] (= (:name t) (str "Create Auto Scaling Group '" application-name "'"))) tasks))]
+                (let [task-id (:id task)
+                      url (task-by-id-url region task-id)
+                      stored-task-id (store/store-task {:region region :url url})]
+                  (schedule-track-task region url (* 1 60 60))
+                  {:taskId stored-task-id})))))))))
 
 (defn auto-deploy
   "Kicks off an automated red/black deployment. If successful, the task
@@ -315,11 +332,9 @@
         (when (= 302 status)
           (log/info "Headers are" headers)
           (let [{:strs [location]} headers
-                task-info (task-info-from-url location)
-                {:keys [runId workflowId]} task-info
-                task-id (store/store-task {:region region :runId runId :workflowId workflowId})]
-            (schedule-track-task region runId workflowId (* 1 60 60))
-            {:taskId task-id}))))))
+                stored-task-id (store/store-task {:region region :url location})]
+            (schedule-track-task region location (* 1 60 60))
+            {:taskId stored-task-id}))))))
 
 ;(task "eu-west-1" "120DqQWqEBYsOK5Vaj6sK8b4YErobn8sF61FcN7OA63t0=" "b7287ace-cfd3-41b6-9618-189534d9f207")
 ;(last-launch-configuration-name "eu-west-1" "skeleton")

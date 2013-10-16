@@ -12,8 +12,8 @@
   (if-let [task (mc/find-map-by-id "tasks" (ObjectId. id))]
     (merge task {:_id (str (:_id task))})))
 
-(defn store-task [{:keys [region runId workflowId] :as task}]
-  (let [find-criteria {:region region :runId runId :workflowId workflowId}]
+(defn store-task [{:keys [region url] :as task}]
+  (let [find-criteria {:region region :url url}]
     (log/info "Storing task" task)
     (mc/upsert "tasks" find-criteria task)
     (log/info "Done storing task")
