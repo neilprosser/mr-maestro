@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [clj-time.format :as fmt]
             [clojure.set :as set]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [exploud.http :as http]
@@ -332,8 +333,9 @@
         (when (= 302 status)
           (log/info "Headers are" headers)
           (let [{:strs [location]} headers
-                stored-task-id (store/store-task {:region region :url location})]
-            (schedule-track-task region location (* 1 60 60))
+                url (str/replace location "/show" "/show.json")
+                stored-task-id (store/store-task {:region region :url url})]
+            (schedule-track-task region url (* 1 60 60))
             {:taskId stored-task-id}))))))
 
 ;(task "eu-west-1" "120DqQWqEBYsOK5Vaj6sK8b4YErobn8sF61FcN7OA63t0=" "b7287ace-cfd3-41b6-9618-189534d9f207")
