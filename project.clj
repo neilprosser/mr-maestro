@@ -2,10 +2,20 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
-  :dependencies [[compojure "1.1.5" :exclusions [javax.servlet/servlet-api]]
-                 [ring-json-params "0.1.3"]
-                 [ring-middleware-format "0.3.0"]
-                 [ring/ring-jetty-adapter "1.2.0"]
+  :dependencies [[cheshire "5.2.0"]
+                 [ch.qos.logback/logback-classic "1.0.13"]
+                 [clj-http "0.7.7"]
+                 [clj-time "0.6.0"]
+                 [compojure "1.1.5" :exclusions [javax.servlet/servlet-api]]
+                 [com.novemberain/monger "1.6.0"]
+                 [com.ovi.common.logging/logback-appender "0.0.45"]
+                 [com.yammer.metrics/metrics-logback "2.2.0"]
+                 [com.ovi.common.metrics/metrics-graphite "2.1.21"]
+                 [dire "0.4.4"]
+                 [environ "0.4.0"]
+                 [metrics-clojure "1.0.1"]
+                 [metrics-clojure-ring "1.0.1"]
+                 [nokia/ring-utils "1.0.0"]
                  [org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.2"]
                  [org.clojure/data.xml "0.0.7"]
@@ -13,21 +23,12 @@
                  [org.clojure/tools.logging "0.2.6"]
                  [org.slf4j/slf4j-api "1.7.5"]
                  [org.slf4j/jul-to-slf4j "1.7.5"]
-                 [ch.qos.logback/logback-classic "1.0.13"]
-                 [com.novemberain/monger "1.6.0"]
-                 [com.ovi.common.logging/logback-appender "0.0.45"]
-                 [com.yammer.metrics/metrics-logback "2.2.0"]
-                 [com.ovi.common.metrics/metrics-graphite "2.1.21"]
-                 [clj-http "0.7.4"]
-                 [cheshire "5.2.0"]
-                 [clj-time "0.5.1"]
-                 [environ "0.4.0"]
-                 [nokia/ring-utils "1.0.0"]
-                 [metrics-clojure "1.0.1"]
-                 [metrics-clojure-ring "1.0.1"]
-                 [overtone/at-at "1.2.0"]]
+                 [overtone/at-at "1.2.0"]
+                 [ring-json-params "0.1.3"]
+                 [ring-middleware-format "0.3.0"]
+                 [ring/ring-jetty-adapter "1.2.0"]]
 
-  :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.32"
+  :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.33"
                                    :exclusions [org.slf4j/slf4j-nop
                                                 javax.servlet/servlet-api
                                                 org.eclipse.jetty.orbit/javax.servlet]]
@@ -56,9 +57,9 @@
         :service-graphite-post-unit "MINUTES"
         :service-graphite-enabled "ENABLED"
         :service-production "false"
-        :service-asgard-url "http://asgard.brislabs.com:8080"
-        :service-onix-url "http://onix.brislabs.com:8080"
-        :service-tyranitar-url "http://tyranitar.brislabs.com:8080"
+        :service-asgard-url "http://asgard:8080"
+        :service-onix-url "http://onix:8080"
+        :service-tyranitar-url "http://tyranitar:8080"
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"
         :service-vpc-id "vpc-7bc88713"}

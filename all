@@ -28,18 +28,4 @@ echo "Running unit tests"
 lein midje :filter unit
 exit_if_fail Unit
 
-echo "Running integration tests"
-
-./integration
-exit_if_fail Integration
-
-sleep 1
-
-echo "Running acceptance tests"
-
-./acceptance
-exit_if_fail Acceptance
-
-sleep 1
-
 exit 0

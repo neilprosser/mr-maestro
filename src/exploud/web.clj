@@ -1,25 +1,29 @@
 (ns exploud.web
-  (:require   [cheshire.core :as json]
-              [clojure.tools.logging :as log]
-              [compojure.core :refer [defroutes context GET PUT POST DELETE]]
-              [compojure.route :as route]
-              [compojure.handler :as handler]
-              [exploud.actions :as exp]
-              [exploud.pokemon :as pokemon]
-              [exploud.store :as store]
-              [ring.middleware.format-response :refer [wrap-json-response]]
-              [ring.middleware.json-params :refer [wrap-json-params]]
-              [ring.middleware.params :refer [wrap-params]]
-              [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-              [clojure.string :refer [split]]
-              [clojure.tools.logging :refer [info warn error]]
-              [environ.core :refer [env]]
-              [nokia.ring-utils.error :refer [wrap-error-handling error-response]]
-              [nokia.ring-utils.metrics :refer [wrap-per-resource-metrics replace-outside-app
-                                                replace-guid replace-mongoid replace-number]]
-              [nokia.ring-utils.ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
-              [metrics.ring.expose :refer [expose-metrics-as-json]]
-              [metrics.ring.instrument :refer [instrument]]))
+  (:require [cheshire.core :as json]
+            [clojure.string :refer [split]]
+            [clojure.tools.logging :refer [info warn error]]
+            [compojure
+             [core :refer [defroutes context GET PUT POST DELETE]]
+             [handler :as handler]
+             [route :as route]]
+            [environ.core :refer [env]]
+            [exploud
+             [actions :as exp]
+             [pokemon :as pokemon]
+             [store :as store]]
+            [metrics.ring
+             [expose :refer [expose-metrics-as-json]]
+             [instrument :refer [instrument]]]
+            [nokia.ring-utils
+             [error :refer [wrap-error-handling error-response]]
+             [metrics :refer [wrap-per-resource-metrics replace-outside-app
+                              replace-guid replace-mongoid replace-number]]
+             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
+            [ring.middleware
+             [format-response :refer [wrap-json-response]]
+             [json-params :refer [wrap-json-params]]
+             [params :refer [wrap-params]]
+             [keyword-params :refer [wrap-keyword-params]]]))
 
 (def ^:dynamic *version* "none")
 (defn set-version! [version]
@@ -29,62 +33,71 @@
 
 (def default-user "exploud")
 
-(defn response [data content-type & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" content-type}
-   :body data})
-
-(defn get-application
-  [name]
-  (if-let [body (exp/application default-region name)]
-    {:status 200 :body body}
-    (error-response "The requested application does not exist." 404)))
-
 (defroutes routes
   (context
    "/1.x" []
 
    (GET "/ping"
-        [] {:status 200 :body "pong"})
+        []
+        {:status 200
+         :headers {"Content-Type" "text/plain"}
+         :body "pong"})
 
    (GET "/status"
-        [] {:status 200 :body {:name "exploud"
-                               :version *version*
-                               :status true}})
+        []
+        {:status 200
+         :body {:name "exploud"
+                :version *version*
+                :status true}})
 
    (GET "/pokemon"
-        [] {:status 200 :body pokemon/pokemon})
+        []
+        {:status 200
+         :headers {"Content-Type" "text/plain"}
+         :body pokemon/pokemon})
 
-   (GET "/icon" []
+   (GET "/icon"
+        []
         {:status 200
          :headers {"Content-Type" "image/jpeg"}
          :body (-> (clojure.java.io/resource "exploud.jpg")
                    (clojure.java.io/input-stream))})
 
-   (GET "/tasks/:task-id"
-        [task-id] {:status 200 :body (store/get-task task-id)})
-
-   (GET "/configurations/:configuration-id"
-        [configuration-id] {:status 200 :body (store/get-configuration configuration-id)})
+   (GET "/deployments/:deployment-id"
+        [deployment-id]
+        (store/get-deployment deployment-id))
 
    (GET "/applications"
-        [] {:status 200 :body (exp/applications)})
+        []
+        (exp/applications))
 
    (GET "/applications/:application"
-        [application] (get-application application))
+        [application]
+        (exp/application default-region name))
 
    (PUT "/applications/:application"
-        [application description email owner] {:status 201 :body (exp/upsert-application default-region application {:description description
-                                                                                                                     :email email
-                                                                                                                     :owner owner})})
+        [application description email owner]
+        (let [body (exp/upsert-application default-region application {:description description
+                                                                       :email email
+                                                                       :owner owner})]
+          {:status 201
+           :headers {"Content-Type" "application/json; charset=utf-8"}
+           :body body}))
 
    (POST "/applications/:application/deploy"
-         [application ami environment] {:status 200 :body (exp/deploy default-region application {:ami ami
-                                                                                                  :environment environment
-                                                                                                  :user default-user})}))
+         [application ami environment]
+         (let [body (exp/deploy default-region application {:ami ami
+                                                            :environment environment
+                                                            :user default-user})]
+           {:status 200
+            :headers {"Content-Type" "application/json; charset=utf-8"}
+            :body body})))
 
-     (GET "/healthcheck" []
-        (response "I am healthy. Thank you for asking." "text/plain;charset=utf-8"))
+  (GET "/healthcheck"
+       []
+       {:status 200
+        :headers {"Content-Type" "text/plain"}
+        :body "I am healthy. Thank you for asking."})
 
   (route/not-found (error-response "Resource not found" 404)))
 

@@ -1,49 +1,61 @@
 (ns exploud.store
-  (:require [clj-time.core :as time]
-            [clj-time.format :as fmt]
+  "## Storing all the things
+
+   Currently an integration point with MongoDB allowing the storage of deployments and tasks."
+  (:require [clj-time
+             [core :as time]
+             [format :as fmt]]
+            [clojure.set :as set]
             [clojure.tools.logging :as log]
-            [monger.collection :as mc])
-  (:use monger.operators)
-  (:import org.bson.types.ObjectId))
+            [monger
+             [collection :as mc]
+             [operators :refer :all]]))
 
-(def formatter (fmt/formatters :date-time))
+;; The formatter we use for our dates.
+(def formatter (fmt/formatters :date-time-no-ms))
 
-(defn get-task [id]
-  (if-let [task (mc/find-map-by-id "tasks" (ObjectId. id))]
-    (merge task {:_id (str (:_id task))})))
+(defn swap-mongo-id
+  "Swaps out an `_id` field for `id`."
+  [object]
+  (set/rename-keys object {:_id :id}))
 
-(defn store-task [{:keys [region url] :as task}]
-  (let [find-criteria {:region region :url url}]
-    (log/info "Storing task" task)
-    (mc/upsert "tasks" find-criteria task)
-    (log/info "Done storing task")
-    (str (:_id (mc/find-one-as-map "tasks" find-criteria)))))
+(defn swap-id
+  "Swaps out an `id` field for `_id`."
+  [object]
+  (set/rename-keys object {:id :_id}))
 
-(defn get-configuration [id]
-  (if-let [configuration (mc/find-map-by-id "deployments" (ObjectId. id))]
-    (merge configuration {:_id (str (:_id configuration))})))
+(defn get-deployment
+  "Retrieves a deployment by its ID."
+  [deployment-id]
+  (if-let [deployment (mc/find-map-by-id "deployments" deployment-id)]
+    (swap-mongo-id deployment)))
 
-(defn store-configuration
-  "Inserts a new deployment configuration into Mongo and returns the ID of that deployment."
-  [application-name {:keys [ami environment hash region user]}]
-  (let [inserted (mc/insert-and-return "deployments"
-                                       {:ami ami
-                                        :application application-name
-                                        :date (fmt/unparse formatter (time/now))
-                                        :environment environment
-                                        :hash hash
-                                        :region region
-                                        :user user})]
-    (str (:_id inserted))))
+(defn store-deployment
+  "Stores a deployment. If it doesn't exist, we create it. If it's already there, we'll overwrite it with __WHATEVER__ you provide. We __DO NOT__ assign an ID to the deployment for you. You're going to have to do that yourself. Don't be lazy..."
+  [deployment]
+  (let [{:keys [_id] :as amended-deployment} (swap-id deployment)]
+    (mc/upsert "deployments" {:_id _id} amended-deployment)
+    nil))
+
+(defn update-task-in-deployment
+  "Updates a task in the given deployment (where tasks match with identical `:id` values). Returns a new deployment."
+  [{:keys [tasks] :as deployment} {:keys [id] :as task}]
+  (let [amended-tasks (map (fn [t] (if (= (:id t) id)
+                                    task
+                                    t)) tasks)]
+    (assoc-in deployment [:tasks] amended-tasks)))
+
+(defn store-task
+  "Stores a task. This function is pretty naïve in that it will find a task within the deployment (found by `deployment-id`) with the same `:id` as the one given. It then replaces this task and saves the amended deployment."
+  [deployment-id task]
+  (when-let [deployment (get-deployment deployment-id)]
+    (store-deployment (update-task-in-deployment deployment task))
+    nil))
 
 (defn incomplete-tasks
-  "Finds any tasks which are not finished"
+  "Gives a list of any tasks (potentially across many deployments) which are not finished."
   []
-  (mc/find-maps "tasks" {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}))
-
-;(store-configuration "skeleton" {:ami "ami-223addf1" :environment "dev" :hash "whatever" :region "eu-west-1" :user "nprosser"})
-;(get-configuration "524331b94e08331c0378ccda")
-;(get-task "522f06741ea55d2d3aa437e6")
-;(get-configuration "524324234e08331c0378ccd3")
-;(store-task {:region "eu-west-1" :run-id "runid" :workflow-id "workflowid" :something "hello"})
-;(incomplete-tasks)
+  (mapcat :tasks
+          (mc/find-maps "deployments"
+                        {:tasks {$elemMatch {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}}}
+                        ["tasks.$"])))

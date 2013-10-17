@@ -1,12 +1,14 @@
 (ns exploud.asgard
   (:require [cheshire.core :as json]
             [clj-time.format :as fmt]
-            [clojure.set :as set]
-            [clojure.string :as str]
+            [clojure
+             [set :as set]
+             [string :as str]]
             [clojure.tools.logging :as log]
             [environ.core :refer [env]]
-            [exploud.http :as http]
-            [exploud.store :as store]
+            [exploud
+             [http :as http]
+             [store :as store]]
             [overtone.at-at :as at-at]
             [ring.util.codec :as codec]))
 

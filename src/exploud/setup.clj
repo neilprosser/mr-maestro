@@ -1,22 +1,24 @@
 (ns exploud.setup
-  (:require [exploud.asgard :as asg]
-            [exploud.store :as store]
-            [exploud.web :as web]
-            [environ.core :refer [env]]
+  (:require [clojure.java.io :as io]
             [clojure.string :as cs :only (split)]
             [clojure.tools.logging :refer (info warn error)]
-            [clojure.java.io :as io]
-            [monger.core :as mc :only (connect! mongo-options server-address use-db!)]
-            [monger.collection :as mcol :only (ensure-index)]
+            [exploud
+             [asgard :as asg]
+             [store :as store]
+             [web :as web]]
+            [environ.core :refer [env]]
+            [monger
+             [collection :as mcol :only (ensure-index)]
+             [core :as mc :only (connect! mongo-options server-address use-db!)]]
             [ring.adapter.jetty :refer [run-jetty]])
   (:import (java.lang Integer Throwable)
+           (java.util.concurrent TimeUnit)
            (java.util.logging LogManager)
            (com.yammer.metrics Metrics)
            (com.yammer.metrics.core MetricName)
-           (com.ovi.common.metrics.graphite GraphiteReporterFactory GraphiteName ReporterState)
            (com.ovi.common.metrics HostnameFactory)
-           (org.slf4j.bridge SLF4JBridgeHandler)
-           (java.util.concurrent TimeUnit))
+           (com.ovi.common.metrics.graphite GraphiteName GraphiteReporterFactory ReporterState)
+           (org.slf4j.bridge SLF4JBridgeHandler))
   (:gen-class))
 
 (defn read-file-to-properties [file-name]

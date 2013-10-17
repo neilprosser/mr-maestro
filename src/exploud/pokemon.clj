@@ -1,5 +1,7 @@
-(ns exploud.pokemon)
+(ns exploud.pokemon
+  "## Because everyone should have a pokémon picture")
 
+;; The finest ASCII-art pokémon you'll find this side of this file.
 (def pokemon
 "                      =?~~~~:8..   ..
              .   .....:~~~~===7,..I7+8,..
