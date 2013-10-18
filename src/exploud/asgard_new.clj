@@ -174,6 +174,11 @@
 (def asgard-url
   (env :service-asgard-url))
 
+(defn- application-url
+  "Gives us a region-based URL we can use to get information about an application."
+  [region application-name]
+  (str asgard-url "/" region "/cluster/show/" application-name ".json"))
+
 (defn- auto-scaling-group-url
   "Gives us a region-based URL we can use to get information about an Auto Scaling Group."
   [region asg-name]
@@ -239,6 +244,12 @@
     (when (= status 200)
       (json/parse-string body true))))
 
+(defn last-auto-scaling-group
+  "Retrieves the last ASG for an application, or `nil` if one doesn't exist."
+  [region application-name]
+  (let [{:keys [status body]} (http/simple-get (application-url region application-name))]
+    (when (= status 200)
+      (last (json/parse-string body true)))))
 
 (defn security-groups
   "Retrives all security groups within a particular region."
@@ -338,10 +349,11 @@
   [task]
   (contains? finished-states (:status task)))
 
+;; We're going to need this in a minute.
 (declare track-task)
 
 (defn track-until-completed
-  "After a 1s delay, tracks the task by saving its content to the task store until it is completed (as indicated by `is-finished?`) or `count` reaches 0."
+  "After a 1s delay, tracks the task by saving its content to the task store until it is completed (as indicated by `finished?`) or `count` reaches 0."
   [ticket-id {:keys [url] :as task} count]
   (at-at/after 1000 #(track-task ticket-id task count) task-pool :desc url))
 
@@ -425,7 +437,7 @@
                                 {:type ::missing-asg
                                  :args args}))))
 
-;; ## Concerning enabling traffic for ASGs
+;; # Concerning enabling traffic for ASGs
 
 (defn enable-asg
   "Begins an enable traffic operation on the specified Auto Scaling Group in the region given. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
@@ -455,7 +467,7 @@
                                 {:type ::missing-asg
                                  :args args}))))
 
-;; ## Concerning disabling traffic for ASGs
+;; # Concerning disabling traffic for ASGs
 
 (defn disable-asg
   "Begins an disable traffic operation on the specified Auto Scaling Group in the region given. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."

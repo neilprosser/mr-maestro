@@ -41,7 +41,7 @@
 (defn deploy [region application-name details]
   (let [{:keys [ami environment user]} details]
     (if-let [hash (tyr/last-commit-hash environment application-name)]
-      (let [deploy-id (UUID/randomUUID)
+      (let [deploy-id (str (UUID/randomUUID))
             deployment {:ami ami
                         :application application-name
                         :environment environment

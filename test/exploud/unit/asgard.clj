@@ -88,6 +88,15 @@
          "http://asgard:8080/region/autoScaling/show/asg-name.json")
         => {:status 404}))
 
+ (fact "We can get the last ASG for an application"
+       (last-auto-scaling-group "region" "application-environment")
+       => {:autoScalingGroupName "application-environment-v023"}
+       (provided
+        ( http/simple-get
+          "http://asgard:8080/region/cluster/show/application-environment.json")
+        => {:status 200
+            :body "[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]"}))
+
  (against-background
   [(auto-scaling-group "region" ..asg..)
    => {}

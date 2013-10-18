@@ -25,7 +25,7 @@ exit_if_fail () {
 
 echo "Running unit tests"
 
-lein midje :filter unit
+lein midje
 exit_if_fail Unit
 
 exit 0
