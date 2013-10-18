@@ -11,9 +11,6 @@
              [collection :as mc]
              [operators :refer :all]]))
 
-;; The formatter we use for our dates.
-(def formatter (fmt/formatters :date-time-no-ms))
-
 (defn swap-mongo-id
   "Swaps out an `_id` field for `id`."
   [object]
@@ -52,10 +49,9 @@
     (store-deployment (update-task-in-deployment deployment task))
     nil))
 
-(defn incomplete-tasks
-  "Gives a list of any tasks (potentially across many deployments) which are not finished."
+(defn deployments-with-incomplete-tasks
+  "Gives a list of any deployments with tasks which are not finished. We use this so they can be restarted if Exploud is stopped for any reason."
   []
-  (mapcat :tasks
-          (mc/find-maps "deployments"
-                        {:tasks {$elemMatch {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}}}
-                        ["tasks.$"])))
+  (mc/find-maps "deployments"
+                {:tasks {$elemMatch {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}}}
+                ["tasks.$"]))

@@ -15,5 +15,6 @@
            :uri resource } ))
 
 (fact-group
-            (fact "Ping returns a pong"
-                  (:body (request :get "/1.x/ping"))  => "pong" ))
+ (fact "that ping pongs"
+       (:body (request :get "/1.x/ping"))
+       => "pong" ))

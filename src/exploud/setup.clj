@@ -3,7 +3,8 @@
             [clojure.string :as cs :only (split)]
             [clojure.tools.logging :refer (info warn error)]
             [exploud
-             [asgard :as asg]
+             [asgard_new :as asgard]
+             [deployment :as deployment]
              [store :as store]
              [web :as web]]
             [environ.core :refer [env]]
@@ -68,8 +69,9 @@
      (ReporterState/valueOf (env :service-graphite-enabled)))))
 
 (defn pick-up-tasks []
-  (doseq [task (store/incomplete-tasks)]
-    (asg/schedule-track-task (:region task) (:url task) (* 1 60 60))))
+  (doseq [{:keys [id tasks]} (store/deployments-with-incomplete-tasks)
+          task tasks]
+    (asgard/track-until-completed id task (* 1 60 60) deployment/task-finished deployment/task-timed-out)))
 
 (def version
   (delay (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/exploud/exploud/pom.properties")]

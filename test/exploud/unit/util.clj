@@ -1,6 +1,6 @@
 (ns exploud.unit.util
-  (:use [exploud.util :refer :all]
-        [midje.sweet :refer :all]))
+  (:require [exploud.util :refer :all]
+            [midje.sweet :refer :all]))
 
 (fact-group
 

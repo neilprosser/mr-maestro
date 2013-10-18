@@ -19,7 +19,6 @@
             [exploud
              [http :as http]
              [store :as store]
-             [tyranitar :as tyr]
              [util :as util]]
             [overtone.at-at :as at-at]))
 
@@ -27,9 +26,6 @@
 
 ;; The VPC ID we'll be deploying into.
 (def vpc-id (env :service-vpc-id))
-
-;; The date formatter we'll use to write out our nicely parsed dates.
-(def date-formatter (fmt/formatters :date-time-no-ms))
 
 ;; The formatter used by Asgard in log messages.
 (def asgard-log-date-formatter (fmt/formatter "YYYY-MM-dd_HH:mm:ss"))
@@ -111,7 +107,7 @@
 ;; When combining these parameters for a deployment we'll take the defaults and merge them with the users parameters, letting the user parameters override the defaults. We'll then overlay the protected parameters for the operation back over the top.
 
 ;; A map of the default parameters shared by both creating a new ASG and creating the next ASG.
-(def default-shared-params
+(def default-shared-parameters
   {"azRebalance" "enabled"
    "defaultCooldown" 10
    "desiredCapacity" 1
@@ -131,8 +127,8 @@
    "terminationPolicy" "Default"})
 
 ;; A map of the default parameters we use when creating a new ASG so the user doesn't always have to provide everything.
-(def default-create-new-asg-params
-  (merge default-shared-params
+(def default-create-new-asg-parameters
+  (merge default-shared-parameters
          {"appWithClusterOptLevel" false
           "countries" ""
           "detail" ""
@@ -143,7 +139,7 @@
           "requestedFromGui" true
           "revision" ""}))
 
-(defn protected-create-new-asg-params
+(defn protected-create-new-asg-parameters
   "Creates a map of the parameters we populate ourselves and won't let the user override when creating a new ASG."
   [application-name environment image-id ticket-id]
   {"_action_save" ""
@@ -154,12 +150,12 @@
    "ticket" ticket-id})
 
 ;; A map of the default parameters we use when creating the next ASG for an application so the user doesn't always have to provide everything.
-(def default-create-next-asg-params
-  (merge default-shared-params
+(def default-create-next-asg-parameters
+  (merge default-shared-parameters
          {"afterBootWait" 30
           "noOptionalDefaults" true}))
 
-(defn protected-create-next-asg-params
+(defn protected-create-next-asg-parameters
   "Creates a map of the parameters we populate ourselves and won't let the user override when creating the next ASG for an application."
   [application-name environment image-id ticket-id]
   {"_action_createNextGroup" ""
@@ -221,12 +217,12 @@
   "Splits a log message from its Asgard form (where each line is something like `2013-10-11_18:25:23 Completed in 1s.`) to a map with separate `:date` and `:message` fields."
   [log]
   (let [[date message] (clojure.string/split log #" " 2)]
-    {:date (fmt/unparse date-formatter (fmt/parse asgard-log-date-formatter date)) :message message}))
+    {:date (str (fmt/parse asgard-log-date-formatter date)) :message message}))
 
 (defn- correct-date-time
   "Parses a task date/time from its Asgard form (like `2013-10-11 14:20:42 UTC`) to an ISO8601 one. Unfortunately has to do a crappy string-replace of `UTC` for `GMT`, ugh..."
   [date]
-  (fmt/unparse date-formatter (fmt/parse asgard-update-time-formatter (str/replace date "UTC" "GMT"))))
+  (str (fmt/parse asgard-update-time-formatter (str/replace date "UTC" "GMT"))))
 
 (defn- munge-task
   "Converts an Asgard task to a desired form by using `split-log-message` on each line of the `:log` in the task and replacing it."
@@ -277,11 +273,11 @@
 ;; # Concerning parameter transformation
 
 (defn replace-load-balancer-key
-  "If `subnetPurpose` is `internal` and `selectedLoadBalancers` is found within `params` the key name will be switched with `selectedLoadBalancersForVpcId{vpc-id}"
-  [params]
-  (if (= "internal" (get params "subnetPurpose"))
-    (set/rename-keys params {"selectedLoadBalancers" (str "selectedLoadBalancersForVpcId" vpc-id)})
-    params))
+  "If `subnetPurpose` is `internal` and `selectedLoadBalancers` is found within `parameters` the key name will be switched with `selectedLoadBalancersForVpcId{vpc-id}"
+  [parameters]
+  (if (= "internal" (get parameters "subnetPurpose"))
+    (set/rename-keys parameters {"selectedLoadBalancers" (str "selectedLoadBalancersForVpcId" vpc-id)})
+    parameters))
 
 (defn is-security-group-id?
   "Whether `security-group` starts with `sg-`"
@@ -306,27 +302,27 @@
     (get-security-group-id security-group region)))
 
 (defn replace-security-group-names
-  "If `subnetPurpose` is `internal` and `securityGroupNames` is found within `params` the value will be checked for security group names and replaced with their IDs (since we can't use security group names in a VPC."
-  [params region]
-  (if (= "internal" (get params "subnetPurpose"))
-    (if-let [security-group-names (util/list-from (get params "selectedSecurityGroups"))]
+  "If `subnetPurpose` is `internal` and `securityGroupNames` is found within `parameters` the value will be checked for security group names and replaced with their IDs (since we can't use security group names in a VPC."
+  [parameters region]
+  (if (= "internal" (get parameters "subnetPurpose"))
+    (if-let [security-group-names (util/list-from (get parameters "selectedSecurityGroups"))]
       (let [security-group-ids (map (fn [sg] (replace-security-group-name region sg))
                                     security-group-names)]
-        (assoc params "selectedSecurityGroups" security-group-ids))
-      params)
-    params))
+        (assoc parameters "selectedSecurityGroups" security-group-ids))
+      parameters)
+    parameters))
 
-(defn prepare-params
+(defn prepare-parameters
   "Prepares Asgard parameters by running them through a series of transformations."
-  [params region]
-  (-> params
+  [parameters region]
+  (-> parameters
       replace-load-balancer-key
       (replace-security-group-names region)))
 
-(defn explode-params
+(defn explode-parameters
   "Take a map of parameters and turns them into a list of [key value] pairs where the same key may appear multiple times. This is used to create the form parameters which we pass to Asgard (and may be specified multiple times each)."
-  [params]
-  (for [[k v] (seq params)
+  [parameters]
+  (for [[k v] (seq parameters)
         vs (flatten (conj [] v))]
     [k vs]))
 
@@ -348,41 +344,42 @@
 
 (defn track-until-completed
   "After a 1s delay, tracks the task by saving its content to the task store until it is completed (as indicated by `finished?`) or `count` reaches 0."
-  [ticket-id {:keys [url] :as task} count]
-  (at-at/after 1000 #(track-task ticket-id task count) task-pool :desc url))
+  [ticket-id {:keys [url] :as task} count completed-fn timed-out-fn]
+  (at-at/after 1000 #(track-task ticket-id task count completed-fn timed-out-fn) task-pool :desc url))
 
 (defn track-task
   "Grabs the task by its URL and updates its details in the store. If it's not completed and we've not exhausted the retry count it'll reschedule itself."
-  [ticket-id {:keys [url] :as task} count]
+  [ticket-id {:keys [url] :as task} count completed-fn timed-out-fn]
   (when-let [asgard-task (task-by-url url)]
     (store/store-task (merge task asgard-task))
-    (when (and (not (finished? asgard-task))
-               (pos? count))
-      (track-until-completed ticket-id task (dec count)))))
+    (cond (finished? asgard-task) (completed-fn ticket-id task)
+          (= count 0) (timed-out-fn ticket-id task)
+          :else (track-until-completed ticket-id task (dec count) completed-fn timed-out-fn))))
 
 ;; Handler for recovering from failure while tracking a task. In the event of an exception marked with a `:class` of `:http` or `:store` we'll reschedule.
 (with-handler! #'track-task
   clojure.lang.ExceptionInfo
-  (fn [e ticket-id task count]
+  (fn [e ticket-id task count completed-fn timed-out-fn]
     (let [data (.getData e)]
       (if (or (= (:class data) :http)
               (= (:class data) :store))
-        (track-until-completed ticket-id task (dec count))
+        (track-until-completed ticket-id task (dec count) completed-fn timed-out-fn)
         (throw e)))))
 
 ;; # Concerning deleting ASGs
 
 (defn delete-asg
   "Begins a delete operation on the specified Auto Scaling Group in the region given. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
-  [region asg-name ticket-id task]
-  (let [params {"_action_delete" ""
-                "name" asg-name
-                "ticket" ticket-id}
+  [region asg-name ticket-id task completed-fn timed-out-fn]
+  (let [parameters {"_action_delete" ""
+                    "name" asg-name
+                    "ticket" ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
-                                               {:form-params params})]
+                                               {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")}) task-track-count)
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")
+                                                    :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
       (throw (ex-info "Unexpected status while deleting ASG"
                       {:type ::unexpected-response
                        :response response})))))
@@ -390,7 +387,7 @@
 ;; Precondition attached to `delete-asg` asserting that the ASG we're attempting to delete exists.
 (with-precondition! #'delete-asg
   :asg-exists
-  (fn [r a _ _]
+  (fn [r a _ _ _ _]
     (auto-scaling-group r a)))
 
 ;; Handler for a missing ASG attached to `delete-asg`.
@@ -404,16 +401,17 @@
 
 (defn resize-asg
   "Begins a resize operation on the specified Auto Scaling Group in the region given. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
-  [region asg-name ticket-id task new-size]
-  (let [params {"_action_resize" ""
-                "minAndMaxSize" new-size
-                "name" asg-name
-                "ticket" ticket-id}
+  [region asg-name ticket-id task new-size completed-fn timed-out-fn]
+  (let [parameters {"_action_resize" ""
+                    "minAndMaxSize" new-size
+                    "name" asg-name
+                    "ticket" ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
-                                               {:form-params params})]
+                                               {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")}) task-track-count)
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")
+                                                    :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
       (throw (ex-info "Unexpected status while resizing ASG"
                       {:type ::unexpected-response
                        :response response})))))
@@ -421,7 +419,7 @@
 ;; Precondition attached to `resize-asg` asserting that the ASG we're attempting to resize exists.
 (with-precondition! #'resize-asg
   :asg-exists
-  (fn [r a _ _ _]
+  (fn [r a _ _ _ _ _]
     (auto-scaling-group r a)))
 
 ;; Handler for a missing ASG attached to `resize-asg`.
@@ -435,15 +433,16 @@
 
 (defn enable-asg
   "Begins an enable traffic operation on the specified Auto Scaling Group in the region given. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
-  [region asg-name ticket-id task]
-  (let [params {"_action_activate" ""
-                "name" asg-name
-                "ticket" ticket-id}
+  [region asg-name ticket-id task completed-fn timed-out-fn]
+  (let [parameters {"_action_activate" ""
+                    "name" asg-name
+                    "ticket" ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
-                                               {:form-params params})]
+                                               {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")}) task-track-count)
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")
+                                                    :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
       (throw (ex-info "Unexpected status while enabling ASG"
                       {:type ::unexpected-response
                        :response response})))))
@@ -451,7 +450,7 @@
 ;; Precondition attached to `enable-asg` asserting that the ASG we're attempting to enable exists.
 (with-precondition! #'enable-asg
   :asg-exists
-  (fn [r a _ _]
+  (fn [r a _ _ _ _]
     (auto-scaling-group r a)))
 
 ;; Handler for a missing ASG attached to `enable-asg`.
@@ -465,15 +464,16 @@
 
 (defn disable-asg
   "Begins an disable traffic operation on the specified Auto Scaling Group in the region given. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
-  [region asg-name ticket-id task]
-  (let [params {"_action_deactivate" ""
-                "name" asg-name
-                "ticket" ticket-id}
+  [region asg-name ticket-id task completed-fn timed-out-fn]
+  (let [parameters {"_action_deactivate" ""
+                    "name" asg-name
+                    "ticket" ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
-                                               {:form-params params})]
+                                               {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")}) task-track-count)
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")
+                                                    :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
       (throw (ex-info "Unexpected status while disabling ASG"
                       {:type ::unexpected-response
                        :response response})))))
@@ -481,7 +481,7 @@
 ;; Precondition attached to `disable-asg` asserting that the ASG we're attempting to disable exists.
 (with-precondition! #'disable-asg
   :asg-exists
-  (fn [r a _ _]
+  (fn [r a _ _ _ _]
     (auto-scaling-group r a)))
 
 ;; Handler for a missing ASG attached to `disable-asg`.
@@ -498,27 +498,27 @@
   [url]
   (second (re-find #"/autoScaling/show/(.+)$" url)))
 
-(defn create-new-asg-asgard-params
+(defn create-new-asg-asgard-parameters
   "Creates the Asgard parameters for creating a new ASG as a combination of the various defaults and user-provided parameters."
-  [region application-name environment image-id commit-hash ticket-id]
-  (let [protected-params (protected-create-new-asg-params application-name environment image-id ticket-id)
-        user-params (tyr/deployment-params environment application-name commit-hash)]
-    (prepare-params (merge default-create-new-asg-params user-params protected-params) region)))
+  [region application-name environment image-id user-parameters ticket-id]
+  (let [protected-parameters (protected-create-new-asg-parameters application-name environment image-id ticket-id)]
+    (prepare-parameters (merge default-create-new-asg-parameters user-parameters protected-parameters) region)))
 
 (defn create-new-asg
   "Begins a create new Auto Scaling Group operation for the specified application and environment in the region given. It __WILL__ start traffic to the newly-created ASG. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
-  [region application-name environment image-id commit-hash ticket-id task]
-  (let [asgard-params (create-new-asg-asgard-params region application-name environment image-id commit-hash ticket-id)
+  [region application-name environment image-id user-parameters ticket-id task completed-fn timed-out-fn]
+  (let [asgard-parameters (create-new-asg-asgard-parameters region application-name environment image-id user-parameters ticket-id)
         {:keys [status headers] :as response} (http/simple-post
                                                (auto-scaling-save-url region)
-                                               {:form-params (explode-params asgard-params)})]
+                                               {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [new-asg-name (extract-new-asg-name (get headers "location"))
             tasks (tasks region)]
         (when-let [found-task (first (filter (fn [t] (= (:name t) (str "Create Auto Scaling Group '" new-asg-name "'"))) tasks))]
           (let [task-id (:id found-task)
                 url (task-by-id-url region task-id)]
-            (track-until-completed ticket-id (merge task {:url url}) task-track-count)))
+            (track-until-completed ticket-id (merge task {:url url
+                                                          :asgardParameters asgard-parameters}) task-track-count completed-fn timed-out-fn)))
         new-asg-name)
       (throw (ex-info "Unexpected status while creating new ASG"
                       {:type ::unexpected-response
@@ -526,22 +526,37 @@
 
 ;; # Concerning the creation of the next ASG for an application-name
 
-(defn create-next-asg-asgard-params
+(defn create-next-asg-asgard-parameters
   "Creates the Asgard parameters for creating the next ASG as a combination of the various defaults and user-provided parameters."
-  [region application-name environment image-id commit-hash ticket-id]
-  (let [protected-params (protected-create-next-asg-params application-name environment image-id ticket-id)
-        user-params (tyr/deployment-params environment application-name commit-hash)]
-    (prepare-params (merge default-create-next-asg-params user-params protected-params) region)))
+  [region application-name environment image-id user-parameters ticket-id]
+  (let [protected-parameters (protected-create-next-asg-parameters application-name environment image-id ticket-id)]
+    (prepare-parameters (merge default-create-next-asg-parameters user-parameters protected-parameters) region)))
 
 (defn create-next-asg
   "Begins a create next Auto Scaling Group operation for the specified application and environment in the region given. It __WILL NOT__ start traffic to the newly-created ASG. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
-  [region application-name environment image-id commit-hash ticket-id task]
-  (let [asgard-params (create-next-asg-asgard-params region application-name environment image-id commit-hash ticket-id)
+  [region application-name environment image-id parameters ticket-id task completed-fn timed-out-fn]
+  (let [asgard-parameters (create-next-asg-asgard-parameters region application-name environment image-id parameters ticket-id)
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-create-next-group-url region)
-                                               {:form-params (explode-params asgard-params)})]
+                                               {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json")}) task-track-count)
+      (let [task-json-url (str (get headers "location") ".json")]
+        (track-until-completed ticket-id (merge task {:url task-json-url
+                                                      :asgardParameters asgard-parameters}) task-track-count completed-fn timed-out-fn))
       (throw (ex-info "Unexpected status while creating next ASG"
                       {:type ::unexpected-response
                        :response response})))))
+
+;; # Concerning creating ASGs for an application
+
+(defn create-auto-scaling-group
+  "If the specified application already has an ASG in the given region and environment, create the next one. Otherwise, create a brand-new ASG."
+  [{:keys [region application environment ami parameters]
+    ticket-id :id
+    :as deployment} task completed-fn timed-out-fn]
+  (if-let [asg (last-auto-scaling-group region (str application "-" environment))]
+    (let [old-asg-name (:autoScalingGroupName asg)
+          updated-parameters (assoc parameters :old-asg old-asg-name)]
+      (store/store-deployment (assoc deployment :parameters updated-parameters))
+      (create-next-asg region application environment ami updated-parameters ticket-id task completed-fn timed-out-fn))
+    (create-new-asg region application environment ami parameters ticket-id task completed-fn timed-out-fn)))

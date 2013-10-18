@@ -44,8 +44,11 @@
                    (update-task-in-deployment ..deploy.. ..task..) => ..amended-deploy..
                    (store-deployment ..amended-deploy..) => ..store-result..))
 
-            (fact "We can find incomplete tasks"
-                  (incomplete-tasks) => [..task-1.. ..task-2..]
+            (fact "We can find deployments with incomplete tasks"
+                  (deployments-with-incomplete-tasks) => [{:id ..deploy-1..
+                                                           :tasks [..task-1..]}
+                                                          {:id ..deploy-2..
+                                                           :tasks [..task-2..]}]
                   (provided
                    (mc/find-maps "deployments"
                                   {:tasks {$elemMatch {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}}}

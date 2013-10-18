@@ -6,18 +6,19 @@
 (def onix-url
   (env :service-onix-url))
 
-(defn- applications-url []
+(defn applications-url []
   (str onix-url "/1.x/applications"))
 
-(defn- application-url [application-name]
+(defn application-url [application-name]
   (str onix-url "/1.x/applications/" application-name))
 
 (defn create-application [application-name]
   (let [body (json/generate-string {:name application-name})
-        {:keys [body status]} (http/simple-post (applications-url) {:content-type :json :body body})]
+        {:keys [body status] :as response} (http/simple-post (applications-url) {:content-type :json :body body})]
     (if (= status 201)
       (json/parse-string body true)
-      {:status 500 :body "Could not create application in Onix."})))
+      (throw (ex-info "Unexpected status while creating application" {:type ::unexpected-response
+                          :response response})))))
 
 (defn application [application-name]
   (let [{ :keys [body status]} (http/simple-get (application-url application-name))]
@@ -28,6 +29,3 @@
   (if-let [application (application application-name)]
     application
     (create-application application-name)))
-
-;(upsert-application "skeleton2")
-;(application "skeleton2")
