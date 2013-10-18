@@ -33,6 +33,16 @@
        => {"subnetPurpose" "internal"
            (str "selectedLoadBalancersForVpcId" vpc-id) ["load-balancer"]})
 
+ (fact "We gracefully handle no load balancer when working in a VPC"
+       (replace-load-balancer-key {"subnetPurpose" "internal"})
+       => {"subnetPurpose" "internal"})
+
+ (fact "We gracefully handle a single load balancer specified as a string"
+       (replace-load-balancer-key {"subnetPurpose" "internal"
+                                   "selectedLoadBalancers" "load-balancer"})
+       => {"subnetPurpose" "internal"
+           (str "selectedLoadBalancersForVpcId" vpc-id) "load-balancer"})
+
  (fact "We don't replace security group names when not working in a VPC"
        (replace-security-group-names {"selectedSecurityGroups" ["group-one" "group-two"]} ..region..)
        => {"selectedSecurityGroups" ["group-one" "group-two"]})
@@ -54,6 +64,16 @@
        (provided
         (security-groups ..region..)
         => []))
+
+ (fact "We gracefully handle a security group name specified as a single string"
+       (replace-security-group-names {"subnetPurpose" "internal"
+                                      "selectedSecurityGroups" "group"} ..region..)
+       => {"subnetPurpose" "internal"
+           "selectedSecurityGroups" ["sg-group"]}
+       (provided
+        (security-groups ..region..)
+        => [{:groupId "sg-group"
+             :groupName "group"}]))
 
  (fact "Preparing params works through all expected transformations"
        (prepare-params ..original.. ..region..)
@@ -305,7 +325,7 @@
  (against-background
   [(tyr/deployment-params ..environment.. ..application.. ..hash..)
    => {"from" "user"}
-   (create-asgard-params "region" "application" "environment" ..ami.. ..hash.. ..ticket..)
+   (create-new-asg-asgard-params "region" "application" "environment" ..ami.. ..hash.. ..ticket..)
    => ..asgard-params..
    (explode-params ..asgard-params..)
    => ..exploded-params..]
@@ -338,7 +358,7 @@
  (against-background
   [(tyr/deployment-params "environment" "application" ..hash..)
    => {"from" "user"}
-   (create-asgard-params "region" "application" "environment" ..ami.. ..hash.. ..ticket..)
+   (create-next-asg-asgard-params "region" "application" "environment" ..ami.. ..hash.. ..ticket..)
    => ..asgard-params..
    (explode-params ..asgard-params..)
    => ..exploded-params..]

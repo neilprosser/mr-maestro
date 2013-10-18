@@ -19,7 +19,8 @@
             [exploud
              [http :as http]
              [store :as store]
-             [tyranitar :as tyr]]
+             [tyranitar :as tyr]
+             [util :as util]]
             [overtone.at-at :as at-at]))
 
 ;; # General def-age
@@ -308,7 +309,7 @@
   "If `subnetPurpose` is `internal` and `securityGroupNames` is found within `params` the value will be checked for security group names and replaced with their IDs (since we can't use security group names in a VPC."
   [params region]
   (if (= "internal" (get params "subnetPurpose"))
-    (if-let [security-group-names (get params "selectedSecurityGroups")]
+    (if-let [security-group-names (util/list-from (get params "selectedSecurityGroups"))]
       (let [security-group-ids (map (fn [sg] (replace-security-group-name region sg))
                                     security-group-names)]
         (assoc params "selectedSecurityGroups" security-group-ids))
@@ -321,13 +322,6 @@
   (-> params
       replace-load-balancer-key
       (replace-security-group-names region)))
-
-(defn create-asgard-params
-  "Creates the Asgard parameters as a combination of the various defaults and user-provided parameters."
-  [region application-name environment image-id commit-hash ticket-id]
-  (let [protected-params (protected-create-next-asg-params application-name environment image-id ticket-id)
-        user-params (tyr/deployment-params environment application-name commit-hash)]
-    (prepare-params (merge default-create-next-asg-params user-params protected-params) region)))
 
 (defn explode-params
   "Take a map of parameters and turns them into a list of [key value] pairs where the same key may appear multiple times. This is used to create the form parameters which we pass to Asgard (and may be specified multiple times each)."
@@ -504,10 +498,17 @@
   [url]
   (second (re-find #"/autoScaling/show/(.+)$" url)))
 
+(defn create-new-asg-asgard-params
+  "Creates the Asgard parameters for creating a new ASG as a combination of the various defaults and user-provided parameters."
+  [region application-name environment image-id commit-hash ticket-id]
+  (let [protected-params (protected-create-new-asg-params application-name environment image-id ticket-id)
+        user-params (tyr/deployment-params environment application-name commit-hash)]
+    (prepare-params (merge default-create-new-asg-params user-params protected-params) region)))
+
 (defn create-new-asg
   "Begins a create new Auto Scaling Group operation for the specified application and environment in the region given. It __WILL__ start traffic to the newly-created ASG. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
   [region application-name environment image-id commit-hash ticket-id task]
-  (let [asgard-params (create-asgard-params region application-name environment image-id commit-hash ticket-id)
+  (let [asgard-params (create-new-asg-asgard-params region application-name environment image-id commit-hash ticket-id)
         {:keys [status headers] :as response} (http/simple-post
                                                (auto-scaling-save-url region)
                                                {:form-params (explode-params asgard-params)})]
@@ -525,10 +526,17 @@
 
 ;; # Concerning the creation of the next ASG for an application-name
 
+(defn create-next-asg-asgard-params
+  "Creates the Asgard parameters for creating the next ASG as a combination of the various defaults and user-provided parameters."
+  [region application-name environment image-id commit-hash ticket-id]
+  (let [protected-params (protected-create-next-asg-params application-name environment image-id ticket-id)
+        user-params (tyr/deployment-params environment application-name commit-hash)]
+    (prepare-params (merge default-create-next-asg-params user-params protected-params) region)))
+
 (defn create-next-asg
   "Begins a create next Auto Scaling Group operation for the specified application and environment in the region given. It __WILL NOT__ start traffic to the newly-created ASG. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
   [region application-name environment image-id commit-hash ticket-id task]
-  (let [asgard-params (create-asgard-params region application-name environment image-id commit-hash ticket-id)
+  (let [asgard-params (create-next-asg-asgard-params region application-name environment image-id commit-hash ticket-id)
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-create-next-group-url region)
                                                {:form-params (explode-params asgard-params)})]
