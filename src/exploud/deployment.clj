@@ -59,20 +59,27 @@
         :else (throw (ex-info "Unrecognised action." {:type ::unrecogized-action
                                                       :action action}))))
 
+(defn add-end-to-task-and-save
+  "Makes sure that the task has now as its `:end` value and saves it."
+  [deployment task]
+  (store/update-task-in-deployment deployment (assoc task :end (util/now-string))))
+
 (defn task-finished
   "Function called when a task has completed. Deals with moving the deployment to the next phase."
-  [deployment-id {task-id :id}]
-  (let [deployment (store/get-deployment deployment-id)
-        next-task (task-after deployment task-id)]
-    (if next-task
-      (start-task deployment next-task)
-      (finish-deployment deployment))))
+  [deployment-id {task-id :id :as task}]
+  (let [deployment (store/get-deployment deployment-id)]
+    (add-end-to-task-and-save deployment task)
+    (let [next-task (task-after deployment task-id)]
+      (if next-task
+        (start-task deployment next-task)
+        (finish-deployment deployment)))))
 
 (defn task-timed-out
   "Function called when a task has timed-out. Deals with the repercussions of that."
   [deployment-id task]
-  ;; TODO - FINISH HIM!
-  )
+  (let [deployment (store/get-deployment deployment-id)]
+    (add-end-to-task-and-save deployment task)
+    nil))
 
 ;; # Concerning deployments
 

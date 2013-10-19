@@ -110,6 +110,11 @@
        (provided
         (store/get-deployment ..deploy-id..)
         => ..deployment..
+        (util/now-string)
+        => ..end..
+        (store/update-task-in-deployment ..deployment.. {:id ..task-id..
+                                                         :end ..end..})
+        => ..store-result..
         (task-after ..deployment.. ..task-id..)
         => nil
         (finish-deployment ..deployment..)
@@ -121,6 +126,11 @@
        (provided
         (store/get-deployment ..deploy-id..)
         => ..deployment..
+        (util/now-string)
+        => ..end..
+        (store/update-task-in-deployment ..deployment.. {:id ..task-id..
+                                                         :end ..end..})
+        => ..store-result..
         (task-after ..deployment.. ..task-id..)
         => ..next-task..
         (start-task ..deployment.. ..next-task..)
@@ -141,4 +151,16 @@
                             {:id ..task-2..}
                             {:id ..task-3..}]}
                    ..task-2..)
-       => {:id ..task-3..}))
+       => {:id ..task-3..})
+
+ (fact "that timing out a task puts an `:end` date on it"
+       (task-timed-out ..deploy-id.. {:id ..task-id..})
+       => nil
+       (provided
+        (store/get-deployment ..deploy-id..)
+        => ..deployment..
+        (util/now-string)
+        => ..end..
+        (store/update-task-in-deployment ..deployment.. {:id ..task-id..
+                                                         :end ..end..})
+        => ..store-result..)))
