@@ -14,7 +14,6 @@
   (routes {:request-method method
            :uri resource } ))
 
-(fact-group
- (fact "that ping pongs"
-       (:body (request :get "/1.x/ping"))
-       => "pong" ))
+(fact "that ping pongs"
+      (:body (request :get "/1.x/ping"))
+      => "pong")
