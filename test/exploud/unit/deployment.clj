@@ -164,7 +164,7 @@
                                                                 :start ..start..} task-finished task-timed-out)
        => ..enable-result..))
 
-(fact "that starting a task with an action of `:disable-asg` sets a `:start` value and calls Asgard cirrectly"
+(fact "that starting a task with an action of `:disable-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
                    :parameters {:oldAutoScalingGroupName ..old-asg..}
                    :region ..region..} {:action :disable-asg})
@@ -175,3 +175,15 @@
        (asgard/disable-asg ..region.. ..old-asg.. ..deploy-id.. {:action :disable-asg
                                                                  :start ..start..} task-finished task-timed-out)
        => ..disable-result..))
+
+(fact "that starting a task with an action of `:delete-asg` sets a `:start` value and calls Asgard correctly"
+      (start-task {:id ..deploy-id..
+                   :parameters {:oldAutoScalingGroupName ..old-asg..}
+                   :region ..region..} {:action :delete-asg})
+      => ..delete-result..
+      (provided
+       (util/now-string)
+       => ..start..
+       (asgard/delete-asg ..region.. ..old-asg.. ..deploy-id.. {:action :delete-asg
+                                                                :start ..start..} task-finished task-timed-out)
+       => ..delete-result..))

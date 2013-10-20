@@ -44,19 +44,19 @@
 
 (defn start-task
   "Starts the given task based on its `:action`."
-  [{deployment-id :id :as deployment} {:keys [action] :as task}]
+  [{:keys [region] deployment-id :id :as deployment} {:keys [action] :as task}]
   (let [task (assoc task :start (util/now-string))]
     (cond (= action :create-asg)
-          (let [{:keys [ami application environment parameters region]} deployment]
+          (let [{:keys [ami application environment parameters]} deployment]
             (asgard/create-auto-scaling-group region application environment ami parameters deployment-id task task-finished task-timed-out))
           (= action :wait-for-health)
           nil
           (= action :enable-asg)
-          (let [{:keys [region]} deployment]
-            (asgard/enable-asg region (get-in deployment [:parameters :newAutoScalingGroupName]) deployment-id task task-finished task-timed-out))
+          (asgard/enable-asg region (get-in deployment [:parameters :newAutoScalingGroupName]) deployment-id task task-finished task-timed-out)
           (= action :disable-asg)
-          (let [{:keys [region]} deployment]
-            (asgard/disable-asg region (get-in deployment [:parameters :oldAutoScalingGroupName]) deployment-id task task-finished task-timed-out))
+          (asgard/disable-asg region (get-in deployment [:parameters :oldAutoScalingGroupName]) deployment-id task task-finished task-timed-out)
+          (= action :delete-asg)
+          (asgard/delete-asg region (get-in deployment [:parameters :oldAutoScalingGroupName]) deployment-id task task-finished task-timed-out)
           :else (throw (ex-info "Unrecognised action." {:type ::unrecogized-action
                                                         :action action})))))
 
