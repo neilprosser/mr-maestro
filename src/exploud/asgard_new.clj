@@ -517,6 +517,7 @@
         (when-let [found-task (first (filter (fn [t] (= (:name t) (str "Create Auto Scaling Group '" new-asg-name "'"))) tasks))]
           (let [task-id (:id found-task)
                 url (task-by-id-url region task-id)]
+            (store/add-to-deployment-parameters ticket-id {:newAutoScalingGroupName (str application-name "-" environment)})
             (track-until-completed ticket-id (merge task {:url url
                                                           :asgardParameters asgard-parameters}) task-track-count completed-fn timed-out-fn)))
         new-asg-name)
@@ -532,6 +533,12 @@
   (let [protected-parameters (protected-create-next-asg-parameters application-name environment image-id ticket-id)]
     (prepare-parameters (merge default-create-next-asg-parameters user-parameters protected-parameters) region)))
 
+(defn new-asg-name-from-task
+  "Examines the `:message` of the first item in the task's `:log` for a string matching `Creating auto scaling group '{new-asg-name}'` and returns `new-asg-name`."
+  [task-url]
+  (let [task (task-by-url task-url)]
+    ((re-find #"Creating auto scaling group '([^']+)'" (get-in task [:log 0 :message])) 1)))
+
 (defn create-next-asg
   "Begins a create next Auto Scaling Group operation for the specified application and environment in the region given. It __WILL NOT__ start traffic to the newly-created ASG. Will start tracking the resulting task URL until completed. You can assume that a non-explosive call has been successful and the task is being tracked."
   [region application-name environment image-id parameters ticket-id task completed-fn timed-out-fn]
@@ -540,7 +547,9 @@
                                                (cluster-create-next-group-url region)
                                                {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
-      (let [task-json-url (str (get headers "location") ".json")]
+      (let [task-json-url (str (get headers "location") ".json")
+            new-asg-name (new-asg-name-from-task task-json-url)]
+        (store/add-to-deployment-parameters ticket-id {:newAutoScalingGroupName new-asg-name})
         (track-until-completed ticket-id (merge task {:url task-json-url
                                                       :asgardParameters asgard-parameters}) task-track-count completed-fn timed-out-fn))
       (throw (ex-info "Unexpected status while creating next ASG"
@@ -551,12 +560,9 @@
 
 (defn create-auto-scaling-group
   "If the specified application already has an ASG in the given region and environment, create the next one. Otherwise, create a brand-new ASG."
-  [{:keys [region application environment ami parameters]
-    ticket-id :id
-    :as deployment} task completed-fn timed-out-fn]
+  [region application environment ami parameters ticket-id task completed-fn timed-out-fn]
   (if-let [asg (last-auto-scaling-group region (str application "-" environment))]
-    (let [old-asg-name (:autoScalingGroupName asg)
-          updated-parameters (assoc parameters :old-asg old-asg-name)]
-      (store/store-deployment (assoc deployment :parameters updated-parameters))
-      (create-next-asg region application environment ami updated-parameters ticket-id task completed-fn timed-out-fn))
+    (let [old-asg-name (:autoScalingGroupName asg)]
+      (store/add-to-deployment-parameters ticket-id {:oldAutoScalingGroupName old-asg-name})
+      (create-next-asg region application environment ami parameters ticket-id task completed-fn timed-out-fn))
     (create-new-asg region application environment ami parameters ticket-id task completed-fn timed-out-fn)))

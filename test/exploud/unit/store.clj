@@ -54,3 +54,18 @@
                                        :tasks [..task-1..]}
                                       {:id ..deploy-2..
                                        :tasks [..task-2..]}]))
+
+(fact "that we can add to existing deployment parameters"
+      (add-to-deployment-parameters ..deploy-id.. {:p1 "p1"
+                                                   :p2 "p2"})
+      => nil
+      (provided
+       (get-deployment ..deploy-id..)
+       => {:id ..deploy-id..
+           :parameters {:p2 "old-p2"
+                        :p3 "p3"}}
+       (store-deployment {:id ..deploy-id..
+                          :parameters {:p1 "p1"
+                                       :p2 "p2"
+                                       :p3 "p3"}})
+       => ..store-result..))

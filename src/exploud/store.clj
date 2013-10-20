@@ -34,6 +34,14 @@
     (mc/upsert "deployments" {:_id _id} amended-deployment)
     nil))
 
+(defn add-to-deployment-parameters
+  "Gets a deployment with `deployment-id` and will merge the given `parameters` into the existing `:parameters` from the deployment. Then save it back."
+  [deployment-id parameters]
+  (let [deployment (get-deployment deployment-id)
+        updated-deployment (update-in deployment [:parameters] merge parameters)]
+    (store-deployment updated-deployment)
+    nil))
+
 (defn update-task-in-deployment
   "Updates a task in the given deployment (where tasks match with identical `:id` values). Returns a new deployment."
   [{:keys [tasks] :as deployment} {:keys [id] :as task}]

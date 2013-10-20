@@ -30,15 +30,6 @@
    (new-task :disable-asg)
    (new-task :delete-asg)])
 
-(defn prepare-deployment-tasks
-  "Prepares a deployment for the application in a given region. This will create the deployment tasks and pre-populates any parameters we can provide to the first task."
-  [region application-name environment]
-  (let [tasks (create-standard-deployment-tasks)]
-    (if-let [asg (asgard/last-auto-scaling-group region (str application-name "-" environment))]
-      (let [old-asg-name (:autoScalingGroupName asg)]
-        (assoc-in tasks [0 :params :old-asg] old-asg-name))
-      tasks)))
-
 (defn task-after
   "Given a deployment and a task ID will find the task which occurs after the one with an `:id` of `task-id` in the `:tasks` of `deployment`. It returns either the next task or `nil` if the given ID was last."
   [{:keys [tasks]} task-id]
@@ -53,22 +44,27 @@
 
 (defn start-task
   "Starts the given task based on its `:action`."
-  [deployment {:keys [action] :as task}]
-  (cond (= action :create-asg)
-        (asgard/create-auto-scaling-group deployment (assoc task :start (util/now-string)) task-finished task-timed-out)
-        :else (throw (ex-info "Unrecognised action." {:type ::unrecogized-action
-                                                      :action action}))))
-
-(defn add-end-to-task-and-save
-  "Makes sure that the task has now as its `:end` value and saves it."
-  [deployment task]
-  (store/update-task-in-deployment deployment (assoc task :end (util/now-string))))
+  [{deployment-id :id :as deployment} {:keys [action] :as task}]
+  (let [task (assoc task :start (util/now-string))]
+    (cond (= action :create-asg)
+          (let [{:keys [ami application environment parameters region]} deployment]
+            (asgard/create-auto-scaling-group region application environment ami parameters deployment-id task task-finished task-timed-out))
+          (= action :wait-for-health)
+          nil
+          (= action :enable-asg)
+          (let [{:keys [region]} deployment]
+            (asgard/enable-asg region (get-in deployment [:parameters :newAutoScalingGroupName]) deployment-id task task-finished task-timed-out))
+          (= action :disable-asg)
+          (let [{:keys [region]} deployment]
+            (asgard/disable-asg region (get-in deployment [:parameters :oldAutoScalingGroupName]) deployment-id task task-finished task-timed-out))
+          :else (throw (ex-info "Unrecognised action." {:type ::unrecogized-action
+                                                        :action action})))))
 
 (defn task-finished
   "Function called when a task has completed. Deals with moving the deployment to the next phase."
   [deployment-id {task-id :id :as task}]
+  (store/store-task deployment-id (assoc task :end (util/now-string)))
   (let [deployment (store/get-deployment deployment-id)]
-    (add-end-to-task-and-save deployment task)
     (let [next-task (task-after deployment task-id)]
       (if next-task
         (start-task deployment next-task)
@@ -77,9 +73,8 @@
 (defn task-timed-out
   "Function called when a task has timed-out. Deals with the repercussions of that."
   [deployment-id task]
-  (let [deployment (store/get-deployment deployment-id)]
-    (add-end-to-task-and-save deployment task)
-    nil))
+  (store/store-task deployment-id (assoc task :end (util/now-string)))
+  nil)
 
 ;; # Concerning deployments
 

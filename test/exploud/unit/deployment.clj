@@ -22,20 +22,6 @@
            (filter (fn [t] (= (:action t) "pending")))
            empty?))
 
-(fact "that the first task of a deployment for an application with an ASG has the `old-asg` parameter"
-      (first (prepare-deployment-tasks "region" "application" "environment"))
-      => (contains {:params {:old-asg ..old-asg..}})
-      (provided
-       (asgard/last-auto-scaling-group "region" "application-environment")
-       => {:autoScalingGroupName ..old-asg..}))
-
-(fact "that the first task of a deployment for an application without an ASG has the no `old-asg` parameter"
-      (first (prepare-deployment-tasks "region" "application" "environment"))
-      =not=> (contains {:params {}})
-      (provided
-       (asgard/last-auto-scaling-group "region" "application-environment")
-       => nil))
-
 (fact "that we obtain the properties for a deployment correctly and store the right things"
       (prepare-deployment ..region.. ..app.. ..env.. ..user.. ..ami..)
       => {:ami ..ami..
@@ -85,12 +71,17 @@
        => nil))
 
 (fact "that starting a task with an action of `:create-asg` sets a `:start` value and calls Asgard correctly"
-      (start-task ..deployment.. {:action :create-asg})
+      (start-task {:ami ..ami..
+                   :application ..app..
+                   :environment ..env..
+                   :id ..deploy-id..
+                   :parameters ..params..
+                   :region ..region..} {:action :create-asg})
       => ..create-result..
       (provided
        (util/now-string)
        => ..start..
-       (asgard/create-auto-scaling-group ..deployment.. {:action :create-asg :start ..start..} task-finished task-timed-out)
+       (asgard/create-auto-scaling-group ..region.. ..app.. ..env.. ..ami.. ..params.. ..deploy-id.. {:action :create-asg :start ..start..} task-finished task-timed-out)
        => ..create-result..))
 
 (fact "that completing a deployment adds an `:end` date to it"
@@ -106,13 +97,13 @@
       (task-finished ..deploy-id.. {:id ..task-id..})
       => ..finish-result..
       (provided
-       (store/get-deployment ..deploy-id..)
-       => ..deployment..
        (util/now-string)
        => ..end..
-       (store/update-task-in-deployment ..deployment.. {:id ..task-id..
-                                                        :end ..end..})
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :end ..end..})
        => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => ..deployment..
        (task-after ..deployment.. ..task-id..)
        => nil
        (finish-deployment ..deployment..)
@@ -122,13 +113,13 @@
       (task-finished ..deploy-id.. {:id ..task-id..})
       => ..start-result..
       (provided
-       (store/get-deployment ..deploy-id..)
-       => ..deployment..
        (util/now-string)
        => ..end..
-       (store/update-task-in-deployment ..deployment.. {:id ..task-id..
-                                                        :end ..end..})
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :end ..end..})
        => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => ..deployment..
        (task-after ..deployment.. ..task-id..)
        => ..next-task..
        (start-task ..deployment.. ..next-task..)
@@ -155,10 +146,32 @@
       (task-timed-out ..deploy-id.. {:id ..task-id..})
       => nil
       (provided
-       (store/get-deployment ..deploy-id..)
-       => ..deployment..
        (util/now-string)
        => ..end..
-       (store/update-task-in-deployment ..deployment.. {:id ..task-id..
-                                                        :end ..end..})
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :end ..end..})
        => ..store-result..))
+
+(fact "that starting a task with an action of `:enable-asg` sets a `:start` value and calls Asgard correctly"
+      (start-task {:id ..deploy-id..
+                   :parameters {:newAutoScalingGroupName ..new-asg..}
+                   :region ..region..} {:action :enable-asg})
+      => ..enable-result..
+      (provided
+       (util/now-string)
+       => ..start..
+       (asgard/enable-asg ..region.. ..new-asg.. ..deploy-id.. {:action :enable-asg
+                                                                :start ..start..} task-finished task-timed-out)
+       => ..enable-result..))
+
+(fact "that starting a task with an action of `:disable-asg` sets a `:start` value and calls Asgard cirrectly"
+      (start-task {:id ..deploy-id..
+                   :parameters {:oldAutoScalingGroupName ..old-asg..}
+                   :region ..region..} {:action :disable-asg})
+      => ..disable-result..
+      (provided
+       (util/now-string)
+       => ..start..
+       (asgard/disable-asg ..region.. ..old-asg.. ..deploy-id.. {:action :disable-asg
+                                                                 :start ..start..} task-finished task-timed-out)
+       => ..disable-result..))

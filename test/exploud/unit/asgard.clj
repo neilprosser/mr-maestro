@@ -357,6 +357,8 @@
         (tasks "region")
         => [{:name "Something we don't care about"}
             {:id 420 :name "Create Auto Scaling Group 'new-asg-name'"}]
+        (store/add-to-deployment-parameters ..ticket.. {:newAutoScalingGroupName "application-environment"})
+        => ..store-result..
         (track-until-completed ..ticket.. {:id ..task-id..
                                            :url "http://asgard:8080/region/task/show/420.json"
                                            :asgardParameters ..asgard-params..} 3600 ..completed.. ..timed-out..)
@@ -370,6 +372,14 @@
          "http://asgard:8080/region/autoScaling/save"
          {:form-params ..exploded-params..})
         => {:status 500})))
+
+(fact "that we can get the next ASG name from a task's log messages"
+      (new-asg-name-from-task ..task-url..)
+      => "new-asg-name"
+      (provided
+       (task-by-url ..task-url..)
+       => {:log [{:message "Whatever we have going on and then Creating auto scaling group 'new-asg-name', followed by whatever..."}
+                 {:message "Another log message, which we'll not pay attention to."}]}))
 
 (against-background
  [(create-next-asg-asgard-parameters "region" "application" "environment" ..ami.. ..user-params.. ..ticket..)
@@ -386,6 +396,10 @@
          {:form-params ..exploded-params..})
         => {:status 302
             :headers {"location" "http://asgard:8080/region/task/show/426"}}
+        (new-asg-name-from-task "http://asgard:8080/region/task/show/426.json")
+        => ..new-asg..
+        (store/add-to-deployment-parameters ..ticket.. {:newAutoScalingGroupName ..new-asg..})
+        => ..store-result..
         (track-until-completed ..ticket.. {:id ..task-id..
                                            :url "http://asgard:8080/region/task/show/426.json"
                                            :asgardParameters ..asgard-params..} 3600 ..completed.. ..timed-out..)
@@ -401,12 +415,12 @@
         => {:status 500})))
 
 (fact "that creating a new ASG for an application which already has one puts the name of the old one in the params and creates the next one"
-      (create-auto-scaling-group {:region ..region..
-                                  :application "application"
-                                  :environment "environment"
-                                  :ami ..ami..
-                                  :parameters {}
-                                  :id ..ticket..}
+      (create-auto-scaling-group ..region..
+                                 "application"
+                                 "environment"
+                                 ..ami..
+                                 ..params..
+                                 ..ticket..
                                  ..task..
                                  ..completed..
                                  ..timed-out..)
@@ -414,12 +428,7 @@
       (provided
        (last-auto-scaling-group ..region.. "application-environment")
        => {:autoScalingGroupName ..old-asg..}
-       (store/store-deployment {:region ..region..
-                                :application "application"
-                                :environment "environment"
-                                :ami ..ami..
-                                :parameters {:old-asg ..old-asg..}
-                                :id ..ticket..})
+       (store/add-to-deployment-parameters ..ticket.. {:oldAutoScalingGroupName ..old-asg..})
        => ..store-result..
-       (create-next-asg ..region.. "application" "environment" ..ami.. {:old-asg ..old-asg..} ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (create-next-asg ..region.. "application" "environment" ..ami.. ..params.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => ..create-result..))
