@@ -1,6 +1,6 @@
-(ns exploud.unit.setup
+(ns exploud.setup_test
   (:require [exploud
-             [asgard_new :as asgard]
+             [asgard :as asgard]
              [deployment :as deployment]
              [setup :refer :all]
              [store :as store]]

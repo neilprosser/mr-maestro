@@ -1,4 +1,4 @@
-(ns exploud.unit.tyranitar
+(ns exploud.tyranitar_test
   (:require [cheshire.core :as json]
             [exploud
              [http :as http]

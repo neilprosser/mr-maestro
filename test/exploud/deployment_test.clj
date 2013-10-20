@@ -1,6 +1,6 @@
-(ns exploud.unit.deployment
+(ns exploud.deployment_test
   (:require [exploud
-             [asgard_new :as asgard]
+             [asgard :as asgard]
              [deployment :refer :all]
              [store :as store]
              [tyranitar :as tyr]

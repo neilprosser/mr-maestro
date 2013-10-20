@@ -1,4 +1,4 @@
-(ns exploud.unit.web
+(ns exploud.web_test
   (:require [cheshire.core :as json]
             [exploud.web :refer :all]
             [midje.sweet :refer :all]))

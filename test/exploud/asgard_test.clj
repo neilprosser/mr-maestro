@@ -1,8 +1,8 @@
-(ns exploud.unit.asgard
+(ns exploud.asgard_test
   (:require [clojure.set :as set]
             [environ.core :refer :all]
             [exploud
-             [asgard_new :refer :all]
+             [asgard :refer :all]
              [http :as http]
              [store :as store]]
             [midje.sweet :refer :all])
@@ -105,14 +105,62 @@
         "http://asgard:8080/region/autoScaling/show/asg-name.json")
        => {:status 404}))
 
+(fact "We can get the list of applications in Asgard"
+      (applications)
+      => {:applications [{:name "something"}]}
+      (provided
+       (http/simple-get
+        "http://asgard:8080/application/list.json")
+       => {:status 200
+           :body "{\"applications\":[{\"name\":\"something\"}]}"}))
+
+(fact "We can retrieve the security groups within a region"
+      (security-groups "region")
+      => [{:name "group"}]
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/security/list.json")
+       => {:status 200
+           :body "{\"securityGroups\":[{\"name\":\"group\"}]}"}))
+
+(fact "We can retrieve tasks from Asgard"
+      (tasks)
+      => [{:id "task-1"}
+          {:id "task-2"}]
+      (provided
+       (http/simple-get
+        "http://asgard:8080/task/list.json")
+       => {:status 200
+           :body "{\"runningTaskList\":[{\"id\":\"task-1\"}],
+                   \"completedTaskList\":[{\"id\":\"task-2\"}]}"}))
+
+(fact "We can upsert an application"
+      (upsert-application "application" {:description "description"
+                                         :email "email"
+                                         :owner "owner"})
+      => ..response..
+      (provided
+       (http/simple-post
+        "http://asgard:8080/application/index"
+        {:form-params {:description "description"
+                       :email "email"
+                       :monitorBucketType "application"
+                       :name "application"
+                       :owner "owner"
+                       :ticket ""
+                       :type "Web Service"
+                       :_action_update ""}
+         :follow-redirects false})
+       => ..response..))
+
 (fact "We can get the last ASG for an application"
       (last-auto-scaling-group "region" "application-environment")
       => {:autoScalingGroupName "application-environment-v023"}
       (provided
        ( http/simple-get
-         "http://asgard:8080/region/cluster/show/application-environment.json")
+         "http://asgard:8080/region/application/show/application-environment.json")
        => {:status 200
-           :body "[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]"}))
+           :body "{\"groups\":[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]}"}))
 
 (against-background
  [(auto-scaling-group "region" ..asg..)

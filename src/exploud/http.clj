@@ -27,28 +27,32 @@
   (fn [url & [params]]
     (log/debug "GETting" url "with params" params)))
 
-;; Exception handler attached to `simple-get` which deals with `ConnectException`.
+;; Exception handler attached to `simple-get` which deals with
+;; `ConnectException`.
 (with-handler! #'simple-get
   java.net.ConnectException
   (fn [e url]
     (throw (ex-info (.getMessage e) {:type ::connection-refused
                                      :class :http}))))
 
-;; Exception handler attached to `simple-get` which deals with `ConnectTimeoutException`.
+;; Exception handler attached to `simple-get` which deals with
+;; `ConnectTimeoutException`.
 (with-handler! #'simple-get
   org.apache.http.conn.ConnectTimeoutException
   (fn [e url]
     (throw (ex-info (.getMessage e) {:type ::connect-timeout
                                      :class :http}))))
 
-;; Exception handler attached to `simple-get` which deals with `SocketTimeoutException`.
+;; Exception handler attached to `simple-get` which deals with
+;; `SocketTimeoutException`.
 (with-handler! #'simple-get
   java.net.SocketTimeoutException
   (fn [e url]
     (throw (ex-info (.getMessage e) {:type ::socket-timeout
                                      :class :http}))))
 
-;; Exception handler attached to `simple-get` which deals with `UnknownHostException`.
+;; Exception handler attached to `simple-get` which deals with
+;; `UnknownHostException`.
 (with-handler! #'simple-get
   java.net.UnknownHostException
   (fn [e url]

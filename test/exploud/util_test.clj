@@ -1,4 +1,4 @@
-(ns exploud.unit.util
+(ns exploud.util_test
   (:require [clj-time.core :as time]
             [exploud.util :refer :all]
             [midje.sweet :refer :all]))

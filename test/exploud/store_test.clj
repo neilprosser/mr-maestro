@@ -1,4 +1,4 @@
-(ns exploud.unit.store
+(ns exploud.store_test
   (:require [exploud.store :refer :all]
             [midje.sweet :refer :all]
             [monger
