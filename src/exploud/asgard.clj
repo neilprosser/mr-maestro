@@ -309,7 +309,7 @@
   (last (:groups (application region application-name))))
 
 (defn security-groups
-  "Retrives all security groups within a particular region."
+  "Retrieves all security groups within a particular region."
   [region]
   (let [{:keys [body status]} (http/simple-get (security-groups-list-url
                                                 region))]
