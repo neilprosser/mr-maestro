@@ -11,6 +11,10 @@
       (list-from "hello")
       => ["hello"])
 
+(fact "given a single nil `list-from` gives back an empty list"
+      (list-from nil)
+      => [])
+
 (fact "that now-string works"
       (now-string)
       => (str ..now..)

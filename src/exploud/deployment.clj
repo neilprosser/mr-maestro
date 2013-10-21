@@ -47,6 +47,14 @@
       (nth 2 nil)
       first))
 
+(defn check-elb-health?
+  "If the `:parameters` of `deployment` have both a `selectedLoadBalancers`
+   value and `healthCheckType` of `ELB` then we should be checking the health
+   of the ELB. Otherwise, we're not going to do anything. They're on their own."
+  [{:keys [parameters]}]
+  (and (pos? (count (util/list-from (get parameters "selectedLoadBalancers"))))
+       (= "ELB" (get parameters "healthCheckType"))))
+
 ;; We're going to need these before we can defn them.
 (declare task-finished)
 (declare task-timed-out)
@@ -72,7 +80,16 @@
            (get-in deployment [:parameters "newAutoScalingGroupName"])
            deployment-id task task-finished task-timed-out)
           (= action :wait-for-elb-health)
-          nil
+          (if (check-elb-health? deployment)
+            (let [elb-names (util/list-from
+                             (get-in deployment
+                                     [:parameters "selectedLoadBalancers"]))
+                  asg-name (get-in deployment
+                                   [:parameters "newAutoScalingGroupName"])]
+              (health/wait-until-elb-healthy region elb-names asg-name
+                                             deployment-id task task-finished
+                                             task-timed-out))
+            (task-finished deployment-id task))
           (= action :disable-asg)
           (asgard/disable-asg
            region

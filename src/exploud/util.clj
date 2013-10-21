@@ -14,7 +14,13 @@
    `clojure.core` for this, but I still can't find it. If you know what it is I
    want, __PLEASE__ let Neil know!"
   [thing]
-  (if (coll? thing) thing [thing]))
+  (cond
+   (coll? thing)
+   thing
+   (nil? thing)
+   []
+   :else
+   [thing]))
 
 (defn now-string
   "Gets the current time as a string."

@@ -56,7 +56,7 @@
   [region asg-name deployment-id task completed-fn timed-out-fn polls]
   (let [f #(check-asg-health region asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
-    (at-at/after 5000 f)))
+    (at-at/after 5000 f task-pool)))
 
 (defn check-asg-health
   "If `asg-name` is healthy call `completed-fn` otherwise reschedule until
@@ -101,7 +101,7 @@
   [region elb-name asg-name deployment-id task completed-fn timed-out-fn polls]
   (let [f #(check-elb-health region elb-name asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
-    (at-at/after 5000 f)))
+    (at-at/after 5000 f task-pool)))
 
 (defn check-elb-health
   "This check will look at the members of the ELB which belong to the ASG. If
