@@ -1,4 +1,5 @@
 (ns exploud.healthchecks
+  "## Involved in the business of checking health"
   (:require [exploud
              [asgard :as asgard]
              [http :as http]
@@ -112,7 +113,8 @@
     (if-let [elb-name (first elb-names)]
       (let [healthy? (elb-healthy? region elb-name asg-name)
             message (str "Checking ELB (" elb-name ") health.")
-            updated-log (conj (:log task) {:date (util/now-string) :message message})
+            updated-log (conj (:log task) {:date (util/now-string)
+                                           :message message})
             updated-task (assoc task :log updated-log)]
         (store/store-task deployment-id updated-task)
         (if healthy?

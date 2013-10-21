@@ -1,5 +1,5 @@
 (ns exploud.deployment
-  "Creating and managing deployment chains."
+  "## Creating and managing deployment chains"
   (:require [exploud
              [asgard :as asgard]
              [healthchecks :as health]

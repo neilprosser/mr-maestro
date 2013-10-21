@@ -1,5 +1,5 @@
 (ns exploud.info
-  "## For grabbing information about the things we're dealing with."
+  "## For grabbing information about the things we're dealing with"
   (:require [exploud
              [asgard :as asgard]
              [onix :as onix]
