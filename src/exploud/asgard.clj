@@ -229,6 +229,11 @@
   [region]
   (str asgard-url "/" region "/cluster/index"))
 
+(defn- instance-url
+  "Gives us a region-based URL we can use to get information about an instance."
+  [region instance-id]
+  (str asgard-url "/" region "/instance/show/" instance-id ".json"))
+
 (defn- security-groups-list-url
   "Gives us a region-based URL we can use to get a list of all Security
    Groups."
@@ -302,6 +307,21 @@
                                                 asg-name))]
     (when (= status 200)
       (json/parse-string body true))))
+
+(defn instance
+  "Retrieves information about an instance, or `nil` if it doesn't exist."
+  [region instance-id]
+  (let [{:keys [body status]} (http/simple-get (instance-url
+                                                region instance-id))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn instances-in-asg
+  "Retrieves a list of instances in an ASG, or `nil` if the ASG doesn't exist."
+  [region asg-name]
+  (when-let [asg (auto-scaling-group region asg-name)]
+    (let [instances (get-in asg [:group :instances])]
+      (map (fn [i] (instance region (:instanceId i))) instances))))
 
 (defn last-auto-scaling-group
   "Retrieves the last ASG for an application, or `nil` if one doesn't exist."

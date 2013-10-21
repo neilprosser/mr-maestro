@@ -105,6 +105,43 @@
         "http://asgard:8080/region/autoScaling/show/asg-name.json")
        => {:status 404}))
 
+(fact "that we can retrieve an instance from Asgard"
+      (instance "region" "id")
+      => {:id "id"
+          :something "this"}
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/instance/show/id.json")
+       => {:status 200
+           :body "{\"id\":\"id\",\"something\":\"this\"}"}))
+
+(fact "that a missing instance comes back with nil"
+      (instance "region" "id")
+      => nil
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/instance/show/id.json")
+       => {:status 404}))
+
+(fact "that we can retrieve the instances in an ASG"
+      (instances-in-asg "region" "asg")
+      => [..instance-1.. ..instance-2..]
+      (provided
+       (auto-scaling-group "region" "asg")
+       => {:group {:instances [{:instanceId "i-1"}
+                               {:instanceId "i-2"}]}}
+       (instance "region" "i-1")
+       => ..instance-1..
+       (instance "region" "i-2")
+       => ..instance-2..))
+
+(fact "that a missing ASG gives nil when getting instances from a non-existent ASG"
+      (instances-in-asg "region" "asg")
+      => nil
+      (provided
+       (auto-scaling-group "region" "asg")
+       => nil))
+
 (fact "We can get the list of applications in Asgard"
       (applications)
       => {:applications [{:name "something"}]}

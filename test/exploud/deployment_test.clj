@@ -2,6 +2,7 @@
   (:require [exploud
              [asgard :as asgard]
              [deployment :refer :all]
+             [healthchecks :as health]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]
@@ -11,8 +12,9 @@
 (fact "the standard deployment tasks for an application are all there and in the correct order"
       (map :action (create-standard-deployment-tasks))
       => [:create-asg
-          :wait-for-health
+          :wait-for-instance-health
           :enable-asg
+          :wait-for-elb-health
           :disable-asg
           :delete-asg])
 
@@ -154,7 +156,7 @@
 
 (fact "that starting a task with an action of `:enable-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
-                   :parameters {:newAutoScalingGroupName ..new-asg..}
+                   :parameters {"newAutoScalingGroupName" ..new-asg..}
                    :region ..region..} {:action :enable-asg})
       => ..enable-result..
       (provided
@@ -166,7 +168,7 @@
 
 (fact "that starting a task with an action of `:disable-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
-                   :parameters {:oldAutoScalingGroupName ..old-asg..}
+                   :parameters {"oldAutoScalingGroupName" ..old-asg..}
                    :region ..region..} {:action :disable-asg})
       => ..disable-result..
       (provided
@@ -178,7 +180,7 @@
 
 (fact "that starting a task with an action of `:delete-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
-                   :parameters {:oldAutoScalingGroupName ..old-asg..}
+                   :parameters {"oldAutoScalingGroupName" ..old-asg..}
                    :region ..region..} {:action :delete-asg})
       => ..delete-result..
       (provided
@@ -187,3 +189,17 @@
        (asgard/delete-asg ..region.. ..old-asg.. ..deploy-id.. {:action :delete-asg
                                                                 :start ..start..} task-finished task-timed-out)
        => ..delete-result..))
+
+(fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing"
+      (start-task {:id ..deploy-id..
+                   :parameters {"newAutoScalingGroupName" ..new-asg..
+                                "healthCheckType" "ELB"
+                                "selectedLoadBalancers" ..elb..}
+                   :region ..region..} {:action :wait-for-instance-health})
+      => ..wait-result..
+      (provided
+       (util/now-string)
+       => ..start..
+       (health/wait-until-asg-healthy ..region.. ..new-asg.. ..deploy-id.. {:action :wait-for-instance-health
+                                                                            :start ..start..} task-finished task-timed-out)
+       => ..wait-result..))

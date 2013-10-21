@@ -2,6 +2,7 @@
   "Creating and managing deployment chains."
   (:require [exploud
              [asgard :as asgard]
+             [healthchecks :as health]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]))
@@ -21,15 +22,19 @@
 
    - __create-asg__ - create either the next ASG or a new starting ASG for the
      application
-   - __wait-for-health__ - wait until all instances in the newly-created ASG are
-     healthy
+   - __wait-for-instance-health__ - wait until all instances in the newly-
+     created ASG are passing their healthchecks (by showing a 200 status)
    - __enable-asg__ - enable traffic to the newly-created ASG
+   - __wait-for-elb-health__ - if adding instances to any ELBs, wait until
+     __all__ instances in the newly-created ASG are listed as healthy in the
+     ELBs, if not adding instances to any ELBs this is a no-op
    - __disable-asg__ - disable traffic to the old ASG
    - __delete-asg__ - delete the old ASG, terminating any instances within it"
   []
   [(new-task :create-asg)
-   (new-task :wait-for-health)
+   (new-task :wait-for-instance-health)
    (new-task :enable-asg)
+   (new-task :wait-for-elb-health)
    (new-task :disable-asg)
    (new-task :delete-asg)])
 
@@ -56,22 +61,27 @@
             (asgard/create-auto-scaling-group region application environment ami
                                               parameters deployment-id task
                                               task-finished task-timed-out))
-          (= action :wait-for-health)
-          nil
+          (= action :wait-for-instance-health)
+          (health/wait-until-asg-healthy
+           region
+           (get-in deployment [:parameters "newAutoScalingGroupName"])
+           deployment-id task task-finished task-timed-out)
           (= action :enable-asg)
           (asgard/enable-asg
            region
-           (get-in deployment [:parameters :newAutoScalingGroupName])
+           (get-in deployment [:parameters "newAutoScalingGroupName"])
            deployment-id task task-finished task-timed-out)
+          (= action :wait-for-elb-health)
+          nil
           (= action :disable-asg)
           (asgard/disable-asg
            region
-           (get-in deployment [:parameters :oldAutoScalingGroupName])
+           (get-in deployment [:parameters "oldAutoScalingGroupName"])
            deployment-id task task-finished task-timed-out)
           (= action :delete-asg)
           (asgard/delete-asg
            region
-           (get-in deployment [:parameters :oldAutoScalingGroupName])
+           (get-in deployment [:parameters "oldAutoScalingGroupName"])
            deployment-id task task-finished task-timed-out)
           :else (throw (ex-info "Unrecognised action."
                                 {:type ::unrecogized-action
