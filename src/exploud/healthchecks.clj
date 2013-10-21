@@ -98,33 +98,39 @@
 
 (defn schedule-elb-check
   "Schedules an ELB healthcheck, which will use `elb-healthy?` to determine
-   health."
-  [region elb-name asg-name deployment-id task completed-fn timed-out-fn polls]
-  (let [f #(check-elb-health region elb-name asg-name deployment-id task
+   health of all `elb-names`."
+  [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls]
+  (let [f #(check-elb-health region elb-names asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
     (at-at/after 5000 f task-pool)))
 
 (defn check-elb-health
-  "This check will look at the members of the ELB which belong to the ASG. If
+  "This check will look at the members of each ELB which belong to the ASG. If
    they're all showing a `:state` of `InService` it's all good."
-  [region elb-name asg-name deployment-id task completed-fn timed-out-fn polls]
-  (let [healthy? (elb-healthy? region elb-name asg-name)
-        updated-log (conj (:log task) {:date (util/now-string)
-                                       :message "Checking ELB health."})
-        updated-task (assoc task :log updated-log)]
-    (store/store-task deployment-id updated-task)
-    (if healthy?
-      (completed-fn deployment-id updated-task)
-      (cond (zero? polls)
-            (timed-out-fn deployment-id updated-task)
-            :else
-            (schedule-elb-check region elb-name asg-name deployment-id
-                                updated-task completed-fn timed-out-fn
-                                (dec polls))))))
+  [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls]
+  (let [elb-names (util/list-from elb-names)]
+    (if-let [elb-name (first elb-names)]
+      (let [healthy? (elb-healthy? region elb-name asg-name)
+            message (str "Checking ELB (" elb-name ") health.")
+            updated-log (conj (:log task) {:date (util/now-string) :message message})
+            updated-task (assoc task :log updated-log)]
+        (store/store-task deployment-id updated-task)
+        (if healthy?
+          (schedule-elb-check region (rest elb-names) asg-name deployment-id
+                              updated-task completed-fn timed-out-fn
+                              (dec polls))
+          (cond
+           (zero? polls)
+           (timed-out-fn deployment-id updated-task)
+           :else
+           (schedule-elb-check region elb-names asg-name deployment-id
+                               updated-task completed-fn timed-out-fn
+                               (dec polls)))))
+      (completed-fn deployment-id task))))
 
 (defn wait-until-elb-healthy
-  "Polls every 5 seconds until `elb-healthy?` comes back `true` or until we've
-   done `poll-count` checks."
-  [region elb-name asg-name deployment-id task completed-fn timed-out-fn]
-  (schedule-elb-check region elb-name asg-name deployment-id task completed-fn
+  "Polls every 5 seconds until `elb-healthy?` comes back `true` for all ELBs or
+   until we've done `poll-count` checks."
+  [region elb-names asg-name deployment-id task completed-fn timed-out-fn]
+  (schedule-elb-check region elb-names asg-name deployment-id task completed-fn
                       timed-out-fn poll-count))

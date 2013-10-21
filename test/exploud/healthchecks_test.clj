@@ -96,9 +96,43 @@
        => false
        (util/now-string)
        => ..now..
-       (store/store-task ..deploy-id.. {:log [{:message "Checking ELB health."
+       (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb) health."
                                                :date ..now..}]})
        => ..store-result..
-       (schedule-elb-check "region" "elb" "asg" ..deploy-id.. {:log [{:message "Checking ELB health."
-                                                                      :date ..now..}]} ..completed.. ..timed-out.. 4)
+       (schedule-elb-check "region" ["elb"] "asg" ..deploy-id.. {:log [{:message "Checking ELB (elb) health."
+                                                                        :date ..now..}]} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
+
+(fact "that checking ELB health does the right things when unhealthy and checking multiple ELBs"
+      (check-elb-health "region" ["elb1" "elb2"] "asg" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
+      => ..reschedule-result..
+      (provided
+       (elb-healthy? "region" "elb1" "asg")
+       => false
+       (util/now-string)
+       => ..now..
+       (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
+                                               :date ..now..}]})
+       => ..store-result..
+       (schedule-elb-check "region" ["elb1" "elb2"] "asg" ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
+                                                                                :date ..now..}]} ..completed.. ..timed-out.. 4)
+       => ..reschedule-result..))
+
+(fact "that checking ELB health does the right things when healthy and checking multiple ELBs"
+      (check-elb-health "region" ["elb1" "elb2"] "asg" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
+      => ..reschedule-result..
+      (provided
+       (elb-healthy? "region" "elb1" "asg")
+       => true
+       (util/now-string)
+       => ..now..
+       (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
+                                               :date ..now..}]})
+       => ..store-result..
+       (schedule-elb-check "region" ["elb2"] "asg" ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
+                                                                         :date ..now..}]} ..completed.. ..timed-out.. 4)
+       => ..reschedule-result..))
+
+(fact "that checking ELB health does the right things when we're all out of ELBs to check"
+      (check-elb-health "region" [] "asg" ..deploy-id.. {:log []} (fn [_ _] ..completed-result..) ..timed-out.. 5)
+      => ..completed-result..)
