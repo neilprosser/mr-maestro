@@ -195,13 +195,40 @@
                    :parameters {"newAutoScalingGroupName" ..new-asg..
                                 "healthCheckType" "ELB"
                                 "selectedLoadBalancers" ..elb..}
-                   :region ..region..} {:action :wait-for-instance-health})
+                   :region ..region..
+                   :environment ..env..
+                   :application ..app..
+                   :hash ..hash..} {:action :wait-for-instance-health})
       => ..wait-result..
       (provided
        (util/now-string)
        => ..start..
-       (health/wait-until-asg-healthy ..region.. ..new-asg.. ..deploy-id.. {:action :wait-for-instance-health
-                                                                            :start ..start..} task-finished task-timed-out)
+       (tyr/application-properties ..env.. ..app.. ..hash..)
+       => {"service.port" 8082
+           "service.healthcheck.path" "/1.x/status"}
+       (health/wait-until-asg-healthy ..region.. ..new-asg.. 8082 "/1.x/status" ..deploy-id..
+                                      {:action :wait-for-instance-health
+                                       :start ..start..} task-finished task-timed-out)
+       => ..wait-result..))
+
+(fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we're using ELBs"
+      (start-task {:id ..deploy-id..
+                   :parameters {"newAutoScalingGroupName" ..new-asg..
+                                "healthCheckType" "ELB"
+                                "selectedLoadBalancers" ..elb..}
+                   :region ..region..
+                   :environment ..env..
+                   :application ..app..
+                   :hash ..hash..} {:action :wait-for-instance-health})
+      => ..wait-result..
+      (provided
+       (util/now-string)
+       => ..start..
+       (tyr/application-properties ..env.. ..app.. ..hash..)
+       => {}
+       (health/wait-until-asg-healthy ..region.. ..new-asg.. 8080 "/healthcheck" ..deploy-id..
+                                      {:action :wait-for-instance-health
+                                       :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
 
 (fact "that when deciding whether to check ELB health we return true when we have selectedLoadBalancers and a healthCheckType of ELB"

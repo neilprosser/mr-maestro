@@ -8,7 +8,7 @@
             [midje.sweet :refer :all]))
 
 (fact "that when checking ASG health all healthy instances returns true"
-      (asg-healthy? "region" "asg")
+      (asg-healthy? "region" "asg" 8080 "healthcheck")
       => true
       (provided
        (asgard/instances-in-asg "region" "asg")
@@ -20,7 +20,7 @@
        => {:status 200}))
 
 (fact "that when checking ASG health no healthy instances returns false"
-      (asg-healthy? "region" "asg")
+      (asg-healthy? "region" "asg" 8080 "healthcheck")
       => false
       (provided
        (asgard/instances-in-asg "region" "asg")
@@ -32,7 +32,7 @@
        => {:status 500}))
 
 (fact "that when checking ASG health one unhealthy instance returns false"
-      (asg-healthy? "region" "asg")
+      (asg-healthy? "region" "asg" 8080 "healthcheck")
       => false
       (provided
        (asgard/instances-in-asg "region" "asg")
@@ -44,18 +44,18 @@
        => {:status 500}))
 
 (fact "that checking ASG health does the right things when unhealthy"
-      (check-asg-health "region" "asg" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
+      (check-asg-health "region" "asg" 8080 "healthcheck" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
       => ..reschedule-result..
       (provided
        (asg-healthy? "region" "asg")
        => false
        (util/now-string)
        => ..now..
-       (store/store-task ..deploy-id.. {:log [{:message "Polled again."
+       (store/store-task ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
                                                :date ..now..}]})
        => ..store-result..
-       (schedule-asg-check "region" "asg" ..deploy-id.. {:log [{:message "Polled again."
-                                                                :date ..now..}]} ..completed.. ..timed-out.. 4)
+       (schedule-asg-check "region" "asg" 8080 "healthcheck" ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
+                                                                                   :date ..now..}]} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
 
 (fact "that when checking ELB health all healthy instances returns true"
@@ -96,9 +96,9 @@
        => false
        (util/now-string)
        => ..now..
-       (store/store-task ..deploy-id.. {:log [{:message "Polled again."
+       (store/store-task ..deploy-id.. {:log [{:message "Checking ELB health."
                                                :date ..now..}]})
        => ..store-result..
-       (schedule-elb-check "region" "elb" "asg" ..deploy-id.. {:log [{:message "Polled again."
-                                                                :date ..now..}]} ..completed.. ..timed-out.. 4)
+       (schedule-elb-check "region" "elb" "asg" ..deploy-id.. {:log [{:message "Checking ELB health."
+                                                                      :date ..now..}]} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))

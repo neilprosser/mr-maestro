@@ -70,10 +70,16 @@
                                               parameters deployment-id task
                                               task-finished task-timed-out))
           (= action :wait-for-instance-health)
-          (health/wait-until-asg-healthy
-           region
-           (get-in deployment [:parameters "newAutoScalingGroupName"])
-           deployment-id task task-finished task-timed-out)
+          (let [{:keys [application environment hash]} deployment
+                service-properties (tyr/application-properties
+                                    environment application hash)
+                port (get service-properties "service.port" 8080)
+                healthcheck (get service-properties "service.healthcheck.path"
+                                 "/healthcheck")]
+            (health/wait-until-asg-healthy
+             region
+             (get-in deployment [:parameters "newAutoScalingGroupName"])
+             port healthcheck deployment-id task task-finished task-timed-out))
           (= action :enable-asg)
           (asgard/enable-asg
            region

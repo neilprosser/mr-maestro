@@ -21,3 +21,11 @@
       (provided
        (time/now)
        => ..now..))
+
+(fact "that strip-first-forward-slash works if the string starts with /"
+      (strip-first-forward-slash "/this/that")
+      => "this/that")
+
+(fact "that strip-first-forward-slash works if the string doesn't start with /"
+      (strip-first-forward-slash "this/that")
+      => "this/that")

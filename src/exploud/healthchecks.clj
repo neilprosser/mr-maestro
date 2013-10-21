@@ -23,17 +23,11 @@
   [instance]
   (get-in instance [:instance :privateIpAddress]))
 
-(defn strip-first-forward-slash
-  "Turns `/this/that` into `this/that`."
-  [thing]
-  (second (re-find #"^/([^/]+)$" thing)))
-
 (defn instance-healthy?
   "`true` if the healthcheck returns `200`, otherwise `false."
-  [instance]
+  [instance port healthcheck-path]
   (let [ip (instance-ip instance)
-        port 8080
-        healthcheck-path (strip-first-forward-slash "/healthcheck")
+        healthcheck-path (util/strip-first-forward-slash healthcheck-path)
         url (str "http://" ip ":" port "/" healthcheck-path)
         {:keys [status]} (http/simple-get url)]
     (= status 200)))
@@ -43,9 +37,10 @@
 (defn asg-healthy?
   "`true` if all instances in `asg-name` are giving a `200` response on their
    heathchecks, otherwise `false."
-  [region asg-name]
+  [region asg-name port healthcheck-path]
   (when-let [instances (asgard/instances-in-asg region asg-name)]
-    (every? true? (map instance-healthy? instances))))
+    (every? true? (map (fn [i] (instance-healthy? i port healthcheck-path))
+                       instances))))
 
 ;; We're going to need this guy in a minute.
 (declare check-asg-health)
@@ -53,18 +48,22 @@
 (defn schedule-asg-check
   "Schedules an ASG healthcheck, which will use `asg-healthy?` to determine
    health."
-  [region asg-name deployment-id task completed-fn timed-out-fn polls]
-  (let [f #(check-asg-health region asg-name deployment-id task
-                             completed-fn timed-out-fn polls)]
+  [region asg-name port healthcheck-path deployment-id task completed-fn
+   timed-out-fn polls]
+  (let [f #(check-asg-health region asg-name port healthcheck-path deployment-id
+                             task completed-fn timed-out-fn polls)]
     (at-at/after 5000 f task-pool)))
 
 (defn check-asg-health
   "If `asg-name` is healthy call `completed-fn` otherwise reschedule until
    `seconds` has elapsed. If we've timed out call `timed-out-fn`."
-  [region asg-name deployment-id task completed-fn timed-out-fn polls]
+  [region asg-name port healthcheck-path deployment-id task completed-fn
+   timed-out-fn polls]
   (let [healthy? (asg-healthy? region asg-name)
+        message (str "Checking healthcheck on port " port " and path /"
+                     (util/strip-first-forward-slash healthcheck-path) ".")
         updated-log (conj (:log task) {:date (util/now-string)
-                                       :message "Polled again."})
+                                       :message message})
         updated-task (assoc task :log updated-log)]
     (store/store-task deployment-id updated-task)
     (if healthy?
@@ -72,14 +71,16 @@
       (cond (zero? polls)
             (timed-out-fn deployment-id updated-task)
             :else
-            (schedule-asg-check region asg-name deployment-id updated-task
-                              completed-fn timed-out-fn (dec polls))))))
+            (schedule-asg-check region asg-name port healthcheck-path
+                                deployment-id updated-task completed-fn
+                                timed-out-fn (dec polls))))))
 
 (defn wait-until-asg-healthy
   "Polls every 5 seconds until `asg-healthy?` comes back `true` or until we've
    done `poll-count` checks."
-  [region asg-name deployment-id task completed-fn timed-out-fn]
-  (schedule-asg-check region asg-name deployment-id task
+  [region asg-name port healthcheck-path deployment-id task completed-fn
+   timed-out-fn]
+  (schedule-asg-check region asg-name port healthcheck-path deployment-id task
                       completed-fn timed-out-fn poll-count))
 
 ;; # Concerning the checking of ELBs
@@ -109,7 +110,7 @@
   [region elb-name asg-name deployment-id task completed-fn timed-out-fn polls]
   (let [healthy? (elb-healthy? region elb-name asg-name)
         updated-log (conj (:log task) {:date (util/now-string)
-                                       :message "Polled again."})
+                                       :message "Checking ELB health."})
         updated-task (assoc task :log updated-log)]
     (store/store-task deployment-id updated-task)
     (if healthy?

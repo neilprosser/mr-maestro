@@ -26,3 +26,8 @@
   "Gets the current time as a string."
   []
   (str (time/now)))
+
+(defn strip-first-forward-slash
+  "Turns `/this/that` into `this/that`."
+  [thing]
+  (second (re-find #"^/*(.+)" thing)))

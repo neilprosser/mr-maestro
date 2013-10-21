@@ -15,7 +15,7 @@
        => {:status 200
            :body ..body..}
        (json/parse-string ..body..)
-       => ..properties..))
+       => {:data ..properties..}))
 
 (fact "that getting application properties which fails throws an exception"
       (application-properties "environment" "application" "hash")
@@ -34,7 +34,7 @@
        => {:status 200
            :body ..body..}
        (json/parse-string ..body..)
-       => ..properties..))
+       => {:data ..properties..}))
 
 (fact "that getting deployment params  which fails throws an exception"
       (deployment-params "environment" "application" "hash")
@@ -53,7 +53,7 @@
        => {:status 200
            :body ..body..}
        (json/parse-string ..body..)
-       => ..properties..))
+       => {:data ..properties..}))
 
 (fact "that getting launch data which fails throws an exception"
       (launch-data "environment" "application" "hash")
@@ -72,7 +72,7 @@
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
-       => ..commits..))
+       => {:commits ..commits..}))
 
 (fact "that getting the last commit gives back the first item in the commits response"
       (last-commit-hash "environment" "application")

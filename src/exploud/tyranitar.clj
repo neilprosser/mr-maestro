@@ -53,21 +53,22 @@
   "Gets the application properties for an application and environment with a
    particular commit hash."
   [environment application-name commit-hash]
-  (get-file-content environment application-name commit-hash
-                    "application-properties"))
+  (:data (get-file-content environment application-name commit-hash
+                           "application-properties")))
 
 (defn deployment-params
   "Gets the deployment parameters for an application and environment with a
    particular commit hash."
   [environment application-name commit-hash]
-  (get-file-content environment application-name commit-hash
-                    "deployment-params"))
+  (:data (get-file-content environment application-name commit-hash
+                           "deployment-params")))
 
 (defn launch-data
   "Gets the launch data for an application and environment with a particular
    commit hash."
   [environment application-name commit-hash]
-  (get-file-content environment application-name commit-hash "launch-data"))
+  (:data (get-file-content environment application-name commit-hash
+                           "launch-data")))
 
 (defn commits
   "Gets the list of commits for an application and environment."
@@ -75,12 +76,12 @@
   (let [url (commits-url environment application-name)
         {:keys [body status]} (http/simple-get url)]
     (if (= status 200)
-      (json/parse-string body true))))
+      (:commits (json/parse-string body true)))))
 
 (defn last-commit-hash
   "Gets the last commit for an application and environment."
   [environment application-name]
-  (:hash (first (:commits (commits environment application-name)))))
+  (:hash (first (commits environment application-name))))
 
 (defn create-application
   "Creates an application in Tyranitar. Will fail if the application already
