@@ -7,7 +7,7 @@
              [util :as util]]
             [midje.sweet :refer :all]))
 
-(fact "that all healthy instances returns true"
+(fact "that when checking ASG health all healthy instances returns true"
       (asg-healthy? "region" "asg")
       => true
       (provided
@@ -19,7 +19,7 @@
        (http/simple-get "http://100.100.100.102:8080/healthcheck")
        => {:status 200}))
 
-(fact "that no healthy instances returns false"
+(fact "that when checking ASG health no healthy instances returns false"
       (asg-healthy? "region" "asg")
       => false
       (provided
@@ -31,7 +31,7 @@
        (http/simple-get "http://100.100.100.102:8080/healthcheck")
        => {:status 500}))
 
-(fact "that one unhealth instance returns false"
+(fact "that when checking ASG health one unhealthy instance returns false"
       (asg-healthy? "region" "asg")
       => false
       (provided
@@ -54,6 +54,51 @@
        (store/store-task ..deploy-id.. {:log [{:message "Polled again."
                                                :date ..now..}]})
        => ..store-result..
-       (reschedule-check "region" "asg" ..deploy-id.. {:log [{:message "Polled again."
-                                                              :date ..now..}]} ..completed.. ..timed-out.. 4)
+       (schedule-asg-check "region" "asg" ..deploy-id.. {:log [{:message "Polled again."
+                                                                :date ..now..}]} ..completed.. ..timed-out.. 4)
+       => ..reschedule-result..))
+
+(fact "that when checking ELB health all healthy instances returns true"
+      (elb-healthy? "region" "elb" "asg")
+      => true
+      (provided
+       (asgard/load-balancer "region" "elb")
+       => {:instanceStates [{:autoScalingGroupName "asg"
+                             :state "InService"}
+                            {:autoScalingGroupName "asg"
+                             :state "InService"}]}))
+
+(fact "that when checking ELB health one unhealthy instance in ASG returns false"
+      (elb-healthy? "region" "elb" "asg")
+      => false
+      (provided
+       (asgard/load-balancer "region" "elb")
+       => {:instanceStates [{:autoScalingGroupName "asg"
+                             :state "InService"}
+                            {:autoScalingGroupName "asg"
+                             :state "Busted"}]}))
+
+(fact "that when checking ELB health one unhealthy instance outside the ASG returns true"
+      (elb-healthy? "region" "elb" "asg")
+      => true
+      (provided
+       (asgard/load-balancer "region" "elb")
+       => {:instanceStates [{:autoScalingGroupName "another-asg"
+                             :state "Busted"}
+                            {:autoScalingGroupName "asg"
+                             :state "InService"}]}))
+
+(fact "that checking ELB health does the right things when unhealthy"
+      (check-elb-health "region" "elb" "asg" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
+      => ..reschedule-result..
+      (provided
+       (elb-healthy? "region" "elb" "asg")
+       => false
+       (util/now-string)
+       => ..now..
+       (store/store-task ..deploy-id.. {:log [{:message "Polled again."
+                                               :date ..now..}]})
+       => ..store-result..
+       (schedule-elb-check "region" "elb" "asg" ..deploy-id.. {:log [{:message "Polled again."
+                                                                :date ..now..}]} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))

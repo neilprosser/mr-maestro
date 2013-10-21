@@ -234,6 +234,12 @@
   [region instance-id]
   (str asgard-url "/" region "/instance/show/" instance-id ".json"))
 
+(defn- load-balancer-url
+  "Gives us a region-based URL we can use to get information about a load-
+   balancer"
+  [region elb-name]
+  (str asgard-url "/" region "/loadBalancer/show/" elb-name ".json"))
+
 (defn- security-groups-list-url
   "Gives us a region-based URL we can use to get a list of all Security
    Groups."
@@ -327,6 +333,14 @@
   "Retrieves the last ASG for an application, or `nil` if one doesn't exist."
   [region application-name]
   (last (:groups (application region application-name))))
+
+(defn load-balancer
+  "Retrieves information about a load-balancer."
+  [region elb-name]
+  (let [{:keys [body status]} (http/simple-get (load-balancer-url
+                                                region elb-name))]
+    (when (= status 200)
+      (json/parse-string body true))))
 
 (defn security-groups
   "Retrieves all security groups within a particular region."

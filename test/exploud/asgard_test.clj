@@ -123,6 +123,24 @@
         "http://asgard:8080/region/instance/show/id.json")
        => {:status 404}))
 
+(fact "that we can retrieve a load-balancer form Asgard"
+      (load-balancer "region" "elb")
+      => {:id "id"
+          :something "this"}
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/loadBalancer/show/elb.json")
+       => {:status 200
+           :body "{\"id\":\"id\",\"something\":\"this\"}"}))
+
+(fact "that a missing load-balancer comes back with nil"
+      (load-balancer "region" "elb")
+      => nil
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/loadBalancer/show/elb.json")
+       => {:status 404}))
+
 (fact "that we can retrieve the instances in an ASG"
       (instances-in-asg "region" "asg")
       => [..instance-1.. ..instance-2..]
