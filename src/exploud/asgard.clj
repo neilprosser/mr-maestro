@@ -75,7 +75,6 @@
     :keyName
     :max
     :min
-    :newStack
     :partners
     :pricing
     :ramdiskId
@@ -167,7 +166,6 @@
    :iamInstanceProfile application-name
    :imageId image-id
    :keyName default-key-name
-   :newStack environment
    :stack environment
    :ticket ticket-id})
 
