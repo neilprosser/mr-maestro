@@ -56,67 +56,67 @@
 (def all-create-new-asg-keys
   "A set of the all parameters we can provide to Asgard when creating a new
    ASG."
-  #{"_action_save"
-    "appName"
-    "appWithClusterOptLevel"
-    "azRebalance"
-    "countries"
-    "defaultCooldown"
-    "desiredCapacity"
-    "detail"
-    "devPhase"
-    "hardware"
-    "healthCheckGracePeriod"
-    "healthCheckType"
-    "iamInstanceProfile"
-    "imageId"
-    "instanceType"
-    "kernelId"
-    "keyName"
-    "max"
-    "min"
-    "newStack"
-    "partners"
-    "pricing"
-    "ramdiskId"
-    "requestedFromGui"
-    "revision"
-    "selectedLoadBalancers"
-    "selectedSecurityGroups"
-    "selectedZones"
-    "stack"
-    "subnetPurpose"
-    "terminationPolicy"
-    "ticket"})
+  #{:_action_save
+    :appName
+    :appWithClusterOptLevel
+    :azRebalance
+    :countries
+    :defaultCooldown
+    :desiredCapacity
+    :detail
+    :devPhase
+    :hardware
+    :healthCheckGracePeriod
+    :healthCheckType
+    :iamInstanceProfile
+    :imageId
+    :instanceType
+    :kernelId
+    :keyName
+    :max
+    :min
+    :newStack
+    :partners
+    :pricing
+    :ramdiskId
+    :requestedFromGui
+    :revision
+    :selectedLoadBalancers
+    :selectedSecurityGroups
+    :selectedZones
+    :stack
+    :subnetPurpose
+    :terminationPolicy
+    :ticket})
 
 (def all-create-next-asg-keys
   "A set of all the parameters we can provide to Asgard when creating the next
    ASG for an application."
-  #{"_action_createNextGroup"
-    "afterBootWait"
-    "azRebalance"
-    "defaultCooldown"
-    "desiredCapacity"
-    "healthCheckGracePeriod"
-    "healthCheckType"
-    "iamInstanceProfile"
-    "imageId"
-    "instanceType"
-    "kernelId"
-    "keyName"
-    "max"
-    "min"
-    "name"
-    "noOptionalDefaults"
-    "pricing"
-    "ramdiskId"
-    "selectedLoadBalancers"
-    "selectedSecurityGroups"
-    "selectedZones"
-    "subnetPurpose"
-    "terminationPolicy"
-    "ticket"
-    "trafficAllowed"})
+  #{:_action_createNextGroup
+    :afterBootWait
+    :azRebalance
+    :defaultCooldown
+    :desiredCapacity
+    :healthCheckGracePeriod
+    :healthCheckType
+    :iamInstanceProfile
+    :imageId
+    :instanceType
+    :kernelId
+    :keyName
+    :max
+    :min
+    :name
+    :noOptionalDefaults
+    :pricing
+    :ramdiskId
+    :selectedLoadBalancers
+    :selectedSecurityGroups
+    :selectedZones
+    :subnetPurpose
+    :terminationPolicy
+    :ticket
+    :trafficAllowed})
 
 ;; # Concerning the creation of default Asgard parameter maps
 ;;
@@ -128,66 +128,67 @@
 (def default-shared-parameters
   "A map of the default parameters shared by both creating a new ASG and
    creating the next ASG."
-  {"azRebalance" "enabled"
-   "defaultCooldown" 10
-   "desiredCapacity" 1
-   "healthCheckGracePeriod" 600
-   "healthCheckType" "EC2"
-   "iamInstanceProfile" ""
-   "instanceType" "t1.micro"
-   "kernelId" ""
-   "max" 1
-   "min" 1
-   "pricing" "ON_DEMAND"
-   "ramdiskId" ""
-   "selectedLoadBalancers" nil
-   "selectedSecurityGroups" nil
-   "selectedZones" ["a" "b"]
-   "subnetPurpose" "internal"
-   "terminationPolicy" "Default"})
+  {:azRebalance "enabled"
+   :defaultCooldown 10
+   :desiredCapacity 1
+   :healthCheckGracePeriod 600
+   :healthCheckType "EC2"
+   :instanceType "t1.micro"
+   :kernelId ""
+   :max 1
+   :min 1
+   :pricing "ON_DEMAND"
+   :ramdiskId ""
+   :selectedLoadBalancers nil
+   :selectedSecurityGroups nil
+   :selectedZones ["a" "b"]
+   :subnetPurpose "internal"
+   :terminationPolicy "Default"})
 
 (def default-create-new-asg-parameters
   "A map of the default parameters we use when creating a new ASG so the user
    doesn't always have to provide everything."
   (merge default-shared-parameters
-         {"appWithClusterOptLevel" false
-          "countries" ""
-          "detail" ""
-          "devPhase" ""
-          "hardware" ""
-          "newStack" ""
-          "partners" ""
-          "requestedFromGui" true
-          "revision" ""}))
+         {:appWithClusterOptLevel false
+          :countries ""
+          :detail ""
+          :devPhase ""
+          :hardware ""
+          :partners ""
+          :requestedFromGui true
+          :revision ""}))
 
 (defn protected-create-new-asg-parameters
   "Creates a map of the parameters we populate ourselves and won't let the user
    override when creating a new ASG."
   [application-name environment image-id ticket-id]
-  {"_action_save" ""
-   "appName" application-name
-   "imageId" image-id
-   "keyName" default-key-name
-   "stack" environment
-   "ticket" ticket-id})
+  {:_action_save ""
+   :appName application-name
+   :iamInstanceProfile application-name
+   :imageId image-id
+   :keyName default-key-name
+   :newStack environment
+   :stack environment
+   :ticket ticket-id})
 
 (def default-create-next-asg-parameters
   "A map of the default parameters we use when creating the next ASG for an
    application so the user doesn't always have to provide everything."
   (merge default-shared-parameters
-         {"afterBootWait" 30
-          "noOptionalDefaults" true}))
+         {:afterBootWait 30
+          :noOptionalDefaults true}))
 
 (defn protected-create-next-asg-parameters
   "Creates a map of the parameters we populate ourselves and won't let the user
    override when creating the next ASG for an application."
   [application-name environment image-id ticket-id]
-  {"_action_createNextGroup" ""
-   "imageId" image-id
-   "keyName" default-key-name
-   "name" (str application-name "-" environment)
-   "ticket" ticket-id
-   "trafficAllowed" "off"})
+  {:_action_createNextGroup ""
+   :iamInstanceProfile application-name
+   :imageId image-id
+   :keyName default-key-name
+   :name (str application-name "-" environment)
+   :ticket ticket-id
+   :trafficAllowed "off"})
 
 ;; # Concerning Asgard URL generation
 
@@ -387,14 +388,20 @@
 
 ;; # Concerning parameter transformation
 
+(defn remove-nil-values
+  "Removes any key-value pairs from `map` if the value `nil`."
+  [map]
+  (into {} (filter (fn [[k v]] (not (nil? v))) (seq map))))
+
 (defn replace-load-balancer-key
-  "If `subnetPurpose` is `internal` and `selectedLoadBalancers` is found within
-   `parameters` the key name will be switched with
-   `selectedLoadBalancersForVpcId{vpc-id}"
+  "If `:subnetPurpose` is `internal` and `:selectedLoadBalancers` is found
+   within `parameters` the key name will be switched with
+   `:selectedLoadBalancersForVpcId{vpc-id}"
   [parameters]
-  (if (= "internal" (get parameters "subnetPurpose"))
-    (set/rename-keys parameters {"selectedLoadBalancers"
-                                 (str "selectedLoadBalancersForVpcId" vpc-id)})
+  (if (and (= "internal" (:subnetPurpose parameters))
+           (:selectedLoadBalancers parameters))
+    (set/rename-keys parameters {:selectedLoadBalancers
+                                 (keyword (str "selectedLoadBalancersForVpcId" vpc-id))})
     parameters))
 
 (defn is-security-group-id?
@@ -424,18 +431,29 @@
     (get-security-group-id security-group region)))
 
 (defn replace-security-group-names
-  "If `subnetPurpose` is `internal` and `securityGroupNames` is found within
+  "If `:subnetPurpose` is `internal` and `:securityGroupNames` is found within
    `parameters` the value will be checked for security group names and replaced
-   with their IDs (since we can't use security group names in a VPC."
+   with their IDs (since we can't use security group names in a VPC)."
   [parameters region]
-  (if (= "internal" (get parameters "subnetPurpose"))
+  (if (= "internal" (:subnetPurpose parameters))
     (if-let [security-group-names (util/list-from
-                                   (get parameters "selectedSecurityGroups"))]
+                                   (:selectedSecurityGroups parameters))]
       (let [security-group-ids (map (fn [sg]
                                       (replace-security-group-name region sg))
                                     security-group-names)]
-        (assoc parameters "selectedSecurityGroups" security-group-ids))
+        (assoc parameters :selectedSecurityGroups security-group-ids))
       parameters)
+    parameters))
+
+(defn add-region-to-zones
+  "Replace any availability zones found in `:selectedZones` and replace them
+   with the region and the zone. For example if using region `eu-west-1` and we
+   encounter `a` in `:selectedZones` then we'd replace it with `eu-west-1a`,
+   capiche?"
+  [parameters region]
+  (if-let [zones (:selectedZones parameters)]
+    (let [full-zones (map (fn [z] (str region z)) (util/list-from zones))]
+      (assoc parameters :selectedZones full-zones))
     parameters))
 
 (defn prepare-parameters
@@ -443,8 +461,10 @@
    transformations."
   [parameters region]
   (-> parameters
+      remove-nil-values
       replace-load-balancer-key
-      (replace-security-group-names region)))
+      (replace-security-group-names region)
+      (add-region-to-zones region)))
 
 (defn explode-parameters
   "Take a map of parameters and turns them into a list of [key value] pairs
@@ -454,7 +474,7 @@
   [parameters]
   (for [[k v] (seq parameters)
         vs (flatten (conj [] v))]
-    [k vs]))
+    [(name k) vs]))
 
 ;; # Concerning tracking tasks
 
@@ -512,9 +532,9 @@
    assume that a non-explosive call has been successful and the task is being
    tracked."
   [region asg-name ticket-id task completed-fn timed-out-fn]
-  (let [parameters {"_action_delete" ""
-                    "name" asg-name
-                    "ticket" ticket-id}
+  (let [parameters {:_action_delete ""
+                    :name asg-name
+                    :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
                                                {:form-params (explode-parameters
@@ -540,8 +560,8 @@
 (with-handler! #'delete-asg
   {:precondition :asg-exists}
   (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                {:type ::missing-asg
-                                 :args args}))))
+                                 {:type ::missing-asg
+                                  :args args}))))
 
 ;; # Concerning resizing ASGs
 
@@ -551,10 +571,10 @@
    assume that a non-explosive call has been successful and the task is being
    tracked."
   [region asg-name ticket-id task new-size completed-fn timed-out-fn]
-  (let [parameters {"_action_resize" ""
-                    "minAndMaxSize" new-size
-                    "name" asg-name
-                    "ticket" ticket-id}
+  (let [parameters {:_action_resize ""
+                    :minAndMaxSize new-size
+                    :name asg-name
+                    :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
                                                {:form-params (explode-parameters
@@ -580,8 +600,8 @@
 (with-handler! #'resize-asg
   {:precondition :asg-exists}
   (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                {:type ::missing-asg
-                                 :args args}))))
+                                 {:type ::missing-asg
+                                  :args args}))))
 
 ;; # Concerning enabling traffic for ASGs
 
@@ -591,9 +611,9 @@
    can assume that a non-explosive call has been successful and the task is
    being tracked."
   [region asg-name ticket-id task completed-fn timed-out-fn]
-  (let [parameters {"_action_activate" ""
-                    "name" asg-name
-                    "ticket" ticket-id}
+  (let [parameters {:_action_activate ""
+                    :name asg-name
+                    :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
                                                {:form-params (explode-parameters
@@ -619,8 +639,8 @@
 (with-handler! #'enable-asg
   {:precondition :asg-exists}
   (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                {:type ::missing-asg
-                                 :args args}))))
+                                 {:type ::missing-asg
+                                  :args args}))))
 
 ;; # Concerning disabling traffic for ASGs
 
@@ -630,9 +650,9 @@
    You can assume that a non-explosive call has been successful and the task is
    being tracked."
   [region asg-name ticket-id task completed-fn timed-out-fn]
-  (let [parameters {"_action_deactivate" ""
-                    "name" asg-name
-                    "ticket" ticket-id}
+  (let [parameters {:_action_deactivate ""
+                    :name asg-name
+                    :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
                                                (cluster-index-url region)
                                                {:form-params (explode-parameters
@@ -658,8 +678,8 @@
 (with-handler! #'disable-asg
   {:precondition :asg-exists}
   (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                {:type ::missing-asg
-                                 :args args}))))
+                                 {:type ::missing-asg
+                                  :args args}))))
 
 ;; # Concerning the creation of the first ASG for an application
 
@@ -700,10 +720,10 @@
          {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [new-asg-name (extract-new-asg-name (get headers "location"))
-            tasks (tasks region)
+            tasks (tasks)
             log-message (str "Create Auto Scaling Group '" new-asg-name "'")]
-        (when-let [found-task
-                   (first (filter (fn [t] (= (:name t) log-message)) tasks))]
+        (if-let [found-task
+                 (first (filter (fn [t] (= (:name t) log-message)) tasks))]
           (let [task-id (:id found-task)
                 url (task-by-id-url region task-id)]
             (store/add-to-deployment-parameters
@@ -715,7 +735,11 @@
                           :asgardParameters asgard-parameters})
              task-track-count
              completed-fn
-             timed-out-fn)))
+             timed-out-fn))
+          (throw (ex-info "No task found"
+                          {:type ::task-missing
+                           :tasks tasks
+                           :log-message log-message})))
         new-asg-name)
       (throw (ex-info "Unexpected status while creating new ASG"
                       {:type ::unexpected-response

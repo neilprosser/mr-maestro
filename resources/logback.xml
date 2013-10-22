@@ -3,12 +3,14 @@
 
   <!-- Suppress messages that may cause deadlock -->
   <logger name="org.eclipse.jetty.webapp.WebAppClassLoader" level="off" />
+  <!-- Apache HTTPClient is cray with its debug logging -->
+  <logger name="org.apache.http" level="info" />
 
   <!-- Properties should be provided as environment variables or the defaults will be used -->
 
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>${SERVICE_LOGGING_FILETHRESHOLD:-info}</level>
+      <level>${SERVICE_LOGGING_FILETHRESHOLD:-debug}</level>
     </filter>
     <file>${SERVICE_LOGGING_PATH:-/tmp}/exploud.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">

@@ -45,7 +45,7 @@
   (let [url (file-url environment application-name commit-hash file-name)
         {:keys [body status] :as response} (http/simple-get url)]
     (if (= status 200)
-      (json/parse-string body)
+      (json/parse-string body true)
       (throw (ex-info "Unexpected response" {:type ::unexpected-response
                                              :response response})))))
 

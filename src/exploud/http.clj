@@ -1,7 +1,7 @@
 (ns exploud.http
   "## Talking to the outside world"
   (:require [clj-http.client :as http]
-            [dire.core :refer [with-handler! with-pre-hook!]]
+            [dire.core :refer [with-handler! with-post-hook! with-pre-hook!]]
             [clojure.tools.logging :as log]))
 
 (defn merge-with-default-params
@@ -26,6 +26,11 @@
 (with-pre-hook! #'simple-get
   (fn [url & [params]]
     (log/debug "GETting" url "with params" params)))
+
+;; A post-hook attched to `simple-get` to log the response.
+(with-post-hook! #'simple-get
+  (fn [response]
+    (log/debug "Response was" response)))
 
 ;; Exception handler attached to `simple-get` which deals with
 ;; `ConnectException`.
@@ -63,3 +68,8 @@
 (with-pre-hook! #'simple-post
   (fn [url & [params]]
     (log/debug "POSTing to" url "with params" params)))
+
+;; A post-hook attched to `simple-post` to log the response.
+(with-post-hook! #'simple-post
+  (fn [response]
+    (log/debug "Response was" response)))

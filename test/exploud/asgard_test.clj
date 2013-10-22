@@ -20,70 +20,90 @@
        (keys (merge default-create-next-asg-parameters (protected-create-next-asg-parameters ..app. ..env.. ..ami.. ..ticket..))))
       => #{})
 
+(fact "that remove-nil-values works"
+      (remove-nil-values {:something nil :another "thing"})
+      => {:another "thing"})
+
 (fact "We don't replace the selected load balancers when not working in a VPC"
-      (replace-load-balancer-key {"selectedLoadBalancers" ["load-balancer"]})
-      => {"selectedLoadBalancers" ["load-balancer"]})
+      (replace-load-balancer-key {:selectedLoadBalancers ["load-balancer"]})
+      => {:selectedLoadBalancers ["load-balancer"]})
 
 (fact "We replace the selected load balancers when working in a VPC"
-      (replace-load-balancer-key {"subnetPurpose" "internal"
-                                  "selectedLoadBalancers" ["load-balancer"]})
-      => {"subnetPurpose" "internal"
-          (str "selectedLoadBalancersForVpcId" vpc-id) ["load-balancer"]})
+      (replace-load-balancer-key {:subnetPurpose "internal"
+                                  :selectedLoadBalancers ["load-balancer"]})
+      => {:subnetPurpose "internal"
+          (keyword (str "selectedLoadBalancersForVpcId" vpc-id)) ["load-balancer"]})
 
 (fact "We gracefully handle no load balancer when working in a VPC"
-      (replace-load-balancer-key {"subnetPurpose" "internal"})
-      => {"subnetPurpose" "internal"})
+      (replace-load-balancer-key {:subnetPurpose "internal"})
+      => {:subnetPurpose "internal"})
 
 (fact "We gracefully handle a single load balancer specified as a string"
-      (replace-load-balancer-key {"subnetPurpose" "internal"
-                                  "selectedLoadBalancers" "load-balancer"})
-      => {"subnetPurpose" "internal"
-          (str "selectedLoadBalancersForVpcId" vpc-id) "load-balancer"})
+      (replace-load-balancer-key {:subnetPurpose "internal"
+                                  :selectedLoadBalancers "load-balancer"})
+      => {:subnetPurpose "internal"
+          (keyword (str "selectedLoadBalancersForVpcId" vpc-id)) "load-balancer"})
 
 (fact "We don't replace security group names when not working in a VPC"
-      (replace-security-group-names {"selectedSecurityGroups" ["group-one" "group-two"]} ..region..)
-      => {"selectedSecurityGroups" ["group-one" "group-two"]})
+      (replace-security-group-names {:selectedSecurityGroups ["group-one" "group-two"]} ..region..)
+      => {:selectedSecurityGroups ["group-one" "group-two"]})
 
 (fact "We replace security group names when working in a VPC"
-      (replace-security-group-names {"subnetPurpose" "internal"
-                                     "selectedSecurityGroups" ["sg-something" "group"]} ..region..)
-      => {"subnetPurpose" "internal"
-          "selectedSecurityGroups" ["sg-something" "sg-group"]}
+      (replace-security-group-names {:subnetPurpose "internal"
+                                     :selectedSecurityGroups ["sg-something" "group"]} ..region..)
+      => {:subnetPurpose "internal"
+          :selectedSecurityGroups ["sg-something" "sg-group"]}
       (provided
        (security-groups ..region..)
        => [{:groupId "sg-group"
             :groupName "group"}]))
 
 (fact "A missing security group throws an exception"
-      (replace-security-group-names {"subnetPurpose" "internal"
-                                     "selectedSecurityGroups" ["sg-something" "group"]} ..region..)
+      (replace-security-group-names {:subnetPurpose "internal"
+                                     :selectedSecurityGroups ["sg-something" "group"]} ..region..)
       => (throws ExceptionInfo "Unknown security group name")
       (provided
        (security-groups ..region..)
        => []))
 
 (fact "We gracefully handle a security group name specified as a single string"
-      (replace-security-group-names {"subnetPurpose" "internal"
-                                     "selectedSecurityGroups" "group"} ..region..)
-      => {"subnetPurpose" "internal"
-          "selectedSecurityGroups" ["sg-group"]}
+      (replace-security-group-names {:subnetPurpose "internal"
+                                     :selectedSecurityGroups "group"} ..region..)
+      => {:subnetPurpose "internal"
+          :selectedSecurityGroups ["sg-group"]}
       (provided
        (security-groups ..region..)
        => [{:groupId "sg-group"
             :groupName "group"}]))
 
+(fact "that we replace individual zones with the region + zone when only one zones is given"
+      (add-region-to-zones {:selectedZones "a"} "region")
+      => {:selectedZones ["regiona"]})
+
+(fact "that we replace individual zones with region + zone when multiple zones are given"
+      (add-region-to-zones {:selectedZones ["a" "b"]} "region")
+      => {:selectedZones ["regiona" "regionb"]})
+
+(fact "that we gracefully handle there being no zones specified"
+      (add-region-to-zones {:something "irrelevant"} "region")
+      => {:something "irrelevant"})
+
 (fact "Preparing params works through all expected transformations"
       (prepare-parameters ..original.. ..region..)
-      => ..sg-replaced..
+      => ..zones-replaced..
       (provided
-       (replace-load-balancer-key ..original..)
+       (remove-nil-values ..original..)
+       => ..nil-replaced..
+       (replace-load-balancer-key ..nil-replaced..)
        => ..lb-replaced..
        (replace-security-group-names ..lb-replaced.. ..region..)
-       => ..sg-replaced..))
+       => ..sg-replaced..
+       (add-region-to-zones ..sg-replaced.. ..region..)
+       => ..zones-replaced..))
 
 (fact "Exploding params creates a list which replaces maps where the value is a collection with multiple parameters of the same name"
-      (explode-parameters {"some-parameter" ["hello" "world"]
-                           "other-thing" "one-value"})
+      (explode-parameters {:some-parameter ["hello" "world"]
+                           :other-thing "one-value"})
       => [["some-parameter" "hello"]
           ["some-parameter" "world"]
           ["other-thing" "one-value"]])
@@ -220,10 +240,10 @@
 (against-background
  [(auto-scaling-group "region" ..asg..)
   => {}
-  (explode-parameters {"_action_resize" ""
-                       "minAndMaxSize" ..size..
-                       "name" ..asg..
-                       "ticket" ..ticket..})
+  (explode-parameters {:_action_resize ""
+                       :minAndMaxSize ..size..
+                       :name ..asg..
+                       :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
    "http://asgard:8080/region/cluster/index"
@@ -232,10 +252,10 @@
       :headers {"location" "task-url"}}
   (track-until-completed ..ticket.. {:id ..task-id..
                                      :url "task-url.json"
-                                     :asgardParameters {"_action_resize" ""
-                                                        "minAndMaxSize" ..size..
-                                                        "name" ..asg..
-                                                        "ticket" ..ticket..}} 3600 ..completed.. ..timed-out..)
+                                     :asgardParameters {:_action_resize ""
+                                                        :minAndMaxSize ..size..
+                                                        :name ..asg..
+                                                        :ticket ..ticket..}} 3600 ..completed.. ..timed-out..)
   => ..track-result..]
 
  (fact "Resizing ASG returns whatever was returned by `track-until-completed`."
@@ -324,9 +344,9 @@
 (against-background
  [(auto-scaling-group "region" ..asg..)
   => {}
-  (explode-parameters {"_action_delete" ""
-                       "name" ..asg..
-                       "ticket" ..ticket..})
+  (explode-parameters {:_action_delete ""
+                       :name ..asg..
+                       :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
    "http://asgard:8080/region/cluster/index"
@@ -335,9 +355,9 @@
       :headers {"location" "task-url"}}
   (track-until-completed ..ticket.. {:id ..task-id..
                                      :url "task-url.json"
-                                     :asgardParameters {"_action_delete" ""
-                                                        "name" ..asg..
-                                                        "ticket" ..ticket..}} 3600 ..completed.. ..timed-out..)
+                                     :asgardParameters {:_action_delete ""
+                                                        :name ..asg..
+                                                        :ticket ..ticket..}} 3600 ..completed.. ..timed-out..)
   => ..track-result..]
 
  (fact "Deleting ASG returns whatever was returned by `track-until-completed`."
@@ -363,9 +383,9 @@
 (against-background
  [(auto-scaling-group "region" ..asg..)
   => {}
-  (explode-parameters {"_action_activate" ""
-                       "name" ..asg..
-                       "ticket" ..ticket..})
+  (explode-parameters {:_action_activate ""
+                       :name ..asg..
+                       :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
    "http://asgard:8080/region/cluster/index"
@@ -374,9 +394,9 @@
       :headers {"location" "task-url"}}
   (track-until-completed ..ticket.. {:id ..task-id..
                                      :url "task-url.json"
-                                     :asgardParameters {"_action_activate" ""
-                                                        "name" ..asg..
-                                                        "ticket" ..ticket..}} 3600 ..completed.. ..timed-out..)
+                                     :asgardParameters {:_action_activate ""
+                                                        :name ..asg..
+                                                        :ticket ..ticket..}} 3600 ..completed.. ..timed-out..)
   => ..track-result..]
 
  (fact "Enabling ASG returns whatever was returned by `track-until-completed`."
@@ -402,9 +422,9 @@
 (against-background
  [(auto-scaling-group "region" ..asg..)
   => {}
-  (explode-parameters {"_action_deactivate" ""
-                       "name" ..asg..
-                       "ticket" ..ticket..})
+  (explode-parameters {:_action_deactivate ""
+                       :name ..asg..
+                       :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
    "http://asgard:8080/region/cluster/index"
@@ -413,9 +433,9 @@
       :headers {"location" "task-url"}}
   (track-until-completed ..ticket.. {:id ..task-id..
                                      :url "task-url.json"
-                                     :asgardParameters {"_action_deactivate" ""
-                                                        "name" ..asg..
-                                                        "ticket" ..ticket..}} 3600 ..completed.. ..timed-out..)
+                                     :asgardParameters {:_action_deactivate ""
+                                                        :name ..asg..
+                                                        :ticket ..ticket..}} 3600 ..completed.. ..timed-out..)
   => ..track-result..]
 
  (fact "Disabling ASG returns whatever was returned by `track-until-completed`."
@@ -457,7 +477,7 @@
          {:form-params ..exploded-params..})
         => {:status 302
             :headers {"location" "http://asgard:8080/region/autoScaling/show/new-asg-name"}}
-        (tasks "region")
+        (tasks)
         => [{:name "Something we don't care about"}
             {:id 420 :name "Create Auto Scaling Group 'new-asg-name'"}]
         (store/add-to-deployment-parameters ..ticket.. {:newAutoScalingGroupName "application-environment"})

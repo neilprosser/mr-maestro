@@ -52,8 +52,8 @@
    value and `healthCheckType` of `ELB` then we should be checking the health
    of the ELB. Otherwise, we're not going to do anything. They're on their own."
   [{:keys [parameters]}]
-  (and (pos? (count (util/list-from (get parameters "selectedLoadBalancers"))))
-       (= "ELB" (get parameters "healthCheckType"))))
+  (and (pos? (count (util/list-from (:selectedLoadBalancers parameters))))
+       (= "ELB" (:healthCheckType parameters))))
 
 ;; We're going to need these before we can defn them.
 (declare task-finished)
@@ -64,7 +64,7 @@
   "Starts the given task based on its `:action`."
   [{:keys [region] deployment-id :id :as deployment} {:keys [action] :as task}]
   (let [task (assoc task :start (util/now-string))]
-    (cond (= action :create-asg)
+    (cond (= (keyword action) :create-asg)
           (let [{:keys [ami application environment parameters]} deployment]
             (asgard/create-auto-scaling-group region application environment ami
                                               parameters deployment-id task
@@ -73,25 +73,25 @@
           (let [{:keys [application environment hash]} deployment
                 service-properties (tyr/application-properties
                                     environment application hash)
-                port (get service-properties "service.port" 8080)
-                healthcheck (get service-properties "service.healthcheck.path"
-                                 "/healthcheck")]
+                port (:service.port service-properties 8080)
+                healthcheck (:service.healthcheck.path service-properties
+                                                       "/healthcheck")]
             (health/wait-until-asg-healthy
              region
-             (get-in deployment [:parameters "newAutoScalingGroupName"])
+             (get-in deployment [:parameters :newAutoScalingGroupName])
              port healthcheck deployment-id task task-finished task-timed-out))
           (= action :enable-asg)
           (asgard/enable-asg
            region
-           (get-in deployment [:parameters "newAutoScalingGroupName"])
+           (get-in deployment [:parameters :newAutoScalingGroupName])
            deployment-id task task-finished task-timed-out)
           (= action :wait-for-elb-health)
           (if (check-elb-health? deployment)
             (let [elb-names (util/list-from
                              (get-in deployment
-                                     [:parameters "selectedLoadBalancers"]))
+                                     [:parameters :selectedLoadBalancers]))
                   asg-name (get-in deployment
-                                   [:parameters "newAutoScalingGroupName"])]
+                                   [:parameters :newAutoScalingGroupName])]
               (health/wait-until-elb-healthy region elb-names asg-name
                                              deployment-id task task-finished
                                              task-timed-out))
@@ -99,12 +99,12 @@
           (= action :disable-asg)
           (asgard/disable-asg
            region
-           (get-in deployment [:parameters "oldAutoScalingGroupName"])
+           (get-in deployment [:parameters :oldAutoScalingGroupName])
            deployment-id task task-finished task-timed-out)
           (= action :delete-asg)
           (asgard/delete-asg
            region
-           (get-in deployment [:parameters "oldAutoScalingGroupName"])
+           (get-in deployment [:parameters :oldAutoScalingGroupName])
            deployment-id task task-finished task-timed-out)
           :else (throw (ex-info "Unrecognised action."
                                 {:type ::unrecogized-action
@@ -157,9 +157,10 @@
   "Kicks off the first task of the deployment with `deployment-id`."
   [deployment-id]
   (let [deployment (store/get-deployment deployment-id)
-        first-task (first (:tasks deployment))]
-    (store/store-deployment (assoc deployment :start (util/now-string)))
-    (start-task first-task)
+        first-task (first (:tasks deployment))
+        deployment (assoc deployment :start (util/now-string))]
+    (store/store-deployment deployment)
+    (start-task deployment first-task)
     nil))
 
 (defn finish-deployment

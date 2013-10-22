@@ -44,6 +44,15 @@
   "The default user we'll say deployments came from (if one isn't provided)."
   "exploud")
 
+(defn response
+  "Accepts a body an optionally a content type and status. Returns a response object."
+  [body & [content-type status]]
+  (if body
+    {:status (or status 200)
+     :headers {"Content-Type" (or content-type "application/json; charset=utf-8")}
+     :body body}
+    {:status 404}))
+
 (defroutes routes
   "The RESTful routes we provide."
 
@@ -52,41 +61,34 @@
 
    (GET "/ping"
         []
-        {:status 200
-         :headers {"Content-Type" "text/plain"}
-         :body "pong"})
+        (response "pong" "text/plain"))
 
    (GET "/status"
         []
-        {:status 200
-         :body {:name "exploud"
-                :version *version*
-                :status true}})
+        (response {:name "exploud"
+                   :version *version*
+                   :status true}))
 
    (GET "/pokemon"
         []
-        {:status 200
-         :headers {"Content-Type" "text/plain"}
-         :body pokemon/pokemon})
+        (response pokemon/pokemon "text/plain"))
 
    (GET "/icon"
         []
-        {:status 200
-         :headers {"Content-Type" "image/jpeg"}
-         :body (-> (clojure.java.io/resource "exploud.jpg")
-                   (clojure.java.io/input-stream))})
+        (response (-> (clojure.java.io/resource "exploud.jpg")
+                      (clojure.java.io/input-stream)) "image/jpeg"))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]
-        (store/get-deployment deployment-id))
+        (response (store/get-deployment deployment-id)))
 
    (GET "/applications"
         []
-        (info/applications))
+        (response (info/applications)))
 
    (GET "/applications/:application"
         [application]
-        (info/application default-region name))
+        (response (info/application default-region application)))
 
    (PUT "/applications/:application"
         [application description email owner]
@@ -94,9 +96,7 @@
                                             {:description description
                                              :email email
                                              :owner owner})]
-          {:status 201
-           :headers {"Content-Type" "application/json; charset=utf-8"}
-           :body body}))
+          (response body nil 201)))
 
    (POST "/applications/:application/deploy"
          [application ami environment]
@@ -106,9 +106,8 @@
                                             environment
                                             default-user
                                             ami)]
-           {:status 200
-            :headers {"Content-Type" "application/json; charset=utf-8"}
-            :body {:id id}})))
+           (dep/start-deployment id)
+           (response {:id id}))))
 
   (route/not-found (error-response "Resource not found" 404)))
 

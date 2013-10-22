@@ -14,7 +14,7 @@
         "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties")
        => {:status 200
            :body ..body..}
-       (json/parse-string ..body..)
+       (json/parse-string ..body.. true)
        => {:data ..properties..}))
 
 (fact "that getting application properties which fails throws an exception"
@@ -33,10 +33,10 @@
         "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params")
        => {:status 200
            :body ..body..}
-       (json/parse-string ..body..)
+       (json/parse-string ..body.. true)
        => {:data ..properties..}))
 
-(fact "that getting deployment params  which fails throws an exception"
+(fact "that getting deployment params which fails throws an exception"
       (deployment-params "environment" "application" "hash")
       => (throws ExceptionInfo "Unexpected response")
       (provided
@@ -52,7 +52,7 @@
         "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data")
        => {:status 200
            :body ..body..}
-       (json/parse-string ..body..)
+       (json/parse-string ..body.. true)
        => {:data ..properties..}))
 
 (fact "that getting launch data which fails throws an exception"

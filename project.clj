@@ -45,7 +45,6 @@
             [lein-environ "0.4.0"]
             [lein-release "1.1.3"]]
 
-  ;; development token values
   :env {:environment-name "Dev"
         :service-name "exploud"
         :service-port "8080"

@@ -69,7 +69,7 @@
        => ..start..
        (store/store-deployment {:start ..start.. :tasks [{:action ..action..}]})
        => ..deploy-id..
-       (start-task {:action ..action..})
+       (start-task {:start ..start.. :tasks [{:action ..action..}]} {:action ..action..})
        => nil))
 
 (fact "that starting a task with an action of `:create-asg` sets a `:start` value and calls Asgard correctly"
@@ -156,7 +156,7 @@
 
 (fact "that starting a task with an action of `:enable-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..}
+                   :parameters {:newAutoScalingGroupName ..new-asg..}
                    :region ..region..} {:action :enable-asg})
       => ..enable-result..
       (provided
@@ -168,7 +168,7 @@
 
 (fact "that starting a task with an action of `:disable-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
-                   :parameters {"oldAutoScalingGroupName" ..old-asg..}
+                   :parameters {:oldAutoScalingGroupName ..old-asg..}
                    :region ..region..} {:action :disable-asg})
       => ..disable-result..
       (provided
@@ -180,7 +180,7 @@
 
 (fact "that starting a task with an action of `:delete-asg` sets a `:start` value and calls Asgard correctly"
       (start-task {:id ..deploy-id..
-                   :parameters {"oldAutoScalingGroupName" ..old-asg..}
+                   :parameters {:oldAutoScalingGroupName ..old-asg..}
                    :region ..region..} {:action :delete-asg})
       => ..delete-result..
       (provided
@@ -192,9 +192,9 @@
 
 (fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we're using ELBs"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..
-                                "healthCheckType" "ELB"
-                                "selectedLoadBalancers" ..elb..}
+                   :parameters {:newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "ELB"
+                                :selectedLoadBalancers ..elb..}
                    :region ..region..
                    :environment ..env..
                    :application ..app..
@@ -204,8 +204,8 @@
        (util/now-string)
        => ..start..
        (tyr/application-properties ..env.. ..app.. ..hash..)
-       => {"service.port" 8082
-           "service.healthcheck.path" "/1.x/status"}
+       => {:service.port 8082
+           :service.healthcheck.path "/1.x/status"}
        (health/wait-until-asg-healthy ..region.. ..new-asg.. 8082 "/1.x/status" ..deploy-id..
                                       {:action :wait-for-instance-health
                                        :start ..start..} task-finished task-timed-out)
@@ -213,9 +213,9 @@
 
 (fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we're using ELBs"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..
-                                "healthCheckType" "ELB"
-                                "selectedLoadBalancers" ..elb..}
+                   :parameters {:newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "ELB"
+                                :selectedLoadBalancers ..elb..}
                    :region ..region..
                    :environment ..env..
                    :application ..app..
@@ -232,34 +232,34 @@
        => ..wait-result..))
 
 (fact "that when deciding whether to check ELB health we return true when we have selectedLoadBalancers and a healthCheckType of ELB"
-      (check-elb-health? {:parameters {"healthCheckType" "ELB"
-                                       "selectedLoadBalancers" "elb"}})
+      (check-elb-health? {:parameters {:healthCheckType "ELB"
+                                       :selectedLoadBalancers "elb"}})
       => true)
 
 (fact "that when deciding whether to check ELB health we return true when we have multiple selectedLoadBalancers and a healthCheckType of ELB"
-      (check-elb-health? {:parameters {"healthCheckType" "ELB"
-                                       "selectedLoadBalancers" ["elb1" "elb2"]}})
+      (check-elb-health? {:parameters {:healthCheckType "ELB"
+                                       :selectedLoadBalancers ["elb1" "elb2"]}})
       => true)
 
 (fact "that when deciding whether to check ELB health we return false when we have empty selectedLoadBalancers and a healthCheckType of ELB"
-      (check-elb-health? {:parameters {"healthCheckType" "ELB"
-                                       "selectedLoadBalancers" []}})
+      (check-elb-health? {:parameters {:healthCheckType "ELB"
+                                       :selectedLoadBalancers []}})
       => false)
 
 (fact "that when deciding whether to check ELB health we return false when we have selectedLoadBalancers but not a healthCheckType of ELB"
-      (check-elb-health? {:parameters {"healthCheckType" "EC2"
-                                       "selectedLoadBalancers" "elb"}})
+      (check-elb-health? {:parameters {:healthCheckType "EC2"
+                                       :selectedLoadBalancers "elb"}})
       => false)
 
 (fact "that when deciding whether to check ELB health we return false when we don't have selectedLoadBalancers but we do have a healthCheckType of ELB"
-      (check-elb-health? {:parameters {"healthCheckType" "ELB"}})
+      (check-elb-health? {:parameters {:healthCheckType "ELB"}})
       => false)
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and does the right when using a single ELB"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..
-                                "healthCheckType" "ELB"
-                                "selectedLoadBalancers" "elb"}
+                   :parameters {:newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "ELB"
+                                :selectedLoadBalancers "elb"}
                    :region ..region..} {:action :wait-for-elb-health})
       => ..wait-result..
       (provided
@@ -272,10 +272,10 @@
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and does the right when using a multiple ELBs"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..
-                                "healthCheckType" "ELB"
-                                "selectedLoadBalancers" ["elb1"
-                                                         "elb2"]}
+                   :parameters {:newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "ELB"
+                                :selectedLoadBalancers ["elb1"
+                                                        "elb2"]}
                    :region ..region..} {:action :wait-for-elb-health})
       => ..wait-result..
       (provided
@@ -288,9 +288,9 @@
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and then finishes the task when we're not using an ELB healthCheckType"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..
-                                "healthCheckType" "EC2"
-                                "selectedLoadBalancers" "elb"}
+                   :parameters {:newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "EC2"
+                                :selectedLoadBalancers "elb"}
                    :region ..region..} {:action :wait-for-elb-health})
       => ..finish-result..
       (provided
@@ -302,8 +302,8 @@
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and then finishes the task when we've not provided any selectedLoadBalancers"
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..
-                                "healthCheckType" "ELB"}
+                   :parameters {:newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "ELB"}
                    :region ..region..} {:action :wait-for-elb-health})
       => ..finish-result..
       (provided
@@ -315,7 +315,7 @@
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and then finishes the task when we've not provided any selectedLoadBalancers or a healthCheckType of "
       (start-task {:id ..deploy-id..
-                   :parameters {"newAutoScalingGroupName" ..new-asg..}
+                   :parameters {:newAutoScalingGroupName ..new-asg..}
                    :region ..region..} {:action :wait-for-elb-health})
       => ..finish-result..
       (provided
