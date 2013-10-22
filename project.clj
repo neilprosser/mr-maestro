@@ -43,7 +43,7 @@
   :plugins [[lein-embongo "0.2.1"]
             [lein-ring "0.8.7"]
             [lein-environ "0.4.0"]
-            [lein-release "1.1.3"]]
+            [lein-release "1.0.73"]]
 
   :env {:environment-name "Dev"
         :service-name "exploud"
