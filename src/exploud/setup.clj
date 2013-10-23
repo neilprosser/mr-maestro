@@ -69,7 +69,7 @@
 (defn bootstrap-mongo
   "Makes sure that all the indexes we want are present on our collections."
   []
-  (mcol/ensure-index "tasks" {:status 1}))
+  (mcol/ensure-index "deployments" {"tasks.status" 1}))
 
 (defn start-graphite-reporting
   "Starts Graphite reporting."
@@ -93,11 +93,12 @@
    The intention is that even if exploud is redeployed while another
    deployment is going on, that deployment can be picked up and carry on."
   []
-  (doseq [{:keys [id tasks]} (store/deployments-with-incomplete-tasks)
-          task tasks]
-    (asgard/track-until-completed id task (* 1 60 60)
-                                  deployment/task-finished
-                                  deployment/task-timed-out)))
+  (doseq [deployment (store/deployments-with-incomplete-tasks)]
+    (let [{:keys [id tasks]} deployment]
+      (doseq [task tasks]
+        (asgard/track-until-completed id task (* 1 60 60)
+                                      deployment/task-finished
+                                      deployment/task-timed-out)))))
 
 (def version
   "Gets the version of the application from the project properties."

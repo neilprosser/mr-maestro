@@ -7,6 +7,13 @@
              [util :as util]]
             [midje.sweet :refer :all]))
 
+(fact "that when checking ASG health no instances returns true"
+      (asg-healthy? "region" "asg" 8080 "healthcheck")
+      => true
+      (provided
+       (asgard/instances-in-asg "region" "asg")
+       => []))
+
 (fact "that when checking ASG health all healthy instances returns true"
       (asg-healthy? "region" "asg" 8080 "healthcheck")
       => true
@@ -47,16 +54,35 @@
       (check-asg-health "region" "asg" 8080 "healthcheck" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
       => ..reschedule-result..
       (provided
-       (asg-healthy? "region" "asg")
+       (asg-healthy? "region" "asg" 8080 "healthcheck")
        => false
        (util/now-string)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
-                                               :date ..now..}]})
+                                               :date ..now..}]
+                                        :status "running"})
        => ..store-result..
        (schedule-asg-check "region" "asg" 8080 "healthcheck" ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
-                                                                                   :date ..now..}]} ..completed.. ..timed-out.. 4)
+                                                                                   :date ..now..}]
+                                                                            :status "running"} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
+
+(fact "that when checking ELB health no instances returns true"
+      (elb-healthy? "region" "elb" "asg")
+      => true
+      (provided
+       (asgard/load-balancer "region" "elb")
+       => {:instanceStates []}))
+
+(fact "that when checking ELB health no instances in given asg returns true"
+      (elb-healthy? "region" "elb" "asg")
+      => true
+      (provided
+       (asgard/load-balancer "region" "elb")
+       => {:instanceStates [{:autoScalingGroupName "other"
+                             :state "Unhealthy"}
+                            {:autoScalingGroupName "other"
+                             :state "InService"}]}))
 
 (fact "that when checking ELB health all healthy instances returns true"
       (elb-healthy? "region" "elb" "asg")
@@ -97,10 +123,12 @@
        (util/now-string)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb) health."
-                                               :date ..now..}]})
+                                               :date ..now..}]
+                                        :status "running"})
        => ..store-result..
        (schedule-elb-check "region" ["elb"] "asg" ..deploy-id.. {:log [{:message "Checking ELB (elb) health."
-                                                                        :date ..now..}]} ..completed.. ..timed-out.. 4)
+                                                                        :date ..now..}]
+                                                                 :status "running"} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
 
 (fact "that checking ELB health does the right things when unhealthy and checking multiple ELBs"
@@ -112,10 +140,12 @@
        (util/now-string)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
-                                               :date ..now..}]})
+                                               :date ..now..}]
+                                        :status "running"})
        => ..store-result..
        (schedule-elb-check "region" ["elb1" "elb2"] "asg" ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
-                                                                                :date ..now..}]} ..completed.. ..timed-out.. 4)
+                                                                                :date ..now..}]
+                                                                         :status "running"} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
 
 (fact "that checking ELB health does the right things when healthy and checking multiple ELBs"
@@ -127,10 +157,12 @@
        (util/now-string)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
-                                               :date ..now..}]})
+                                               :date ..now..}]
+                                        :status "running"})
        => ..store-result..
        (schedule-elb-check "region" ["elb2"] "asg" ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
-                                                                         :date ..now..}]} ..completed.. ..timed-out.. 4)
+                                                                         :date ..now..}]
+                                                                  :status "running"} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
 
 (fact "that checking ELB health does the right things when we're all out of ELBs to check"

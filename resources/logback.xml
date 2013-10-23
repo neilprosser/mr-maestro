@@ -5,6 +5,8 @@
   <logger name="org.eclipse.jetty.webapp.WebAppClassLoader" level="off" />
   <!-- Apache HTTPClient is cray with its debug logging -->
   <logger name="org.apache.http" level="info" />
+  <!-- As is Jetty -->
+  <logger name="org.eclipse.jetty" level="info" />
 
   <!-- Properties should be provided as environment variables or the defaults will be used -->
 

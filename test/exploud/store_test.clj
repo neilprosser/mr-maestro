@@ -49,7 +49,7 @@
                                                :tasks [..task-2..]}]
       (provided
        (mc/find-maps "deployments"
-                     {:tasks {$elemMatch {$nor [{:status "completed"} {:status "failed"} {:status "terminated"}]}}}
+                     {:tasks {$elemMatch {$nor [{:status "completed"} {:status "failed"} {:status "terminated"} {:status "pending"}]}}}
                      ["tasks.$"]) => [{:id ..deploy-1..
                                        :tasks [..task-1..]}
                                       {:id ..deploy-2..

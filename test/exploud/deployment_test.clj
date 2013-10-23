@@ -102,7 +102,8 @@
        (util/now-string)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
-                                        :end ..end..})
+                                        :end ..end..
+                                        :status "completed"})
        => ..store-result..
        (store/get-deployment ..deploy-id..)
        => ..deployment..
@@ -118,7 +119,8 @@
        (util/now-string)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
-                                        :end ..end..})
+                                        :end ..end..
+                                        :status "completed"})
        => ..store-result..
        (store/get-deployment ..deploy-id..)
        => ..deployment..
@@ -144,14 +146,15 @@
                   ..task-2..)
       => {:id ..task-3..})
 
-(fact "that timing out a task puts an `:end` date on it"
+(fact "that timing out a task puts an `:end` date and `:status` of `failed` on it"
       (task-timed-out ..deploy-id.. {:id ..task-id..})
       => nil
       (provided
        (util/now-string)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
-                                        :end ..end..})
+                                        :end ..end..
+                                        :status "failed"})
        => ..store-result..))
 
 (fact "that starting a task with an action of `:enable-asg` sets a `:start` value and calls Asgard correctly"

@@ -1,6 +1,8 @@
 (ns exploud.healthchecks
   "## Involved in the business of checking health"
-  (:require [exploud
+  (:require [clojure.tools.logging :as log]
+            [dire.core :refer [with-pre-hook!]]
+            [exploud
              [asgard :as asgard]
              [http :as http]
              [store :as store]
@@ -50,31 +52,36 @@
   "Schedules an ASG healthcheck, which will use `asg-healthy?` to determine
    health."
   [region asg-name port healthcheck-path deployment-id task completed-fn
-   timed-out-fn polls]
+   timed-out-fn polls & [delay]]
   (let [f #(check-asg-health region asg-name port healthcheck-path deployment-id
                              task completed-fn timed-out-fn polls)]
-    (at-at/after 5000 f task-pool)))
+    (at-at/after (or delay 5000) f task-pool)))
 
 (defn check-asg-health
   "If `asg-name` is healthy call `completed-fn` otherwise reschedule until
    `seconds` has elapsed. If we've timed out call `timed-out-fn`."
   [region asg-name port healthcheck-path deployment-id task completed-fn
    timed-out-fn polls]
-  (let [healthy? (asg-healthy? region asg-name)
-        message (str "Checking healthcheck on port " port " and path /"
-                     (util/strip-first-forward-slash healthcheck-path) ".")
-        updated-log (conj (:log task) {:date (util/now-string)
-                                       :message message})
-        updated-task (assoc task :log updated-log)]
-    (store/store-task deployment-id updated-task)
-    (if healthy?
-      (completed-fn deployment-id updated-task)
-      (cond (zero? polls)
-            (timed-out-fn deployment-id updated-task)
-            :else
-            (schedule-asg-check region asg-name port healthcheck-path
-                                deployment-id updated-task completed-fn
-                                timed-out-fn (dec polls))))))
+  (try
+    (let [healthy? (asg-healthy? region asg-name port healthcheck-path)
+          message (str "Checking healthcheck on port " port " and path /"
+                       (util/strip-first-forward-slash healthcheck-path) ".")
+          updated-log (conj (:log task) {:date (util/now-string)
+                                         :message message})
+          updated-task (assoc task :log updated-log :status "running")]
+      (store/store-task deployment-id updated-task)
+      (if healthy?
+        (completed-fn deployment-id updated-task)
+        (cond (zero? polls)
+              (timed-out-fn deployment-id updated-task)
+              :else
+              (schedule-asg-check region asg-name port healthcheck-path
+                                  deployment-id updated-task completed-fn
+                                  timed-out-fn (dec polls)))))
+    (catch Exception e
+      (do
+        (log/error "Caught exception" e (map str (.getStackTrace e)))
+        (throw e)))))
 
 (defn wait-until-asg-healthy
   "Polls every 5 seconds until `asg-healthy?` comes back `true` or until we've
@@ -82,7 +89,21 @@
   [region asg-name port healthcheck-path deployment-id task completed-fn
    timed-out-fn]
   (schedule-asg-check region asg-name port healthcheck-path deployment-id task
-                      completed-fn timed-out-fn poll-count))
+                      completed-fn timed-out-fn poll-count 100))
+
+;; Pre-hook attached to `wait-until-asg-healthy` to log parameters.
+(with-pre-hook! #'wait-until-asg-healthy
+  (fn [region asg-name port healthcheck-path deployment-id task completed-fn
+      timed-out-fn]
+    (log/debug "Waiting until ASG healthy with parameters"
+               {:region region
+                :asg-name asg-name
+                :port port
+                :healthcheck-path healthcheck-path
+                :deployment-id deployment-id
+                :task task
+                :completed-fn completed-fn
+                :timed-out-fn timed-out-fn})))
 
 ;; # Concerning the checking of ELBs
 
@@ -100,35 +121,41 @@
 (defn schedule-elb-check
   "Schedules an ELB healthcheck, which will use `elb-healthy?` to determine
    health of all `elb-names`."
-  [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls]
+  [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls
+   & [delay]]
   (let [f #(check-elb-health region elb-names asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
-    (at-at/after 5000 f task-pool)))
+    (at-at/after (or delay 5000) f task-pool)))
 
 (defn check-elb-health
   "This check will look at the members of each ELB which belong to the ASG. If
    they're all showing a `:state` of `InService` it's all good."
   [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls]
-  (let [elb-names (util/list-from elb-names)]
-    (if-let [elb-name (first elb-names)]
-      (let [healthy? (elb-healthy? region elb-name asg-name)
-            message (str "Checking ELB (" elb-name ") health.")
-            updated-log (conj (:log task) {:date (util/now-string)
-                                           :message message})
-            updated-task (assoc task :log updated-log)]
-        (store/store-task deployment-id updated-task)
-        (if healthy?
-          (schedule-elb-check region (rest elb-names) asg-name deployment-id
-                              updated-task completed-fn timed-out-fn
-                              (dec polls))
-          (cond
-           (zero? polls)
-           (timed-out-fn deployment-id updated-task)
-           :else
-           (schedule-elb-check region elb-names asg-name deployment-id
-                               updated-task completed-fn timed-out-fn
-                               (dec polls)))))
-      (completed-fn deployment-id task))))
+  (try
+    (let [elb-names (util/list-from elb-names)]
+      (if-let [elb-name (first elb-names)]
+        (let [healthy? (elb-healthy? region elb-name asg-name)
+              message (str "Checking ELB (" elb-name ") health.")
+              updated-log (conj (:log task) {:date (util/now-string)
+                                             :message message})
+              updated-task (assoc task :log updated-log :status "running")]
+          (store/store-task deployment-id updated-task)
+          (if healthy?
+            (schedule-elb-check region (rest elb-names) asg-name deployment-id
+                                updated-task completed-fn timed-out-fn
+                                (dec polls))
+            (cond
+             (zero? polls)
+             (timed-out-fn deployment-id updated-task)
+             :else
+             (schedule-elb-check region elb-names asg-name deployment-id
+                                 updated-task completed-fn timed-out-fn
+                                 (dec polls)))))
+        (completed-fn deployment-id task)))
+    (catch Exception e
+      (do
+        (log/error "Caught exception" e (map str (.getStackTrace e)))
+        (throw e)))))
 
 (defn wait-until-elb-healthy
   "Polls every 5 seconds until `elb-healthy?` comes back `true` for all ELBs or

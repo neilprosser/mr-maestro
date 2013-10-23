@@ -18,10 +18,12 @@
             [clojure
              [set :as set]
              [string :as str]]
+            [clojure.repl :only pst]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-handler!
-                               with-precondition!
-                               with-post-hook!]]
+                               with-post-hook!
+                               with-pre-hook!
+                               with-precondition!]]
             [environ.core :refer [env]]
             [exploud
              [http :as http]
@@ -216,6 +218,11 @@
   [region]
   (str asgard-url "/" region "/autoScaling/save"))
 
+(defn- cluster-url
+  "Gives us a region-based URL we can use to get information about a Cluster"
+  [region cluster-name]
+  (str asgard-url "/" region "/cluster/show/" cluster-name ".json"))
+
 (defn- cluster-create-next-group-url
   "Gives us a region-based URL we can use to create the next Auto Scaling
    Group."
@@ -262,7 +269,7 @@
 
 ;; # Task transformations
 
-(defn- split-log-message
+(defn split-log-message
   "Splits a log message from its Asgard form (where each line is something like
    `2013-10-11_18:25:23 Completed in 1s.`) to a map with separate `:date` and
    `:message` fields."
@@ -270,21 +277,46 @@
   (let [[date message] (clojure.string/split log #" " 2)]
     {:date (str (fmt/parse asgard-log-date-formatter date)) :message message}))
 
-(defn- correct-date-time
+(defn split-log-messages
+  "If `task` contains a `:log` then attempt to split everything in it. Returns
+   either the amended task or the original if nothing was found."
+  [{:keys [log] :as task}]
+  (if log
+    (assoc task :log (map split-log-message log))
+    task))
+
+(defn correct-date-time
   "Parses a task date/time from its Asgard form (like `2013-10-11 14:20:42 UTC`)
    to an ISO8601 one. Unfortunately has to do a crappy string-replace of `UTC`
    for `GMT`, ugh..."
   [date]
   (str (fmt/parse asgard-update-time-formatter (str/replace date "UTC" "GMT"))))
 
-(defn- munge-task
+(defn correct-update-time
+  "If `task` contains an `:updateTime` then correct the date. Returns either the
+   amended task or the original if nothing was found."
+  [{:keys [updateTime] :as task}]
+  (if updateTime
+    (assoc task :updateTime (correct-date-time updateTime))
+    task))
+
+(defn munge-task
   "Converts an Asgard task to a desired form by using `split-log-message` on
    each line of the `:log` in the task and replacing it."
-  [{:keys [log updateTime] :as task}]
-  (cond log
-        (assoc-in task [:log] (map split-log-message log))
-        updateTime
-        (assoc-in task [:updateTime] (correct-date-time updateTime))))
+  [task]
+  (-> task
+      split-log-messages
+      correct-update-time))
+
+;; Pre-hook attached to `munge-task` to log parameters.
+(with-pre-hook! #'munge-task
+  (fn [t]
+    (log/debug "Munging task" t)))
+
+;; Post-hook attached to `munge-task` to log its return value.
+(with-post-hook! #'munge-task
+  (fn [t]
+    (log/debug "Task was munged to" t)))
 
 ;; # Concerning grabbing objects from Asgard
 
@@ -313,6 +345,15 @@
     (when (= status 200)
       (json/parse-string body true))))
 
+(defn cluster
+  "Retrieves information about a Cluster from Asgard."
+  [region cluster-name]
+  (let [{:keys [status body]} (http/simple-get (cluster-url
+                                                region
+                                                cluster-name))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
 (defn instance
   "Retrieves information about an instance, or `nil` if it doesn't exist."
   [region instance-id]
@@ -329,9 +370,9 @@
       (map (fn [i] (instance region (:instanceId i))) instances))))
 
 (defn last-auto-scaling-group
-  "Retrieves the last ASG for an application, or `nil` if one doesn't exist."
-  [region application-name]
-  (last (:groups (application region application-name))))
+  "Retrieves the last ASG for a cluster, or `nil` if one doesn't exist."
+  [region cluster-name]
+  (last (cluster region cluster-name)))
 
 (defn load-balancer
   "Retrieves information about a load-balancer."
@@ -499,16 +540,41 @@
   (at-at/after 1000 #(track-task ticket-id task count completed-fn timed-out-fn)
                task-pool :desc url))
 
+;; Pre-hook attached to `track-until-completed` to log the parameters.
+(with-pre-hook! #'track-until-completed
+  (fn [ticket-id task count completed-fn timed-out-fn]
+    (log/debug "Scheduling tracking for" {:ticket-id ticket-id
+                                          :task task
+                                          :count count
+                                          :completed-fn completed-fn
+                                          :timed-out-fn timed-out-fn})))
+
 (defn track-task
   "Grabs the task by its URL and updates its details in the store. If it's not
    completed and we've not exhausted the retry count it'll reschedule itself."
   [ticket-id {:keys [url] :as task} count completed-fn timed-out-fn]
-  (when-let [asgard-task (task-by-url url)]
-    (store/store-task (merge task asgard-task))
-    (cond (finished? asgard-task) (completed-fn ticket-id task)
-          (zero? count) (timed-out-fn ticket-id task)
-          :else (track-until-completed ticket-id task (dec count)
-                                       completed-fn timed-out-fn))))
+  (try
+    (if-let [asgard-task (task-by-url url)]
+      (let [task (merge task asgard-task)]
+        (store/store-task ticket-id task)
+        (cond (finished? asgard-task) (completed-fn ticket-id task)
+              (zero? count) (timed-out-fn ticket-id task)
+              :else (track-until-completed ticket-id task (dec count)
+                                           completed-fn timed-out-fn)))
+      (throw (ex-info "No task found" {:type ::task-missing :url url})))
+    (catch Exception e
+      (do
+        (log/error "Caught exception" e (map str (.getStackTrace e)))
+        (throw e)))))
+
+;; Pre-hook attached to `track-task` to log the parameters.
+(with-pre-hook! #'track-task
+  (fn [ticket-id task count completed-fn timed-out-fn]
+    (log/debug "Tracking" {:ticket-id ticket-id
+                           :task task
+                           :count count
+                           :completed-fn completed-fn
+                           :timed-out-fn timed-out-fn})))
 
 ;; Handler for recovering from failure while tracking a task. In the event of an
 ;; exception marked with a `:class` of `:http` or `:store` we'll reschedule.
@@ -759,9 +825,10 @@
    matching `Creating auto scaling group '{new-asg-name}'` and returns
    `new-asg-name`."
   [task-url]
-  (let [task (task-by-url task-url)
+  (let [{:keys [log]} (task-by-url task-url)
+        first-log (first log)
         pattern #"Creating auto scaling group '([^']+)'"]
-    ((re-find pattern (get-in task [:log 0 :message])) 1)))
+    (second (re-find pattern (:message first-log)))))
 
 (defn create-next-asg
   "Begins a create next Auto Scaling Group operation for the specified
@@ -814,3 +881,17 @@
                          task completed-fn timed-out-fn))
       (create-new-asg region application environment ami parameters ticket-id
                       task completed-fn timed-out-fn))))
+
+;; Pre-hook attached to `create-auto-scaling-group` which logs the parameters.
+(with-pre-hook! #'create-auto-scaling-group
+  (fn [region application environment ami parameters ticket-id task
+      completed-fn timed-out-fn]
+    (log/debug "Creating ASG with parameters" {:region region
+                                               :application application
+                                               :environment environment
+                                               :ami ami
+                                               :parameters parameters
+                                               :ticket-id ticket-id
+                                               :task task
+                                               :completed-fn completed-fn
+                                               :timed-out-fn timed-out-fn})))

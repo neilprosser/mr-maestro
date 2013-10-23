@@ -1,6 +1,9 @@
 (ns exploud.deployment
   "## Creating and managing deployment chains"
-  (:require [exploud
+  (:require [dire.core :refer [with-post-hook!
+                               with-pre-hook!]]
+            [clojure.tools.logging :as log]
+            [exploud
              [asgard :as asgard]
              [healthchecks :as health]
              [store :as store]
@@ -43,9 +46,19 @@
    one with an `:id` of `task-id` in the `:tasks` of `deployment`. It returns
    either the next task or `nil` if the given ID was last."
   [{:keys [tasks]} task-id]
-  (-> (partition-by (fn [t] (= (:id t) task-id)) tasks)
-      (nth 2 nil)
-      first))
+  (->> tasks
+       reverse
+       (take-while (fn [{:keys [id]}] (not= id task-id)))
+       last))
+
+;; Pre-hook attached to `task-after` to log parameters.
+(with-pre-hook! #'task-after
+  (fn [d id]
+    (log/debug "Getting task after" id "in" d)))
+
+(with-post-hook! #'task-after
+  (fn [t]
+    (log/debug "Task after came back as" t)))
 
 (defn check-elb-health?
   "If the `:parameters` of `deployment` have both a `selectedLoadBalancers`
@@ -63,8 +76,9 @@
 (defn start-task
   "Starts the given task based on its `:action`."
   [{:keys [region] deployment-id :id :as deployment} {:keys [action] :as task}]
-  (let [task (assoc task :start (util/now-string))]
-    (cond (= (keyword action) :create-asg)
+  (let [task (assoc task :start (util/now-string))
+        action (keyword action)]
+    (cond (= action :create-asg)
           (let [{:keys [ami application environment parameters]} deployment]
             (asgard/create-auto-scaling-group region application environment ami
                                               parameters deployment-id task
@@ -97,15 +111,27 @@
                                              task-timed-out))
             (task-finished deployment-id task))
           (= action :disable-asg)
-          (asgard/disable-asg
-           region
-           (get-in deployment [:parameters :oldAutoScalingGroupName])
-           deployment-id task task-finished task-timed-out)
+          (if-let [asg (get-in deployment [:parameters
+                                           :oldAutoScalingGroupName])]
+            (asgard/disable-asg region asg deployment-id task task-finished
+                                task-timed-out)
+            (do
+              (let [task (assoc task
+                           :end (util/now-string)
+                           :status "completed")])
+              (store/store-task deployment-id task)
+              (task-finished deployment-id task)))
           (= action :delete-asg)
-          (asgard/delete-asg
-           region
-           (get-in deployment [:parameters :oldAutoScalingGroupName])
-           deployment-id task task-finished task-timed-out)
+          (if-let [asg (get-in deployment [:parameters
+                                           :oldAutoScalingGroupName])]
+            (asgard/delete-asg
+             region asg deployment-id task task-finished task-timed-out)
+            (do
+              (let [task (assoc task
+                           :end (util/now-string)
+                           :status "completed")])
+              (store/store-task deployment-id task)
+              (task-finished deployment-id task)))
           :else (throw (ex-info "Unrecognised action."
                                 {:type ::unrecogized-action
                                  :action action})))))
@@ -114,19 +140,33 @@
   "Function called when a task has completed. Deals with moving the deployment
    to the next phase."
   [deployment-id {task-id :id :as task}]
-  (store/store-task deployment-id (assoc task :end (util/now-string)))
+  (store/store-task deployment-id (assoc task
+                                    :end (util/now-string)
+                                    :status "completed"))
   (let [deployment (store/get-deployment deployment-id)]
     (let [next-task (task-after deployment task-id)]
       (if next-task
         (start-task deployment next-task)
         (finish-deployment deployment)))))
 
+;; Pre-hook attached to `task-finished` to log parameters.
+(with-pre-hook! #'task-finished
+  (fn [deployment-id task]
+    (log/debug "Task" task "finished for deployment with ID" deployment-id)))
+
 (defn task-timed-out
   "Function called when a task has timed-out. Deals with the repercussions of
    that."
   [deployment-id task]
-  (store/store-task deployment-id (assoc task :end (util/now-string)))
+  (store/store-task deployment-id (assoc task
+                                    :end (util/now-string)
+                                    :status "failed"))
   nil)
+
+;; Pre-hook attached to `task-timed-out` to log parameters.
+(with-pre-hook! #'task-timed-out
+  (fn [deployment-id task]
+    (log/debug "Task" task "timed-out for deployment with ID" deployment-id)))
 
 ;; # Concerning deployments
 

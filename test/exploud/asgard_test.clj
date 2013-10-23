@@ -108,6 +108,35 @@
           ["some-parameter" "world"]
           ["other-thing" "one-value"]])
 
+(fact "that munging a task handles a task which doesn't need changing"
+      (munge-task {:something "tasky"})
+      => {:something "tasky"})
+
+(fact "that munging a task handles splits log messages"
+      (munge-task {:log [..log-1.. ..log-2..]})
+      => {:log [..split-log-1.. ..split-log-2..]}
+      (provided
+       (split-log-message ..log-1..)
+       => ..split-log-1..
+       (split-log-message ..log-2..)
+       => ..split-log-2..))
+
+(fact "that munging a task updates the updateTime"
+      (munge-task {:updateTime ..update-time..})
+      => {:updateTime ..corrected-update-time..}
+      (provided
+       (correct-date-time ..update-time..)
+       => ..corrected-update-time..))
+
+(fact "that munging a task does all alterations"
+      (munge-task {:log [..log..] :updateTime ..update-time..})
+      => {:log [..split-log..] :updateTime ..corrected-update-time..}
+      (provided
+       (split-log-message ..log..)
+       => ..split-log..
+       (correct-date-time ..update-time..)
+       => ..corrected-update-time..))
+
 (fact "We can retrieve the details about an Auto Scaling Group from Asgard"
       (auto-scaling-group "region" "asg-name")
       => {:name "the-name"}
@@ -233,9 +262,9 @@
       => {:autoScalingGroupName "application-environment-v023"}
       (provided
        ( http/simple-get
-         "http://asgard:8080/region/application/show/application-environment.json")
+         "http://asgard:8080/region/cluster/show/application-environment.json")
        => {:status 200
-           :body "{\"groups\":[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]}"}))
+           :body "[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]"}))
 
 (against-background
  [(auto-scaling-group "region" ..asg..)
@@ -311,9 +340,9 @@
       (provided
        (task-by-url "task-url")
        => {:status "running"}
-       (store/store-task {:status "running" :url "task-url"})
+       (store/store-task "ticket-id" {:status "running" :url "task-url"})
        => nil
-       (track-until-completed "ticket-id" {:url "task-url"} 3599 ..completed.. ..timed-out..)
+       (track-until-completed "ticket-id" {:status "running" :url "task-url"} 3599 ..completed.. ..timed-out..)
        => nil))
 
 (fact "Task tracking sad path attempts to reschedule for :http problem"
@@ -503,6 +532,13 @@
        (task-by-url ..task-url..)
        => {:log [{:message "Whatever we have going on and then Creating auto scaling group 'new-asg-name', followed by whatever..."}
                  {:message "Another log message, which we'll not pay attention to."}]}))
+
+(fact "that we can get the next ASG from something realistic"
+      (new-asg-name-from-task ..task-url..)
+      => "recommendations-dev-v000"
+      (provided
+       (task-by-url ..task-url..)
+       => {:log [{:date "2013-10-23T11:37:11.000Z" :message "Started on thread Task:Creating auto scaling group 'recommendations-dev-v000', min 0, max 0, traffic allowed."}] :status "running" :operation "Started on thread Task:Creating auto scaling group 'recommendations-dev-v000', min 0, max 0, traffic allowed." :durationString "0s" :updateTime "2013-10-23T11:37:11.000Z"}))
 
 (against-background
  [(create-next-asg-asgard-parameters "region" "application" "environment" ..ami.. ..user-params.. ..ticket..)
