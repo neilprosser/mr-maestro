@@ -18,7 +18,6 @@
             [clojure
              [set :as set]
              [string :as str]]
-            [clojure.repl :only pst]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-handler!
                                with-post-hook!
