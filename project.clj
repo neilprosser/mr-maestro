@@ -48,8 +48,6 @@
   :env {:environment-name "Dev"
         :service-name "exploud"
         :service-port "8080"
-        :service-url "http://localhost:%s/1.x"
-        :restdriver-port "8081"
         :environment-entertainment-graphite-host "graphite.brislabs.com"
         :environment-entertainment-graphite-port "8080"
         :service-graphite-post-interval "1"
@@ -66,12 +64,12 @@
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
 
-  :embongo {:port ~(Integer.  (get (System/getenv) "MONGO_PORT" "27017"))
+  :embongo {:port ~(Integer. (get (System/getenv) "MONGO_PORT" "27017"))
             :version "2.4.3"}
 
   :ring {:handler exploud.web/app
          :main exploud.setup
-         :port ~(Integer.  (get (System/getenv) "SERVICE_PORT" "8080"))
+         :port ~(Integer. (get (System/getenv) "SERVICE_PORT" "8080"))
          :init exploud.setup/setup
          :browser-uri "/1.x/status"}
 

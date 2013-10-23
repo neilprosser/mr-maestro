@@ -25,11 +25,11 @@
 
   <appender name="service" class="com.ovi.common.logging.LoggingServiceAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>${SERVICE_LOGGING_SERVICETHRESHOLD:-warn}</level>
+      <level>${SERVICE_LOGGING_SERVICETHRESHOLD:-off}</level>
     </filter>
     <filter class="com.ovi.common.logging.GraphiteReporterFilter" />
     <LoggingServiceUrl>${ENVIRONMENT_MUSIC_ERRORLOGGING1JAVA_BASEURL:-http://errorlogging.music.cq1.brislabs.com:8080/ErrorLogging/1.x}/logitems</LoggingServiceUrl>
-    <ServiceName>exploud</ServiceName>
+    <ServiceName>${SERVICE_NAME}</ServiceName>
     <DefaultCategory>Service</DefaultCategory>
     <FailureLoggerName>failure</FailureLoggerName>
   </appender>
