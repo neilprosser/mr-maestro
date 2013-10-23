@@ -76,6 +76,22 @@
        => [{:groupId "sg-group"
             :groupName "group"}]))
 
+(fact "that we add the whole `:selectedSecurityGroups` key and exploud security group when no groups are given"
+      (add-exploud-security-group {} ..region..)
+      => {:selectedSecurityGroups ["sg-group"]}
+      (provided
+       (security-groups ..region..)
+       => [{:groupId "sg-group"
+            :groupName "exploud-healthcheck"}]))
+
+(fact "that we add the exploud security group to any existing ones"
+      (add-exploud-security-group {:selectedSecurityGroups ["sg-something"]} ..region..)
+      => {:selectedSecurityGroups ["sg-something" "sg-exploud"]}
+      (provided
+       (security-groups ..region..)
+       => [{:groupId "sg-exploud"
+            :groupName "exploud-healthcheck"}]))
+
 (fact "that we replace individual zones with the region + zone when only one zones is given"
       (add-region-to-zones {:selectedZones "a"} "region")
       => {:selectedZones ["regiona"]})
@@ -98,7 +114,9 @@
        => ..lb-replaced..
        (replace-security-group-names ..lb-replaced.. ..region..)
        => ..sg-replaced..
-       (add-region-to-zones ..sg-replaced.. ..region..)
+       (add-exploud-security-group ..sg-replaced.. ..region..)
+       => ..sg-added..
+       (add-region-to-zones ..sg-added.. ..region..)
        => ..zones-replaced..))
 
 (fact "Exploding params creates a list which replaces maps where the value is a collection with multiple parameters of the same name"

@@ -60,6 +60,13 @@
   (fn [t]
     (log/debug "Task after came back as" t)))
 
+(defn wait-for-instance-health?
+  "If the "
+  [{:keys [parameters]}]
+  (if-let [min (:min parameters 0)]
+    (pos? min)
+    false))
+
 (defn check-elb-health?
   "If the `:parameters` of `deployment` have both a `selectedLoadBalancers`
    value and `healthCheckType` of `ELB` then we should be checking the health
@@ -84,16 +91,20 @@
                                               parameters deployment-id task
                                               task-finished task-timed-out))
           (= action :wait-for-instance-health)
-          (let [{:keys [application environment hash]} deployment
-                service-properties (tyr/application-properties
-                                    environment application hash)
-                port (:service.port service-properties 8080)
-                healthcheck (:service.healthcheck.path service-properties
-                                                       "/healthcheck")]
-            (health/wait-until-asg-healthy
-             region
-             (get-in deployment [:parameters :newAutoScalingGroupName])
-             port healthcheck deployment-id task task-finished task-timed-out))
+          (if (wait-for-instance-health? deployment)
+            (let [{:keys [application environment hash]} deployment
+                  service-properties (tyr/application-properties
+                                      environment application hash)
+                  port (:service.port service-properties 8080)
+                  healthcheck (:service.healthcheck.path service-properties
+                                                         "/healthcheck")]
+              (health/wait-until-asg-healthy
+               region
+               (get-in deployment [:parameters :newAutoScalingGroupName])
+               (get-in deployment [:parameters :min])
+               port healthcheck deployment-id task
+               task-finished task-timed-out))
+            (task-finished deployment-id task))
           (= action :enable-asg)
           (asgard/enable-asg
            region

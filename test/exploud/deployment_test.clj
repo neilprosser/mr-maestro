@@ -195,7 +195,8 @@
 
 (fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we're using ELBs"
       (start-task {:id ..deploy-id..
-                   :parameters {:newAutoScalingGroupName ..new-asg..
+                   :parameters {:min 1
+                                :newAutoScalingGroupName ..new-asg..
                                 :healthCheckType "ELB"
                                 :selectedLoadBalancers ..elb..}
                    :region ..region..
@@ -209,14 +210,15 @@
        (tyr/application-properties ..env.. ..app.. ..hash..)
        => {:service.port 8082
            :service.healthcheck.path "/1.x/status"}
-       (health/wait-until-asg-healthy ..region.. ..new-asg.. 8082 "/1.x/status" ..deploy-id..
+       (health/wait-until-asg-healthy ..region.. ..new-asg.. 1 8082 "/1.x/status" ..deploy-id..
                                       {:action :wait-for-instance-health
                                        :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
 
 (fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we're using ELBs"
       (start-task {:id ..deploy-id..
-                   :parameters {:newAutoScalingGroupName ..new-asg..
+                   :parameters {:min 2
+                                :newAutoScalingGroupName ..new-asg..
                                 :healthCheckType "ELB"
                                 :selectedLoadBalancers ..elb..}
                    :region ..region..
@@ -229,10 +231,21 @@
        => ..start..
        (tyr/application-properties ..env.. ..app.. ..hash..)
        => {}
-       (health/wait-until-asg-healthy ..region.. ..new-asg.. 8080 "/healthcheck" ..deploy-id..
+       (health/wait-until-asg-healthy ..region.. ..new-asg.. 2 8080 "/healthcheck" ..deploy-id..
                                       {:action :wait-for-instance-health
                                        :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
+
+(fact "that when deciding whether we should check instance health we return false when we have no `:min`"
+      (wait-for-instance-health? {:parameters {}})
+      => false)
+
+(fact "that when deciding whether we should check instance health we return false when we have a nil value of `:min`"
+      (wait-for-instance-health? {:parameters {:min nil}})
+      => false)
+
+(fact "that when deciding whether we should check instance health we return true when we have a positive value for `:min`"
+      (wait-for-instance-health? {:parameters {:min 1}}))
 
 (fact "that when deciding whether to check ELB health we return true when we have selectedLoadBalancers and a healthCheckType of ELB"
       (check-elb-health? {:parameters {:healthCheckType "ELB"

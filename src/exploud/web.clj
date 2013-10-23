@@ -45,11 +45,13 @@
   "exploud")
 
 (defn response
-  "Accepts a body an optionally a content type and status. Returns a response object."
+  "Accepts a body an optionally a content type and status. Returns a response
+   object."
   [body & [content-type status]]
   (if body
     {:status (or status 200)
-     :headers {"Content-Type" (or content-type "application/json; charset=utf-8")}
+     :headers {"Content-Type" (or content-type
+                                  "application/json; charset=utf-8")}
      :body body}
     {:status 404}))
 
@@ -67,7 +69,7 @@
         []
         (response {:name "exploud"
                    :version *version*
-                   :status true}))
+                   :success true}))
 
    (GET "/pokemon"
         []
@@ -75,8 +77,9 @@
 
    (GET "/icon"
         []
-        (response (-> (clojure.java.io/resource "exploud.jpg")
-                      (clojure.java.io/input-stream)) "image/jpeg"))
+        (response (clojure.java.io/input-stream
+                   (clojure.java.io/resource "exploud.jpg"))
+                  "image/jpeg"))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]

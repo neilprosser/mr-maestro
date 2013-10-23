@@ -439,8 +439,9 @@
   [parameters]
   (if (and (= "internal" (:subnetPurpose parameters))
            (:selectedLoadBalancers parameters))
-    (set/rename-keys parameters {:selectedLoadBalancers
-                                 (keyword (str "selectedLoadBalancersForVpcId" vpc-id))})
+    (set/rename-keys parameters
+                     {:selectedLoadBalancers
+                      (keyword (str "selectedLoadBalancersForVpcId" vpc-id))})
     parameters))
 
 (defn is-security-group-id?
@@ -484,6 +485,17 @@
       parameters)
     parameters))
 
+(defn add-exploud-security-group
+  "Make sure `:selectedSecurityGroups` contains the ID of the
+   `exploud-healthcheck` security group. This group will be used to allow
+   exploud to talk to the box and check its healthcheck."
+  [parameters region]
+  (let [exploud-group-id (replace-security-group-name region
+                                                      "exploud-healthcheck")]
+    (if-let [groups (:selectedSecurityGroups parameters)]
+      (assoc parameters :selectedSecurityGroups (conj groups exploud-group-id))
+      (assoc parameters :selectedSecurityGroups (vector exploud-group-id)))))
+
 (defn add-region-to-zones
   "Replace any availability zones found in `:selectedZones` and replace them
    with the region and the zone. For example if using region `eu-west-1` and we
@@ -503,6 +515,7 @@
       remove-nil-values
       replace-load-balancer-key
       (replace-security-group-names region)
+      (add-exploud-security-group region)
       (add-region-to-zones region)))
 
 (defn explode-parameters
@@ -512,7 +525,7 @@
    each)."
   [parameters]
   (for [[k v] (seq parameters)
-        vs (flatten (conj [] v))]
+        vs (flatten (vector v))]
     [(name k) vs]))
 
 ;; # Concerning tracking tasks
