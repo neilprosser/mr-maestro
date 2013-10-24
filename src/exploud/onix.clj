@@ -38,8 +38,16 @@
   "Gets a particular application. Returns `nil` if the application doesn't
    exist."
   [application-name]
-  (let [{ :keys [body status]} (http/simple-get
+  (let [{:keys [body status]} (http/simple-get
                                 (application-url application-name))]
+    (if (= status 200)
+      (json/parse-string body true))))
+
+(defn applications
+  "Gets all applications Onix knows about."
+  [application-name]
+  (let [{:keys [body status]} (http/simple-get
+                               (applications-url))]
     (if (= status 200)
       (json/parse-string body true))))
 
