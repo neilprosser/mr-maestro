@@ -67,6 +67,12 @@
     (pos? min)
     false))
 
+;; Pre-hook attached to `wait-for-instance-health?` to log parameters.
+(with-pre-hook! #'wait-for-instance-health?
+  (fn [{:keys [parameters]}]
+    (log/debug "Working out whether we should wait for instance health of"
+               parameters)))
+
 (defn check-elb-health?
   "If the `:parameters` of `deployment` have both a `selectedLoadBalancers`
    value and `healthCheckType` of `ELB` then we should be checking the health
@@ -74,6 +80,12 @@
   [{:keys [parameters]}]
   (and (pos? (count (util/list-from (:selectedLoadBalancers parameters))))
        (= "ELB" (:healthCheckType parameters))))
+
+;; Pre-hook attached to `check-elb-health?` to log parameters.
+(with-pre-hook! #'check-elb-health?
+  (fn [{:keys [parameters]}]
+    (log/debug "Working out whether we should check ELB health of"
+               parameters)))
 
 ;; We're going to need these before we can defn them.
 (declare task-finished)
@@ -104,7 +116,11 @@
                (get-in deployment [:parameters :min])
                port healthcheck deployment-id task
                task-finished task-timed-out))
-            (task-finished deployment-id task))
+            (do
+              (let [updated-log (conj (:log task) {:message "Skipping instance healthcheck"
+                                                   :date (util/now-string)})
+                    task (assoc task :log updated-log)]
+                (task-finished deployment-id task))))
           (= action :enable-asg)
           (asgard/enable-asg
            region
@@ -120,16 +136,18 @@
               (health/wait-until-elb-healthy region elb-names asg-name
                                              deployment-id task task-finished
                                              task-timed-out))
-            (task-finished deployment-id task))
+            (let [updated-log (conj (:log task) {:message "Skipping ELB healthcheck"
+                                                 :date (util/now-string)})
+                  task (assoc task :log updated-log)]
+              (task-finished deployment-id task)))
           (= action :disable-asg)
           (if-let [asg (get-in deployment [:parameters
                                            :oldAutoScalingGroupName])]
             (asgard/disable-asg region asg deployment-id task task-finished
                                 task-timed-out)
-            (do
-              (let [task (assoc task
-                           :end (util/now-string)
-                           :status "completed")])
+            (let [task (assoc task
+                         :end (util/now-string)
+                         :status "completed")]
               (store/store-task deployment-id task)
               (task-finished deployment-id task)))
           (= action :delete-asg)

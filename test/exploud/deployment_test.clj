@@ -193,6 +193,23 @@
                                                                 :start ..start..} task-finished task-timed-out)
        => ..delete-result..))
 
+(fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and skips the check when we've got zero as the `:min`"
+      (start-task {:id ..deploy-id..
+                   :parameters {:min 0}
+                   :region ..region..
+                   :environment ..env..
+                   :application ..app..
+                   :hash ..hash..} {:action :wait-for-instance-health})
+      => ..completed-result..
+      (provided
+       (util/now-string)
+       => ..start..
+       (task-finished ..deploy-id.. {:log [{:message "Skipping instance healthcheck"
+                                             :date ..start..}]
+                                     :action :wait-for-instance-health
+                                     :start ..start..})
+       => ..completed-result..))
+
 (fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we're using ELBs"
       (start-task {:id ..deploy-id..
                    :parameters {:min 1
@@ -312,7 +329,9 @@
       (provided
        (util/now-string)
        => ..start..
-       (task-finished ..deploy-id.. {:action :wait-for-elb-health
+       (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
+                                            :date ..start..}]
+                                     :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))
 
@@ -325,11 +344,13 @@
       (provided
        (util/now-string)
        => ..start..
-       (task-finished ..deploy-id.. {:action :wait-for-elb-health
+       (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
+                                            :date ..start..}]
+                                     :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))
 
-(fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and then finishes the task when we've not provided any selectedLoadBalancers or a healthCheckType of "
+(fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and then finishes the task when we've not provided any selectedLoadBalancers or a healthCheckType of ELB"
       (start-task {:id ..deploy-id..
                    :parameters {:newAutoScalingGroupName ..new-asg..}
                    :region ..region..} {:action :wait-for-elb-health})
@@ -337,6 +358,8 @@
       (provided
        (util/now-string)
        => ..start..
-       (task-finished ..deploy-id.. {:action :wait-for-elb-health
+       (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
+                                            :date ..start..}]
+                                     :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))
