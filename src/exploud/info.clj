@@ -6,9 +6,9 @@
              [tyranitar :as tyr]]))
 
 (defn applications
-  "The list of applications Asgard knows about."
+  "The list of applications Onix knows about."
   []
-  {:names (map :name (asgard/applications))})
+  {:names (map :name (onix/applications))})
 
 (defn application
   "The information about a particular application."
