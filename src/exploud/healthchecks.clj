@@ -1,6 +1,7 @@
 (ns exploud.healthchecks
   "## Involved in the business of checking health"
-  (:require [clojure.tools.logging :as log]
+  (:require [clj-time.core :as time]
+            [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [exploud
              [asgard :as asgard]
@@ -73,7 +74,7 @@
                                  healthcheck-path)
           message (str "Checking healthcheck on port " port " and path /"
                        (util/strip-first-forward-slash healthcheck-path) ".")
-          updated-log (conj (:log task) {:date (util/now-string)
+          updated-log (conj (:log task) {:date (time/now)
                                          :message message})
           updated-task (assoc task :log updated-log :status "running")]
       (store/store-task deployment-id updated-task)
@@ -145,7 +146,7 @@
       (if-let [elb-name (first elb-names)]
         (let [healthy? (elb-healthy? region elb-name asg-name)
               message (str "Checking ELB (" elb-name ") health.")
-              updated-log (conj (:log task) {:date (util/now-string)
+              updated-log (conj (:log task) {:date (time/now)
                                              :message message})
               updated-task (assoc task :log updated-log :status "running")]
           (store/store-task deployment-id updated-task)

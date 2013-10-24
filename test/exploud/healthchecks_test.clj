@@ -1,5 +1,6 @@
 (ns exploud.healthchecks_test
-  (:require [exploud
+  (:require [clj-time.core :as time]
+            [exploud
              [asgard :as asgard]
              [healthchecks :refer :all]
              [http :as http]
@@ -82,7 +83,7 @@
       (provided
        (asg-healthy? "region" "asg" 2 8080 "healthcheck")
        => false
-       (util/now-string)
+       (time/now)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
                                                :date ..now..}]
@@ -146,7 +147,7 @@
       (provided
        (elb-healthy? "region" "elb" "asg")
        => false
-       (util/now-string)
+       (time/now)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb) health."
                                                :date ..now..}]
@@ -163,7 +164,7 @@
       (provided
        (elb-healthy? "region" "elb1" "asg")
        => false
-       (util/now-string)
+       (time/now)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
                                                :date ..now..}]
@@ -180,7 +181,7 @@
       (provided
        (elb-healthy? "region" "elb1" "asg")
        => true
-       (util/now-string)
+       (time/now)
        => ..now..
        (store/store-task ..deploy-id.. {:log [{:message "Checking ELB (elb1) health."
                                                :date ..now..}]

@@ -1,6 +1,7 @@
 (ns exploud.setup
   "## Setting up our application"
-  (:require [clojure.java.io :as io]
+  (:require [cheshire.custom :as json]
+            [clojure.java.io :as io]
             [clojure.string :as cs :only (split)]
             [clojure.tools.logging :refer (info warn error)]
             [exploud
@@ -23,6 +24,7 @@
            (com.ovi.common.metrics.graphite GraphiteName
                                             GraphiteReporterFactory
                                             ReporterState)
+           (org.joda.time DateTimeZone)
            (org.slf4j.bridge SLF4JBridgeHandler))
   (:gen-class))
 
@@ -46,6 +48,15 @@
   [comma-sep-hosts]
   (map (fn [[h p]] (mc/server-address h (Integer/parseInt p)))
        (map #(cs/split % #":") (cs/split comma-sep-hosts #","))))
+
+(defn configure-joda
+  "Configures Joda Time to use UTC as the default timezone (in case someone
+   hasn't included it in the JVM args."
+  []
+  (json/add-encoder org.joda.time.DateTime
+                    (fn [dt jg]
+                      (.writeString jg (str dt))))
+  (DateTimeZone/setDefault DateTimeZone/UTC))
 
 (defn configure-mongo-conn-pool
   "Configures the Mongo connection pool."
@@ -112,6 +123,7 @@
   "Sets up the application."
   []
   (web/set-version! @version)
+  (configure-joda)
   (configure-mongo-conn-pool)
   (configure-mongo-db)
   (bootstrap-mongo)

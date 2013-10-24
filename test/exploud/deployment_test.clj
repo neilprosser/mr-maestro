@@ -1,5 +1,6 @@
 (ns exploud.deployment_test
-  (:require [exploud
+  (:require [clj-time.core :as time]
+            [exploud
              [asgard :as asgard]
              [deployment :refer :all]
              [healthchecks :as health]
@@ -45,7 +46,7 @@
        => ..tasks..
        (util/generate-id)
        => ..deploy-id..
-       (util/now-string)
+       (time/now)
        => ..created..
        (store/store-deployment {:ami ..ami..
                                 :application ..app..
@@ -65,7 +66,7 @@
       (provided
        (store/get-deployment ..deploy-id..)
        => {:tasks [{:action ..action..}]}
-       (util/now-string)
+       (time/now)
        => ..start..
        (store/store-deployment {:start ..start.. :tasks [{:action ..action..}]})
        => ..deploy-id..
@@ -81,7 +82,7 @@
                    :region ..region..} {:action :create-asg})
       => ..create-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (asgard/create-auto-scaling-group ..region.. ..app.. ..env.. ..ami.. ..params.. ..deploy-id.. {:action :create-asg :start ..start..} task-finished task-timed-out)
        => ..create-result..))
@@ -90,7 +91,7 @@
       (finish-deployment {})
       => nil
       (provided
-       (util/now-string)
+       (time/now)
        => ..end..
        (store/store-deployment {:end ..end..})
        => ..store-result..))
@@ -99,7 +100,7 @@
       (task-finished ..deploy-id.. {:id ..task-id..})
       => ..finish-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
                                         :end ..end..
@@ -116,7 +117,7 @@
       (task-finished ..deploy-id.. {:id ..task-id..})
       => ..start-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
                                         :end ..end..
@@ -150,7 +151,7 @@
       (task-timed-out ..deploy-id.. {:id ..task-id..})
       => nil
       (provided
-       (util/now-string)
+       (time/now)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
                                         :end ..end..
@@ -163,7 +164,7 @@
                    :region ..region..} {:action :enable-asg})
       => ..enable-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (asgard/enable-asg ..region.. ..new-asg.. ..deploy-id.. {:action :enable-asg
                                                                 :start ..start..} task-finished task-timed-out)
@@ -175,7 +176,7 @@
                    :region ..region..} {:action :disable-asg})
       => ..disable-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (asgard/disable-asg ..region.. ..old-asg.. ..deploy-id.. {:action :disable-asg
                                                                  :start ..start..} task-finished task-timed-out)
@@ -187,7 +188,7 @@
                    :region ..region..} {:action :delete-asg})
       => ..delete-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (asgard/delete-asg ..region.. ..old-asg.. ..deploy-id.. {:action :delete-asg
                                                                 :start ..start..} task-finished task-timed-out)
@@ -202,7 +203,7 @@
                    :hash ..hash..} {:action :wait-for-instance-health})
       => ..completed-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping instance healthcheck"
                                              :date ..start..}]
@@ -222,7 +223,7 @@
                    :hash ..hash..} {:action :wait-for-instance-health})
       => ..wait-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (tyr/application-properties ..env.. ..app.. ..hash..)
        => {:service.port 8082
@@ -244,7 +245,7 @@
                    :hash ..hash..} {:action :wait-for-instance-health})
       => ..wait-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (tyr/application-properties ..env.. ..app.. ..hash..)
        => {}
@@ -296,7 +297,7 @@
                    :region ..region..} {:action :wait-for-elb-health})
       => ..wait-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (health/wait-until-elb-healthy ..region.. ["elb"] ..new-asg..
                                       ..deploy-id.. {:action :wait-for-elb-health
@@ -312,7 +313,7 @@
                    :region ..region..} {:action :wait-for-elb-health})
       => ..wait-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (health/wait-until-elb-healthy ..region.. ["elb1" "elb2"] ..new-asg..
                                       ..deploy-id.. {:action :wait-for-elb-health
@@ -327,7 +328,7 @@
                    :region ..region..} {:action :wait-for-elb-health})
       => ..finish-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
                                             :date ..start..}]
@@ -342,7 +343,7 @@
                    :region ..region..} {:action :wait-for-elb-health})
       => ..finish-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
                                             :date ..start..}]
@@ -356,7 +357,7 @@
                    :region ..region..} {:action :wait-for-elb-health})
       => ..finish-result..
       (provided
-       (util/now-string)
+       (time/now)
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
                                             :date ..start..}]

@@ -1,5 +1,6 @@
 (ns exploud.asgard_test
-  (:require [clojure.set :as set]
+  (:require [clj-time.format :as fmt]
+            [clojure.set :as set]
             [environ.core :refer :all]
             [exploud
              [asgard :refer :all]
@@ -337,20 +338,24 @@
 
 (fact "Getting a task does log transformations"
       (first (:log (task-by-url ..task-url..)))
-      => (just {:date "2013-10-11T18:25:23.000Z"
+      => (just {:date ..date..
                 :message "Completed in 1s."})
       (provided
        (http/simple-get ..task-url..)
        => {:status 200
-           :body "{\"log\":[\"2013-10-11_18:25:23 Completed in 1s.\"]}"}))
+           :body "{\"log\":[\"2013-10-11_18:25:23 Completed in 1s.\"]}"}
+       (fmt/parse asgard-log-date-formatter "2013-10-11_18:25:23")
+       => ..date..))
 
 (fact "Getting a task does updateTime transformations"
       (:updateTime (task-by-url ..task-url..))
-      => "2013-10-11T14:20:42.000Z"
+      => ..date..
       (provided
        (http/simple-get ..task-url..)
        => {:status 200
-           :body "{\"updateTime\":\"2013-10-11 14:20:42 UTC\"}"}))
+           :body "{\"updateTime\":\"2013-10-11 14:20:42 UTC\"}"}
+       (fmt/parse asgard-update-time-formatter "2013-10-11 14:20:42 GMT")
+       => ..date..))
 
 (fact "Task tracking works for the happy path"
       (track-task "ticket-id" {:url "task-url"} 3600 ..completed.. ..timed-out..)

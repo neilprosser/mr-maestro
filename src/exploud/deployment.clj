@@ -1,8 +1,9 @@
 (ns exploud.deployment
   "## Creating and managing deployment chains"
-  (:require [dire.core :refer [with-post-hook!
-                               with-pre-hook!]]
+  (:require [clj-time.core :as time]
             [clojure.tools.logging :as log]
+            [dire.core :refer [with-post-hook!
+                               with-pre-hook!]]
             [exploud
              [asgard :as asgard]
              [healthchecks :as health]
@@ -95,7 +96,7 @@
 (defn start-task
   "Starts the given task based on its `:action`."
   [{:keys [region] deployment-id :id :as deployment} {:keys [action] :as task}]
-  (let [task (assoc task :start (util/now-string))
+  (let [task (assoc task :start (time/now))
         action (keyword action)]
     (cond (= action :create-asg)
           (let [{:keys [ami application environment parameters]} deployment]
@@ -118,7 +119,7 @@
                task-finished task-timed-out))
             (do
               (let [updated-log (conj (:log task) {:message "Skipping instance healthcheck"
-                                                   :date (util/now-string)})
+                                                   :date (time/now)})
                     task (assoc task :log updated-log)]
                 (task-finished deployment-id task))))
           (= action :enable-asg)
@@ -137,7 +138,7 @@
                                              deployment-id task task-finished
                                              task-timed-out))
             (let [updated-log (conj (:log task) {:message "Skipping ELB healthcheck"
-                                                 :date (util/now-string)})
+                                                 :date (time/now)})
                   task (assoc task :log updated-log)]
               (task-finished deployment-id task)))
           (= action :disable-asg)
@@ -146,7 +147,7 @@
             (asgard/disable-asg region asg deployment-id task task-finished
                                 task-timed-out)
             (let [task (assoc task
-                         :end (util/now-string)
+                         :end (time/now)
                          :status "completed")]
               (store/store-task deployment-id task)
               (task-finished deployment-id task)))
@@ -157,7 +158,7 @@
              region asg deployment-id task task-finished task-timed-out)
             (do
               (let [task (assoc task
-                           :end (util/now-string)
+                           :end (time/now)
                            :status "completed")])
               (store/store-task deployment-id task)
               (task-finished deployment-id task)))
@@ -170,7 +171,7 @@
    to the next phase."
   [deployment-id {task-id :id :as task}]
   (store/store-task deployment-id (assoc task
-                                    :end (util/now-string)
+                                    :end (time/now)
                                     :status "completed"))
   (let [deployment (store/get-deployment deployment-id)]
     (let [next-task (task-after deployment task-id)]
@@ -188,7 +189,7 @@
    that."
   [deployment-id task]
   (store/store-task deployment-id (assoc task
-                                    :end (util/now-string)
+                                    :end (time/now)
                                     :status "failed"))
   nil)
 
@@ -211,7 +212,7 @@
         tasks (create-standard-deployment-tasks)
         deployment {:ami ami
                     :application application
-                    :created (util/now-string)
+                    :created (time/now)
                     :environment environment
                     :hash hash
                     :id (util/generate-id)
@@ -227,7 +228,7 @@
   [deployment-id]
   (let [deployment (store/get-deployment deployment-id)
         first-task (first (:tasks deployment))
-        deployment (assoc deployment :start (util/now-string))]
+        deployment (assoc deployment :start (time/now))]
     (store/store-deployment deployment)
     (start-task deployment first-task)
     nil))
@@ -235,5 +236,5 @@
 (defn finish-deployment
   "Puts an `:end` date on the deployment and we all breathe a sigh of relief!"
   [deployment]
-  (store/store-deployment (assoc deployment :end (util/now-string)))
+  (store/store-deployment (assoc deployment :end (time/now)))
   nil)

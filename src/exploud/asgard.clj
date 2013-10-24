@@ -274,7 +274,7 @@
    `:message` fields."
   [log]
   (let [[date message] (clojure.string/split log #" " 2)]
-    {:date (str (fmt/parse asgard-log-date-formatter date)) :message message}))
+    {:date (fmt/parse asgard-log-date-formatter date) :message message}))
 
 (defn split-log-messages
   "If `task` contains a `:log` then attempt to split everything in it. Returns
@@ -289,7 +289,7 @@
    to an ISO8601 one. Unfortunately has to do a crappy string-replace of `UTC`
    for `GMT`, ugh..."
   [date]
-  (str (fmt/parse asgard-update-time-formatter (str/replace date "UTC" "GMT"))))
+  (fmt/parse asgard-update-time-formatter (str/replace date "UTC" "GMT")))
 
 (defn correct-update-time
   "If `task` contains an `:updateTime` then correct the date. Returns either the

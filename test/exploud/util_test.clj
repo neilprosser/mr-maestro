@@ -15,13 +15,6 @@
       (list-from nil)
       => [])
 
-(fact "that now-string works"
-      (now-string)
-      => (str ..now..)
-      (provided
-       (time/now)
-       => ..now..))
-
 (fact "that strip-first-forward-slash works if the string starts with /"
       (strip-first-forward-slash "/this/that")
       => "this/that")
