@@ -550,7 +550,7 @@
    until it is completed (as indicated by `finished?`) or `count` reaches 0."
   [ticket-id {:keys [url] :as task} count completed-fn timed-out-fn]
   (at-at/after 1000 #(track-task ticket-id task count completed-fn timed-out-fn)
-               task-pool :desc url))
+               task-pool :desc (str "task-" url)))
 
 ;; Pre-hook attached to `track-until-completed` to log the parameters.
 (with-pre-hook! #'track-until-completed

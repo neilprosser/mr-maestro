@@ -45,11 +45,11 @@
 
 (defn applications
   "Gets all applications Onix knows about."
-  [application-name]
+  []
   (let [{:keys [body status]} (http/simple-get
                                (applications-url))]
     (if (= status 200)
-      (json/parse-string body true))))
+      {:names (:applications (json/parse-string body true))})))
 
 (defn upsert-application
   "Creates an application and returns it if it doesn't exist or just returns it

@@ -54,8 +54,7 @@
    hasn't included it in the JVM args."
   []
   (json/add-encoder org.joda.time.DateTime
-                    (fn [dt jg]
-                      (.writeString jg (str dt))))
+                    (fn [dt jg] (.writeString jg (str dt))))
   (DateTimeZone/setDefault DateTimeZone/UTC))
 
 (defn configure-mongo-conn-pool

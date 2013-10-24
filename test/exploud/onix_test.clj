@@ -67,3 +67,12 @@
       (provided
        (application "app-name")
        => ..application..))
+
+(fact "that getting applications works properly"
+      (applications)
+      => {:names ["name1" "name2"]}
+      (provided
+       (http/simple-get
+        "http://onix:8080/1.x/applications")
+       => {:status 200
+           :body "{\"applications\":[\"name1\",\"name2\"]}"}))

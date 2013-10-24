@@ -8,7 +8,7 @@
 (defn applications
   "The list of applications Onix knows about."
   []
-  {:names (map :name (onix/applications))})
+  (onix/applications))
 
 (defn application
   "The information about a particular application."

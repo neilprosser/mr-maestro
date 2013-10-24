@@ -62,7 +62,8 @@
   (let [f #(check-asg-health region asg-name min-instances port healthcheck-path
                              deployment-id task completed-fn timed-out-fn
                              polls)]
-    (at-at/after (or delay 5000) f task-pool)))
+    (at-at/after (or delay 5000) f task-pool
+                 :desc (str "asg-healthcheck-" deployment-id))))
 
 (defn check-asg-health
   "If `asg-name` is healthy call `completed-fn` otherwise reschedule until
@@ -135,7 +136,8 @@
    & [delay]]
   (let [f #(check-elb-health region elb-names asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
-    (at-at/after (or delay 5000) f task-pool)))
+    (at-at/after (or delay 5000) f task-pool
+                 :desc (str "elb-healthcheck-" deployment-id))))
 
 (defn check-elb-health
   "This check will look at the members of each ELB which belong to the ASG. If
