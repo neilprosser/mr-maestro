@@ -31,7 +31,7 @@
 ;; `ConnectException`.
 (with-handler! #'simple-get
   java.net.ConnectException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connection-refused
                                      :class :http}))))
 
@@ -39,7 +39,7 @@
 ;; `ConnectTimeoutException`.
 (with-handler! #'simple-get
   org.apache.http.conn.ConnectTimeoutException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connect-timeout
                                      :class :http}))))
 
@@ -47,7 +47,7 @@
 ;; `SocketTimeoutException`.
 (with-handler! #'simple-get
   java.net.SocketTimeoutException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::socket-timeout
                                      :class :http}))))
 
@@ -55,7 +55,7 @@
 ;; `UnknownHostException`.
 (with-handler! #'simple-get
   java.net.UnknownHostException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::unknown-host
                                      :class :http}))))
 
@@ -78,7 +78,7 @@
 ;; `ConnectException`.
 (with-handler! #'simple-post
   java.net.ConnectException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connection-refused
                                      :class :http}))))
 
@@ -86,7 +86,7 @@
 ;; `ConnectTimeoutException`.
 (with-handler! #'simple-post
   org.apache.http.conn.ConnectTimeoutException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connect-timeout
                                      :class :http}))))
 
@@ -94,7 +94,7 @@
 ;; `SocketTimeoutException`.
 (with-handler! #'simple-post
   java.net.SocketTimeoutException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::socket-timeout
                                      :class :http}))))
 
@@ -102,6 +102,6 @@
 ;; `UnknownHostException`.
 (with-handler! #'simple-post
   java.net.UnknownHostException
-  (fn [e url _]
+  (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::unknown-host
                                      :class :http}))))
