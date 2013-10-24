@@ -187,7 +187,7 @@
    :keyName default-key-name
    :name (str application-name "-" environment)
    :ticket ticket-id
-   :trafficAllowed "off"})
+   :trafficAllowed ""})
 
 ;; # Concerning Asgard URL generation
 
