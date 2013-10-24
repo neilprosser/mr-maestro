@@ -40,7 +40,9 @@
                              [lein-midje "3.1.1"]
                              [jonase/kibit "0.0.8"]]}}
 
-  :plugins [[lein-embongo "0.2.1"]
+  :plugins [[lein-cloverage "1.0.2"]
+            [lein-embongo "0.2.1"]
+            [lein-marginalia "0.7.1"]
             [lein-ring "0.8.7"]
             [lein-environ "0.4.0"]
             [lein-release "1.0.73"]]
