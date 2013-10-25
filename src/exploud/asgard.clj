@@ -27,6 +27,7 @@
             [exploud
              [http :as http]
              [store :as store]
+             [tasks :as tasks]
              [util :as util]]
             [overtone.at-at :as at-at]))
 
@@ -529,10 +530,6 @@
 
 ;; # Concerning tracking tasks
 
-(def task-pool
-  "A pool which we use to refresh the tasks from Asgard."
-  (at-at/mk-pool))
-
 (def finished-states
   "The states at which a task is deemed finished."
   #{"completed" "failed" "terminated"})
@@ -550,7 +547,7 @@
    until it is completed (as indicated by `finished?`) or `count` reaches 0."
   [ticket-id {:keys [url] :as task} count completed-fn timed-out-fn]
   (at-at/after 1000 #(track-task ticket-id task count completed-fn timed-out-fn)
-               task-pool :desc (str "task-" url)))
+               tasks/pool :desc (str "task-" url)))
 
 ;; Pre-hook attached to `track-until-completed` to log the parameters.
 (with-pre-hook! #'track-until-completed

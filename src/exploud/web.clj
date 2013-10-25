@@ -12,7 +12,8 @@
              [deployment :as dep]
              [info :as info]
              [pokemon :as pokemon]
-             [store :as store]]
+             [store :as store]
+             [tasks :as tasks]]
             [metrics.ring
              [expose :refer [expose-metrics-as-json]]
              [instrument :refer [instrument]]]
@@ -21,6 +22,7 @@
              [metrics :refer [wrap-per-resource-metrics replace-outside-app
                               replace-guid replace-mongoid replace-number]]
              [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
+            [overtone.at-at :as at-at]
             [ring.middleware
              [format-response :refer [wrap-json-response]]
              [json-params :refer [wrap-json-params]]
@@ -110,7 +112,11 @@
                                             default-user
                                             ami)]
            (dep/start-deployment id)
-           (response {:id id}))))
+           (response {:id id})))
+
+   (GET "/tasks"
+        []
+        (response (with-out-str (at-at/show-schedule tasks/pool)))))
 
   (route/not-found (error-response "Resource not found" 404)))
 

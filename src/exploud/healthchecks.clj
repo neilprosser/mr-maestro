@@ -7,14 +7,11 @@
              [asgard :as asgard]
              [http :as http]
              [store :as store]
+             [tasks :as tasks]
              [util :as util]]
             [overtone.at-at :as at-at]
             [slingshot.slingshot :refer [try+]])
   (:import clojure.lang.ExceptionInfo))
-
-(def task-pool
-  "A pool which we'll use for checking the health of instances."
-  (at-at/mk-pool))
 
 (def poll-every-seconds
   "The delay between polling."
@@ -62,7 +59,7 @@
   (let [f #(check-asg-health region asg-name min-instances port healthcheck-path
                              deployment-id task completed-fn timed-out-fn
                              polls)]
-    (at-at/after (or delay 5000) f task-pool
+    (at-at/after (or delay 5000) f tasks/pool
                  :desc (str "asg-healthcheck-" deployment-id))))
 
 (defn check-asg-health
@@ -136,7 +133,7 @@
    & [delay]]
   (let [f #(check-elb-health region elb-names asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
-    (at-at/after (or delay 5000) f task-pool
+    (at-at/after (or delay 5000) f tasks/pool
                  :desc (str "elb-healthcheck-" deployment-id))))
 
 (defn check-elb-health
