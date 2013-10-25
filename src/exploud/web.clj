@@ -11,6 +11,7 @@
             [exploud
              [deployment :as dep]
              [info :as info]
+             [jsonp :refer [wrap-json-with-padding]]
              [pokemon :as pokemon]
              [store :as store]
              [tasks :as tasks]]
@@ -126,10 +127,11 @@
       (instrument)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
+      (wrap-json-response)
+      (wrap-json-with-padding)
       (wrap-json-params)
       (wrap-keyword-params)
       (wrap-params)
-      (wrap-json-response)
       (wrap-per-resource-metrics [replace-guid
                                   replace-mongoid
                                   replace-number
