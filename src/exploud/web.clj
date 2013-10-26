@@ -28,7 +28,8 @@
              [format-response :refer [wrap-json-response]]
              [json-params :refer [wrap-json-params]]
              [params :refer [wrap-params]]
-             [keyword-params :refer [wrap-keyword-params]]]))
+             [keyword-params :refer [wrap-keyword-params]]]
+            [ring.util.response :refer [header]]))
 
 (def ^:dynamic *version*
   "The version of our application."
@@ -121,10 +122,20 @@
 
   (route/not-found (error-response "Resource not found" 404)))
 
+(defn wrap-cors-headers
+  "Adds in `Access-Control-Allow-Headers` and `Access-Control-Allow-Origin`
+   headers to every response (because I'm lazy)."
+  [handler]
+  (fn [request]
+    (-> (handler request)
+        (header "Access-Control-Allow-Headers" "Access,Origin,X-Prototype-Version,X-Requested-With")
+        (header "Access-Control-Allow-Origin" "*"))))
+
 (def app
   "Sets up our application, adding in various bits of middleware."
   (-> routes
       (instrument)
+      (wrap-cors-headers)
       (wrap-error-handling)
       (wrap-ignore-trailing-slash)
       (wrap-json-response)
