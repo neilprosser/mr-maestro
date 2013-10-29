@@ -26,13 +26,14 @@
            empty?))
 
 (fact "that we obtain the properties for a deployment correctly and store the right things"
-      (prepare-deployment ..region.. ..app.. ..env.. ..user.. ..ami..)
+      (prepare-deployment ..region.. ..app.. ..env.. ..user.. ..ami.. ..message..)
       => {:ami ..ami..
           :application ..app..
           :created ..created..
           :environment ..env..
           :hash ..hash..
           :id ..deploy-id..
+          :message ..message..
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
@@ -56,6 +57,7 @@
                                 :environment ..env..
                                 :hash ..hash..
                                 :id ..deploy-id..
+                                :message ..message..
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
@@ -368,7 +370,7 @@
        => ..finish-result..))
 
 (fact "that preparing a deployment and providing an AMI which doesn't match the application being deployed throws a wobbly"
-      (prepare-deployment "region" "application" "environment" "user" "ami")
+      (prepare-deployment "region" "application" "environment" "user" "ami" "message")
       => (throws ExceptionInfo "Image does not match application")
       (provided
        (asgard/image "region" "ami")

@@ -209,7 +209,7 @@
    use `ami` when telling what Asgard should deploy then store it.
 
    Will return the newly-created deployment."
-  [region application environment user ami]
+  [region application environment user ami message]
   (let [hash (tyr/last-commit-hash environment application)
         parameters (tyr/deployment-params environment application hash)
         tasks (create-standard-deployment-tasks)
@@ -219,6 +219,7 @@
                     :environment environment
                     :hash hash
                     :id (util/generate-id)
+                    :message message
                     :parameters parameters
                     :region region
                     :tasks tasks
@@ -230,7 +231,7 @@
 ;; application matches the application being deployed.
 (with-precondition! #'prepare-deployment
   :ami-name-matches
-  (fn [region application _ _ ami]
+  (fn [region application _ _ ami _]
     (let [ami-application (get-in (asgard/image region ami) [:image :name])
           pattern (re-pattern (str "^ent-" application "-"))]
       (re-find pattern ami-application))))
@@ -239,7 +240,7 @@
 ;; application doesn't match the one being deployed.
 (with-handler! #'prepare-deployment
   {:precondition :ami-name-matches}
-  (fn [e region application _ _ ami]
+  (fn [e region application _ _ ami _]
     (throw (ex-info "Image does not match application" {:type ::mismatched-image
                                                         :region region
                                                         :application application
