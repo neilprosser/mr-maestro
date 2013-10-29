@@ -7,15 +7,15 @@
              [operators :refer :all]
              [query :as mq]]))
 
-(fact "Swapping '_id' with 'id' works"
+(fact "that swapping '_id' with 'id' works"
       (swap-mongo-id {:_id "identifier"}) => {:id "identifier"})
 
-(fact "Swapping 'id' with '_id' works"
+(fact "that swapping 'id' with '_id' works"
       (swap-id {:id "identifier"}) => {:_id "identifier"})
 
-(fact "We can get deployments using the defaut settings"
+(fact "that we can get deployments using the defaut settings"
       (get-deployments {})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
@@ -23,68 +23,68 @@
                            :limit 10
                            :query {}
                            :sort {:start -1}}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments and limit the number that come back"
+(fact "that we can get deployments and limit the number that come back"
       (get-deployments {:size 1})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:limit 1}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments and skip some results"
+(fact "that we can get deployments and skip some results"
       (get-deployments {:from 10})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:skip 10}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments by application"
+(fact "that we can get deployments by application"
       (get-deployments {:application "application"})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:query {:application "application"}}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments after a particular date"
+(fact "that we can get deployments after a particular date"
       (get-deployments {:start-from ..start..})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:query {:start {$gte ..start..}}}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments before a particular date"
+(fact "that we can get deployments before a particular date"
       (get-deployments {:start-to ..end..})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:query {:start {$lt ..end..}}}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments started between two dates"
+(fact "that we can get deployments started between two dates"
       (get-deployments {:start-from ..start.. :start-to ..end..})
-      => ..results..
+      => [{:id "id"}]
       (provided
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:query {:start {$gte ..start.. $lt ..end..}}}))
-       => ..results..))
+       => [{:_id "id"}]))
 
-(fact "We can get deployments by ID"
+(fact "that we can get deployments by ID"
       (get-deployment ..deploy-id..) => {:id ..deploy-id..}
       (provided
        (mc/find-map-by-id "deployments" ..deploy-id..) => {:_id ..deploy-id..}))
 
-(fact "We can store deployments"
+(fact "that we can store deployments"
       (store-deployment {:id ..deploy-id..
                          :something "whatever"}) => nil
                          (provided
@@ -93,7 +93,7 @@
                                      {:_id ..deploy-id..
                                       :something "whatever"}) => ..result..))
 
-(fact "Updating a task in a deployment works"
+(fact "that updating a task in a deployment works"
       (update-task-in-deployment {:tasks
                                   [{:id ..id-1.. :log []}
                                    {:id ..id-2.. :log []}
@@ -103,14 +103,14 @@
                                           {:id ..id-2.. :log ["hello" "world"]}
                                           {:id ..id-3.. :log []}]})
 
-(fact "We can store tasks"
+(fact "that we can store tasks"
       (store-task ..deploy-id.. ..task..) => nil
       (provided
        (get-deployment ..deploy-id..) => ..deploy..
        (update-task-in-deployment ..deploy.. ..task..) => ..amended-deploy..
        (store-deployment ..amended-deploy..) => ..store-result..))
 
-(fact "We can find deployments with incomplete tasks"
+(fact "that we can find deployments with incomplete tasks"
       (deployments-with-incomplete-tasks) => [{:id ..deploy-1..
                                                :tasks [..task-1..]}
                                               {:id ..deploy-2..

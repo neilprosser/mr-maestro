@@ -55,13 +55,15 @@
 (defn get-deployments
   "Retrieves deployments."
   [{:keys [application start-from start-to size from]}]
-  (with-collection (deployments-collection)
-    (find (-> {}
-              (add-application-to-query application)
-              (add-dates-to-query :start start-from start-to)))
-    (limit (or size 10))
-    (skip (or from 0))
-    (sort (array-map :start -1))))
+  (map swap-mongo-id (with-collection (deployments-collection)
+                       (find (-> {}
+                                 (add-application-to-query application)
+                                 (add-dates-to-query :start
+                                                     start-from
+                                                     start-to)))
+                       (limit (or size 10))
+                       (skip (or from 0))
+                       (sort (array-map :start -1)))))
 
 (defn get-deployment
   "Retrieves a deployment by its ID."
