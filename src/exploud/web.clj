@@ -85,6 +85,14 @@
                    (clojure.java.io/resource "exploud.jpg"))
                   "image/jpeg"))
 
+   (GET "/deployments"
+        [application start-from start-to size from]
+        (response (store/get-deployments {:application application
+                                          :start-from start-from
+                                          :start-to start-to
+                                          :size size
+                                          :from from})))
+
    (GET "/deployments/:deployment-id"
         [deployment-id]
         (response (store/get-deployment deployment-id)))

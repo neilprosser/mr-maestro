@@ -3,6 +3,7 @@
 
    Currently an integration point with MongoDB allowing the storage of
    deployments and tasks."
+  (:refer-clojure :exclude [sort find])
   (:require [clj-time
              [core :as time]
              [format :as fmt]]
@@ -12,7 +13,13 @@
             [monger
              [collection :as mc]
              [joda-time]
-             [operators :refer :all]]))
+             [operators :refer :all]
+             [query :refer :all]]))
+
+(defn deployments-collection
+  "Define this as a function because then we can override it for testing."
+  []
+  "deployments")
 
 (defn swap-mongo-id
   "Swaps out an `_id` field for `id`."
@@ -23,6 +30,38 @@
   "Swaps out an `id` field for `_id`."
   [object]
   (set/rename-keys object {:id :_id}))
+
+(defn add-application-to-query
+  "If `application` has been provided, merge it into `query`. Returns the
+   query."
+  [query application]
+  (if application
+    (merge query {:application application})
+    query))
+
+(defn add-dates-to-query
+  "Creates a date-range query for `field` from `start` and `end` and merge into
+   `query` if necessary. Returns the query."
+  [query field start end]
+  (cond (and start end)
+        (merge query {field {$gte start $lt end}})
+        start
+        (merge query {field {$gte start}})
+        end
+        (merge query {field {$lt end}})
+        :else
+        query))
+
+(defn get-deployments
+  "Retrieves deployments."
+  [{:keys [application start-from start-to size from]}]
+  (with-collection (deployments-collection)
+    (find (-> {}
+              (add-application-to-query application)
+              (add-dates-to-query :start start-from start-to)))
+    (limit (or size 10))
+    (skip (or from 0))
+    (sort (array-map :start 1))))
 
 (defn get-deployment
   "Retrieves a deployment by its ID."

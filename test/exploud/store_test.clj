@@ -1,9 +1,11 @@
 (ns exploud.store_test
+  (:refer-clojure :exclude [sort find])
   (:require [exploud.store :refer :all]
             [midje.sweet :refer :all]
             [monger
              [collection :as mc]
-             [operators :refer :all]]))
+             [operators :refer :all]
+             [query :as mq]]))
 
 (fact "Swapping '_id' with 'id' works"
       (swap-mongo-id {:_id "identifier"}) => {:id "identifier"})
@@ -11,7 +13,73 @@
 (fact "Swapping 'id' with '_id' works"
       (swap-id {:id "identifier"}) => {:_id "identifier"})
 
-(fact "We can get deployments"
+(fact "We can get deployments using the defaut settings"
+      (get-deployments {})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 0
+                           :limit 10
+                           :query {}
+                           :sort {:start 1}}))
+       => ..results..))
+
+(fact "We can get deployments and limit the number that come back"
+      (get-deployments {:size 1})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:limit 1}))
+       => ..results..))
+
+(fact "We can get deployments and skip some results"
+      (get-deployments {:from 10})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 10}))
+       => ..results..))
+
+(fact "We can get deployments by application"
+      (get-deployments {:application "application"})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:query {:application "application"}}))
+       => ..results..))
+
+(fact "We can get deployments after a particular date"
+      (get-deployments {:start-from ..start..})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:query {:start {$gte ..start..}}}))
+       => ..results..))
+
+(fact "We can get deployments before a particular date"
+      (get-deployments {:start-to ..end..})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:query {:start {$lt ..end..}}}))
+       => ..results..))
+
+(fact "We can get deployments started between two dates"
+      (get-deployments {:start-from ..start.. :start-to ..end..})
+      => ..results..
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:query {:start {$gte ..start.. $lt ..end..}}}))
+       => ..results..))
+
+(fact "We can get deployments by ID"
       (get-deployment ..deploy-id..) => {:id ..deploy-id..}
       (provided
        (mc/find-map-by-id "deployments" ..deploy-id..) => {:_id ..deploy-id..}))
