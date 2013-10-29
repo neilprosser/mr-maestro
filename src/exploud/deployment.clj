@@ -232,9 +232,8 @@
 (with-precondition! #'prepare-deployment
   :ami-name-matches
   (fn [region application _ _ ami _]
-    (let [ami-application (get-in (asgard/image region ami) [:image :name])
-          pattern (re-pattern (str "^ent-" application "-"))]
-      (re-find pattern ami-application))))
+    (let [ami-application (or (get-in (asgard/image region ami) [:image :name]) "")]
+      (= application (second (re-find #"^ent-([^-]+)-" ami-application))))))
 
 ;; Handler attached to `prepare-deployment` to throw an error if the AMI
 ;; application doesn't match the one being deployed.
