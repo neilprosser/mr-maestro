@@ -173,6 +173,23 @@
         "http://asgard:8080/region/autoScaling/show/asg-name.json")
        => {:status 404}))
 
+(fact "that we can retrieve an image from Asagrd"
+      (image "region" "id")
+      => {:id "id"}
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/image/show/id.json")
+       => {:status 200
+           :body "{\"id\":\"id\"}"}))
+
+(fact "that a missing image comes back with nil"
+      (image "region" "id")
+      => nil
+      (provided
+       (http/simple-get
+        "http://asgard:8080/region/image/show/id.json")
+       => {:status 404}))
+
 (fact "that we can retrieve an instance from Asgard"
       (instance "region" "id")
       => {:id "id"

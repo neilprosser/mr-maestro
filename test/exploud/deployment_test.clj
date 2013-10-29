@@ -38,6 +38,8 @@
           :tasks ..tasks..
           :user ..user..}
       (provided
+       (asgard/image ..region.. ..ami..)
+       => {:image {:name "ent-..app..-0.23"}}
        (tyr/last-commit-hash ..env.. ..app..)
        => ..hash..
        (tyr/deployment-params ..env.. ..app.. ..hash..)
@@ -364,3 +366,10 @@
                                      :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))
+
+(fact "that preparing a deployment and providing an AMI which doesn't match the application being deployed throws a wobbly"
+      (prepare-deployment "region" "application" "environment" "user" "ami")
+      => (throws ExceptionInfo "Image does not match application")
+      (provided
+       (asgard/image "region" "ami")
+       => {:image {:name "ent-somethingelse-0.12"}}))

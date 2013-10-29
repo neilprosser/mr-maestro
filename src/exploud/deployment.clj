@@ -2,8 +2,10 @@
   "## Creating and managing deployment chains"
   (:require [clj-time.core :as time]
             [clojure.tools.logging :as log]
-            [dire.core :refer [with-post-hook!
-                               with-pre-hook!]]
+            [dire.core :refer [with-handler!
+                               with-post-hook!
+                               with-pre-hook!
+                               with-precondition!]]
             [exploud
              [asgard :as asgard]
              [healthchecks :as health]
@@ -223,6 +225,25 @@
                     :user user}]
     (store/store-deployment deployment)
     deployment))
+
+;; Precondition attached to `prepare-deployment` to check that the AMI
+;; application matches the application being deployed.
+(with-precondition! #'prepare-deployment
+  :ami-name-matches
+  (fn [region application _ _ ami]
+    (let [ami-application (get-in (asgard/image region ami) [:image :name])
+          pattern (re-pattern (str "^ent-" application "-"))]
+      (re-find pattern ami-application))))
+
+;; Handler attached to `prepare-deployment` to throw an error if the AMI
+;; application doesn't match the one being deployed.
+(with-handler! #'prepare-deployment
+  {:precondition :ami-name-matches}
+  (fn [e region application _ _ ami]
+    (throw (ex-info "Image does not match application" {:type ::mismatched-image
+                                                        :region region
+                                                        :application application
+                                                        :ami ami}))))
 
 (defn start-deployment
   "Kicks off the first task of the deployment with `deployment-id`."

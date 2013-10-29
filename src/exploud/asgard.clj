@@ -235,6 +235,11 @@
   [region]
   (str asgard-url "/" region "/cluster/index"))
 
+(defn- image-url
+  "Gives us a region-based URL we can use to get information about an image."
+  [region image-id]
+  (str asgard-url "/" region "/image/show/" image-id ".json"))
+
 (defn- instance-url
   "Gives us a region-based URL we can use to get information about an instance."
   [region instance-id]
@@ -351,6 +356,13 @@
   (let [{:keys [status body]} (http/simple-get (cluster-url
                                                 region
                                                 cluster-name))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn image
+  "Retrieves information about an image from Asgard."
+  [region image-id]
+  (let [{:keys [status body]} (http/simple-get (image-url region image-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
