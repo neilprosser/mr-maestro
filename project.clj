@@ -15,7 +15,7 @@
                  [environ "0.4.0"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
-                 [nokia/ring-utils "1.1.4"]
+                 [nokia/ring-utils "1.2.0"]
                  [org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.3"]
                  [org.clojure/data.xml "0.0.7"]
@@ -26,7 +26,7 @@
                  [overtone/at-at "1.2.0"]
                  [ring-json-params "0.1.3"]
                  [ring-middleware-format "0.3.1"]
-                 [ring/ring-jetty-adapter "1.2.0"]]
+                 [ring/ring-jetty-adapter "1.2.1"]]
 
   :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.33"
                                    :exclusions [org.slf4j/slf4j-nop
