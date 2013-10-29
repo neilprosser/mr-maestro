@@ -87,11 +87,11 @@
 
    (GET "/deployments"
         [application start-from start-to size from]
-        (response (store/get-deployments {:application application
-                                          :start-from start-from
-                                          :start-to start-to
-                                          :size size
-                                          :from from})))
+        (response {:deployments (store/get-deployments {:application application
+                                                        :start-from start-from
+                                                        :start-to start-to
+                                                        :size size
+                                                        :from from})}))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]
