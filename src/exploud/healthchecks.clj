@@ -72,8 +72,8 @@
                                  healthcheck-path)
           message (str "Checking healthcheck on port " port " and path /"
                        (util/strip-first-forward-slash healthcheck-path) ".")
-          updated-log (conj (:log task) {:date (time/now)
-                                         :message message})
+          updated-log (conj (or (:log task) []) {:date (time/now)
+                                                 :message message})
           updated-task (assoc task :log updated-log :status "running")]
       (store/store-task deployment-id updated-task)
       (if healthy?
@@ -145,7 +145,7 @@
       (if-let [elb-name (first elb-names)]
         (let [healthy? (elb-healthy? region elb-name asg-name)
               message (str "Checking ELB (" elb-name ") health.")
-              updated-log (conj (:log task) {:date (time/now)
+              updated-log (conj (or (:log task) []) {:date (time/now)
                                              :message message})
               updated-task (assoc task :log updated-log :status "running")]
           (store/store-task deployment-id updated-task)

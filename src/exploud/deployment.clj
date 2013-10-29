@@ -117,11 +117,11 @@
                (get-in deployment [:parameters :min])
                port healthcheck deployment-id task
                task-finished task-timed-out))
-            (do
-              (let [updated-log (conj (:log task) {:message "Skipping instance healthcheck"
-                                                   :date (time/now)})
-                    task (assoc task :log updated-log)]
-                (task-finished deployment-id task))))
+            (let [updated-log (conj (or (:log task) [])
+                                    {:message "Skipping instance healthcheck"
+                                     :date (time/now)})
+                  task (assoc task :log updated-log)]
+              (task-finished deployment-id task)))
           (= action :enable-asg)
           (asgard/enable-asg
            region
@@ -137,8 +137,9 @@
               (health/wait-until-elb-healthy region elb-names asg-name
                                              deployment-id task task-finished
                                              task-timed-out))
-            (let [updated-log (conj (:log task) {:message "Skipping ELB healthcheck"
-                                                 :date (time/now)})
+            (let [updated-log (conj (or (:log task) [])
+                                    {:message "Skipping ELB healthcheck"
+                                     :date (time/now)})
                   task (assoc task :log updated-log)]
               (task-finished deployment-id task)))
           (= action :disable-asg)
