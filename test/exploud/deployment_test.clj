@@ -26,9 +26,9 @@
            empty?))
 
 (fact "that we obtain the properties for a deployment correctly and store the right things"
-      (prepare-deployment ..region.. ..app.. ..env.. ..user.. ..ami.. ..message..)
+      (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..message..)
       => {:ami ..ami..
-          :application ..app..
+          :application "app"
           :created ..created..
           :environment ..env..
           :hash ..hash..
@@ -40,10 +40,10 @@
           :user ..user..}
       (provided
        (asgard/image ..region.. ..ami..)
-       => {:image {:name "ent-..app..-0.23"}}
-       (tyr/last-commit-hash ..env.. ..app..)
+       => {:image {:name "ent-app-0.23"}}
+       (tyr/last-commit-hash ..env.. "app")
        => ..hash..
-       (tyr/deployment-params ..env.. ..app.. ..hash..)
+       (tyr/deployment-params ..env.. "app" ..hash..)
        => ..params..
        (create-standard-deployment-tasks)
        => ..tasks..
@@ -52,7 +52,7 @@
        (time/now)
        => ..created..
        (store/store-deployment {:ami ..ami..
-                                :application ..app..
+                                :application "app"
                                 :created ..created..
                                 :environment ..env..
                                 :hash ..hash..

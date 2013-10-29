@@ -114,12 +114,12 @@
           (response body nil 201)))
 
    (POST "/applications/:application/deploy"
-         [application ami environment message]
+         [application ami environment message user]
          (let [{:keys [id] :as deployment} (dep/prepare-deployment
                                             default-region
                                             application
                                             environment
-                                            default-user
+                                            (or user default-user)
                                             ami
                                             message)]
            (dep/start-deployment id)
