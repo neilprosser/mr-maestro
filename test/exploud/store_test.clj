@@ -22,7 +22,7 @@
        (mq/exec (contains {:skip 0
                            :limit 10
                            :query {}
-                           :sort {:start 1}}))
+                           :sort {:start -1}}))
        => ..results..))
 
 (fact "We can get deployments and limit the number that come back"

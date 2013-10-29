@@ -61,7 +61,7 @@
               (add-dates-to-query :start start-from start-to)))
     (limit (or size 10))
     (skip (or from 0))
-    (sort (array-map :start 1))))
+    (sort (array-map :start -1))))
 
 (defn get-deployment
   "Retrieves a deployment by its ID."
