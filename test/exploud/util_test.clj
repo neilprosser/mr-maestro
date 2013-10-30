@@ -15,6 +15,22 @@
       (list-from nil)
       => [])
 
+(fact "that string->number doesn't blow up if given nil"
+      (string->number nil)
+      => nil)
+
+(fact "that string->number doesn't blow up if given a number"
+      (string->number 1232)
+      => 1232)
+
+(fact "that string->number turns a numeric string into a number"
+      (string->number "1232")
+      => 1232)
+
+(fact "that string->number turns a non-numeric string into nil"
+      (string->number "adsfsa")
+      => nil)
+
 (fact "that strip-first-forward-slash works if the string starts with /"
       (strip-first-forward-slash "/this/that")
       => "this/that")

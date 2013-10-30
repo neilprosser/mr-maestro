@@ -5,7 +5,8 @@
             [monger
              [collection :as mc]
              [operators :refer :all]
-             [query :as mq]]))
+             [query :as mq]])
+  (:import clojure.lang.ExceptionInfo))
 
 (fact "that swapping '_id' with 'id' works"
       (swap-mongo-id {:_id "identifier"}) => {:id "identifier"})

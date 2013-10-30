@@ -2,7 +2,8 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
-  :dependencies [[cheshire "5.2.0"]
+  :dependencies [[bouncer "0.3.0-alpha1"]
+                 [cheshire "5.2.0"]
                  [ch.qos.logback/logback-classic "1.0.13"]
                  [clj-http "0.7.7"]
                  [clj-time "0.6.0"]

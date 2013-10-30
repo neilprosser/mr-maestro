@@ -9,7 +9,8 @@
              [format :as fmt]]
             [clojure.set :as set]
             [clojure.tools.logging :as log]
-            [dire.core :refer [with-pre-hook! with-post-hook!]]
+            [dire.core :refer [with-post-hook!
+                               with-pre-hook!]]
             [monger
              [collection :as mc]
              [joda-time]

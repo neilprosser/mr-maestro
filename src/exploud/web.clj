@@ -1,6 +1,8 @@
 (ns exploud.web
   "## Setting up our RESTful interface"
-  (:require [cheshire.core :as json]
+  (:require [bouncer.core :as b]
+            [cheshire.core :as json]
+            [clj-time.format :as fmt]
             [clojure.string :refer [split]]
             [clojure.tools.logging :refer [info warn error]]
             [compojure
@@ -14,7 +16,9 @@
              [jsonp :refer [wrap-json-with-padding]]
              [pokemon :as pokemon]
              [store :as store]
-             [tasks :as tasks]]
+             [tasks :as tasks]
+             [util :as util]
+             [validators :as v]]
             [metrics.ring
              [expose :refer [expose-metrics-as-json]]
              [instrument :refer [instrument]]]
@@ -87,11 +91,21 @@
 
    (GET "/deployments"
         [application start-from start-to size from]
-        (response {:deployments (store/get-deployments {:application application
-                                                        :start-from start-from
-                                                        :start-to start-to
-                                                        :size size
-                                                        :from from})}))
+        (let [parameters {:application application
+                          :start-from start-from
+                          :start-to start-to
+                          :size size
+                          :from from}
+              result (apply b/validate parameters v/query-param-validators)]
+          (if-let [details (first result)]
+            (response {:message "Query parameter validation failed"
+                       :details details} nil 400)
+            (response {:deployments (store/get-deployments
+                                     {:application application
+                                      :start-from (fmt/parse start-from)
+                                      :start-to (fmt/parse start-to)
+                                      :size (util/string->number size)
+                                      :from (util/string->number from)})}))))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]

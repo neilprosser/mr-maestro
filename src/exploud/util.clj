@@ -22,6 +22,13 @@
    :else
    [thing]))
 
+(defn string->number
+  "Attempts to turn a string into a number, or nil if not a number."
+  [string]
+  (if string
+    (let [n (read-string (str string))]
+      (when (number? n) n))))
+
 (defn strip-first-forward-slash
   "Turns `/this/that` into `this/that`."
   [thing]
