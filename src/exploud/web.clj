@@ -4,7 +4,7 @@
             [cheshire.core :as json]
             [clj-time.format :as fmt]
             [clojure.string :refer [split]]
-            [clojure.tools.logging :refer [info warn error]]
+            [clojure.tools.logging :as log]
             [compojure
              [core :refer [defroutes context GET PUT POST DELETE]]
              [handler :as handler]
@@ -88,6 +88,10 @@
         (response (clojure.java.io/input-stream
                    (clojure.java.io/resource "exploud.jpg"))
                   "image/jpeg"))
+
+   (GET "/instances/:app-name"
+        [app-name]
+        (response (info/instances-for-application default-region app-name)))
 
    (GET "/deployments"
         [application start-from start-to size from]

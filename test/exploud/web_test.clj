@@ -3,6 +3,7 @@
             [clj-time.format :as fmt]
             [exploud
              [store :as store]
+             [info :as info]
              [web :refer :all]]
             [midje.sweet :refer :all]))
 
@@ -123,3 +124,9 @@
 (fact "that getting deployments with an invalid start-to gives a 400"
       (request :get "/1.x/deployments" {:params {:start-to "not a date"}})
       => (contains {:status 400}))
+
+(fact "that getting instances for a given app works"
+      (request :get "/1.x/instances/myapp")
+      => (contains {:status 200})
+      (provided
+       (info/instances-for-application anything "myapp") => '()))

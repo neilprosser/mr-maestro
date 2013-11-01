@@ -240,6 +240,11 @@
   [region image-id]
   (str asgard-url "/" region "/image/show/" image-id ".json"))
 
+(defn- instances-list-url
+  "Gives us a region-based URL we can use to get a list of all instances."
+  [region]
+  (str asgard-url "/" region "/instance/list.json"))
+
 (defn- instance-url
   "Gives us a region-based URL we can use to get information about an instance."
   [region instance-id]
@@ -371,6 +376,13 @@
   [region instance-id]
   (let [{:keys [body status]} (http/simple-get (instance-url
                                                 region instance-id))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn all-instances
+  "Retrieves information about all instances in the given region."
+  [region]
+  (let [{:keys [body status]} (http/simple-get (instances-list-url region))]
     (when (= status 200)
       (json/parse-string body true))))
 

@@ -27,3 +27,16 @@
         tyranitar-application (tyr/upsert-application application-name)]
     (asgard/upsert-application application-name details)
     (merge (application region application-name) tyranitar-application)))
+
+(defn- is-named?
+  "Checks if the given instance has the given name (ignoring version)."
+  [app-name instance]
+  (let [tags (get-in instance [:ec2Instance :tags])
+        pattern (re-pattern (str app-name ".*"))]
+    (some #(and (= "Name" (:key %)) (re-matches pattern (:value %))) tags)))
+
+(defn instances-for-application
+  "Gets those instances in the given region, which have the given name (ignoring version)."
+  [region application-name]
+  (let [all-instances (asgard/all-instances region)]
+    (filter #(is-named? application-name %) all-instances)))

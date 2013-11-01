@@ -44,3 +44,22 @@
        => ..asgard..
        (application "region" "application")
        => {:asgard "business"}))
+
+(def instances [{:ec2Instance {:tags [{:key "Name" :value "myapp"} {:key "color" :value "red"}]}}
+                {:ec2Instance {:tags [{:key "Name" :value "other"} {:key "color" :value "red"}]}}
+                {:ec2Instance {:tags [{:key "Name" :value "another"} {:key "color" :value "green"}]}}])
+
+(fact "that named instance is found"
+      (instances-for-application anything "myapp") => '({:ec2Instance
+                                                         {:tags
+                                                          [{:key "Name"
+                                                            :value "myapp"}
+                                                           {:key "color"
+                                                            :value "red"}]}})
+      (provided
+       (asgard/all-instances anything) => instances))
+
+(fact "that empty list is returned when no app of given name exists."
+      (instances-for-application anything "wibble") => '()
+      (provided
+       (asgard/all-instances anything) => instances))
