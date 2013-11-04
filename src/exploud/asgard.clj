@@ -277,6 +277,16 @@
   []
   (str asgard-url "/application/index"))
 
+(defn- launch-config-list-url
+  "Gives us a URL to get a list of all launch configurations."
+  [region]
+  (str asgard-url "/" region "/launchConfiguration/list.json"))
+
+(defn- launch-config-url
+  "Gives us a URL to get the details of the launch config with the given ID."
+  [region config-id]
+  (str asgard-url "/" region "/launchConfiguration/show/" config-id ".json"))
+
 ;; # Task transformations
 
 (defn split-log-message
@@ -397,6 +407,20 @@
   "Retrieves the last ASG for a cluster, or `nil` if one doesn't exist."
   [region cluster-name]
   (last (cluster region cluster-name)))
+
+(defn launch-config
+  "Fetches the launch configuration with the given ID in the given region."
+  [region config-id]
+  (let [{:keys [body status]} (http/simple-get (launch-config-url region config-id))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
+(defn launch-config-list
+  "Fetches all launch configs for the given region."
+  [region]
+  (let [{:keys [body status]} (http/simple-get (launch-config-list-url region))]
+    (when (= status 200)
+      (json/parse-string body true))))
 
 (defn load-balancer
   "Retrieves information about a load-balancer."
