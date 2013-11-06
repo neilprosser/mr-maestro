@@ -214,7 +214,7 @@
 (defn- application-list-url
   "Gives us a URL we can use to retrieve the list of applications."
   []
-  (str asgard-url "/application/list.json"))
+  (str (asgard-url-for-environment :poke) "/application/list.json"))
 
 (defn- auto-scaling-group-url
   "Gives us a region-based URL we can use to get information about an Auto
