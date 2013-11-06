@@ -42,6 +42,7 @@
     (filter #(is-named? application-name %) all-instances)))
 
 (defn- matching-config-id
+  "Gets the launch config name from the given config if it matches the given app name."
   [config application-name]
   (let [pattern (re-pattern (str application-name ".*"))
         config-name (:launchConfigurationName config)]
@@ -49,17 +50,20 @@
       config-name)))
 
 (defn- matching-config-ids
+  "Gets the launch config name from the given configs where it matches the given app name. Removes 'nil' results."
   [configs app-name]
   (let [app-config-ids (map #(matching-config-id % app-name) configs)]
     (filter identity app-config-ids)))
 
 (defn- active-images
+  "Gets the image data for each given launch-config ID, if the config is active."
   [config-ids region]
   (let [configs (map #(asgard/launch-config region %) config-ids)
         active-configs (filter #(identity (:group %)) configs)]
     (map :image active-configs) ))
 
 (defn active-amis-for-app
+  "Fetches all active amis for the given application in the given region."
   [region app-name]
   (->
    (asgard/launch-config-list region)
