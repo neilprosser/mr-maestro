@@ -22,21 +22,15 @@
                  [org.clojure/data.xml "0.0.7"]
                  [org.clojure/data.zip "0.1.1"]
                  [org.clojure/tools.logging "0.2.6"]
+                 [org.eclipse.jetty/jetty-server "8.1.13.v20130916"]
                  [org.slf4j/slf4j-api "1.7.5"]
                  [org.slf4j/jul-to-slf4j "1.7.5"]
                  [overtone/at-at "1.2.0"]
                  [ring-json-params "0.1.3"]
                  [ring-middleware-format "0.3.1"]
-                 [ring/ring-jetty-adapter "1.2.1"]]
+                 [ring/ring-jetty-adapter "1.2.1" :exclusions [org.eclipse.jetty/jetty-server]]]
 
-  :profiles {:dev {:dependencies [[com.github.rest-driver/rest-client-driver "1.1.33"
-                                   :exclusions [org.slf4j/slf4j-nop
-                                                javax.servlet/servlet-api
-                                                org.eclipse.jetty.orbit/javax.servlet]]
-                                  [clj-http-fake "0.4.1"]
-                                  [junit "4.11"]
-                                  [midje "1.5.1"]
-                                  [rest-cljer "0.1.11"]]
+  :profiles {:dev {:dependencies [[midje "1.5.1"]]
                    :plugins [[lein-rpm "0.0.5"]
                              [lein-midje "3.1.1"]
                              [jonase/kibit "0.0.8"]]}}
