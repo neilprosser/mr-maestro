@@ -10,7 +10,7 @@
   [input]
   (if input
     (if-let [number (util/string->number input)]
-      (or (= 0 number) (v/positive number))
+      (or (zero? number) (v/positive number))
       false)
     true))
 

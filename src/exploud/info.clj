@@ -57,7 +57,7 @@
   [config-ids region]
   (let [configs (map #(asgard/launch-config region %) config-ids)
         active-configs (filter #(identity (:group %)) configs)]
-    (map #(:image %) active-configs) ))
+    (map :image active-configs) ))
 
 (defn active-amis-for-app
   [region app-name]
