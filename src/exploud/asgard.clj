@@ -211,6 +211,7 @@
   [environment region application-name]
   (str (asgard-url-for-environment environment) "/" region "/application/show/" application-name ".json"))
 
+; TODO Make this use both Asgards?
 (defn- application-list-url
   "Gives us a URL we can use to retrieve the list of applications."
   []
@@ -235,29 +236,29 @@
 (defn- cluster-create-next-group-url
   "Gives us a region-based URL we can use to create the next Auto Scaling
    Group."
-  [region]
-  (str asgard-url "/" region "/cluster/createNextGroup"))
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/cluster/createNextGroup"))
 
 (defn- cluster-index-url
   "Gives us a region-based URL we can use to make changes to Auto Scaling
    Groups."
-  [region]
-  (str asgard-url "/" region "/cluster/index"))
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/cluster/index"))
 
 (defn- image-url
   "Gives us a region-based URL we can use to get information about an image."
-  [region image-id]
-  (str asgard-url "/" region "/image/show/" image-id ".json"))
+  [environment region image-id]
+  (str (asgard-url-for-environment environment) "/" region "/image/show/" image-id ".json"))
 
 (defn- instances-list-url
   "Gives us a region-based URL we can use to get a list of all instances."
-  [region]
-  (str asgard-url "/" region "/instance/list.json"))
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/instance/list.json"))
 
 (defn- instance-url
   "Gives us a region-based URL we can use to get information about an instance."
-  [region instance-id]
-  (str asgard-url "/" region "/instance/show/" instance-id ".json"))
+  [environment region instance-id]
+  (str (asgard-url-for-environment environment) "/" region "/instance/show/" instance-id ".json"))
 
 (defn- load-balancer-url
   "Gives us a region-based URL we can use to get information about a load-
@@ -268,18 +269,18 @@
 (defn- security-groups-list-url
   "Gives us a region-based URL we can use to get a list of all Security
    Groups."
-  [region]
-  (str asgard-url "/" region "/security/list.json"))
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/security/list.json"))
 
 (defn- tasks-url
   "Gives us a region-based URL we can use to get tasks."
-  []
-  (str asgard-url "/task/list.json"))
+  [environment]
+  (str (asgard-url-for-environment environment) "/task/list.json"))
 
 (defn- task-by-id-url
   "Gives us a region-based URL we can use to get a single task by its ID."
-  [region task-id]
-  (str asgard-url "/" region "/task/show/" task-id ".json"))
+  [environment region task-id]
+  (str (asgard-url-for-environment environment) "/" region "/task/show/" task-id ".json"))
 
 (defn- upsert-application-url
   "Gives us a URL we can use to upsert an application."
@@ -397,25 +398,27 @@
     (when (= status 200)
       (json/parse-string body true))))
 
+; TODO Make this use both Asgards
 (defn image
   "Retrieves information about an image from Asgard."
   [region image-id]
-  (let [{:keys [status body]} (http/simple-get (image-url region image-id))]
+  (let [{:keys [status body]} (http/simple-get (image-url :poke region image-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
 (defn instance
   "Retrieves information about an instance, or `nil` if it doesn't exist."
-  [region instance-id]
+  [environment region instance-id]
   (let [{:keys [body status]} (http/simple-get (instance-url
-                                                region instance-id))]
+                                                environment region instance-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
+; TODO Make this use both Asgards
 (defn all-instances
   "Retrieves information about all instances in the given region."
   [region]
-  (let [{:keys [body status]} (http/simple-get (instances-list-url region))]
+  (let [{:keys [body status]} (http/simple-get (instances-list-url :poke region))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -424,7 +427,7 @@
   [environment region asg-name]
   (when-let [asg (auto-scaling-group environment region asg-name)]
     (let [instances (get-in asg [:group :instances])]
-      (map (fn [i] (instance region (:instanceId i))) instances))))
+      (map (fn [i] (instance environment region (:instanceId i))) instances))))
 
 (defn last-auto-scaling-group
   "Retrieves the last ASG for a cluster, or `nil` if one doesn't exist."
@@ -457,9 +460,9 @@
 
 (defn security-groups
   "Retrieves all security groups within a particular region."
-  [region]
+  [environment region]
   (let [{:keys [body status]} (http/simple-get (security-groups-list-url
-                                                region))]
+                                                environment region))]
     (when (= status 200)
       (:securityGroups (json/parse-string body true)))))
 
@@ -474,8 +477,8 @@
   "Retrieves all tasks that Asgard knows about. It will combine
    `:runningTaskList` with `:completedTaskList` (with the running tasks first in
    the list)."
-  []
-  (let [{:keys [body status]} (http/simple-get (tasks-url))]
+  [environment]
+  (let [{:keys [body status]} (http/simple-get (tasks-url environment))]
     (when (= status 200)
       (let [both (json/parse-string body true)]
         (concat (:runningTaskList both)
@@ -525,8 +528,8 @@
 
 (defn get-security-group-id
   "Gets the ID of a security group with the given name in a particular region."
-  [security-group region]
-  (let [security-groups (security-groups region)]
+  [security-group environment region]
+  (let [security-groups (security-groups environment region)]
     (if-let [found-group (first (filter (fn [sg] (= security-group
                                                    (:groupName sg)))
                                         security-groups))]
@@ -539,21 +542,21 @@
 (defn replace-security-group-name
   "If `security-group` looks like it's a security name, it'll be switched with
    its ID."
-  [region security-group]
+  [environment region security-group]
   (if (is-security-group-id? security-group)
     security-group
-    (get-security-group-id security-group region)))
+    (get-security-group-id security-group environment region)))
 
 (defn replace-security-group-names
   "If `:subnetPurpose` is `internal` and `:securityGroupNames` is found within
    `parameters` the value will be checked for security group names and replaced
    with their IDs (since we can't use security group names in a VPC)."
-  [parameters region]
+  [parameters environment region]
   (if (= "internal" (:subnetPurpose parameters))
     (if-let [security-group-names (util/list-from
                                    (:selectedSecurityGroups parameters))]
       (let [security-group-ids (map (fn [sg]
-                                      (replace-security-group-name region sg))
+                                      (replace-security-group-name environment region sg))
                                     security-group-names)]
         (assoc parameters :selectedSecurityGroups security-group-ids))
       parameters)
@@ -563,8 +566,8 @@
   "Make sure `:selectedSecurityGroups` contains the ID of the
    `exploud-healthcheck` security group. This group will be used to allow
    exploud to talk to the box and check its healthcheck."
-  [parameters region]
-  (let [exploud-group-id (replace-security-group-name region
+  [parameters environment region]
+  (let [exploud-group-id (replace-security-group-name environment region
                                                       "exploud-healthcheck")]
     (if-let [groups (:selectedSecurityGroups parameters)]
       (assoc parameters :selectedSecurityGroups (conj groups exploud-group-id))
@@ -584,12 +587,12 @@
 (defn prepare-parameters
   "Prepares Asgard parameters by running them through a series of
    transformations."
-  [parameters region]
+  [parameters environment region]
   (-> parameters
       remove-nil-values
       replace-load-balancer-key
-      (replace-security-group-names region)
-      (add-exploud-security-group region)
+      (replace-security-group-names environment region)
+      (add-exploud-security-group environment region)
       (add-region-to-zones region)))
 
 (defn explode-parameters
@@ -683,7 +686,7 @@
                     :name asg-name
                     :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url region)
+                                               (cluster-index-url environment region)
                                                {:form-params (explode-parameters
                                                               parameters)})]
     (if (= status 302)
@@ -723,7 +726,7 @@
                     :name asg-name
                     :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url region)
+                                               (cluster-index-url environment region)
                                                {:form-params (explode-parameters
                                                               parameters)})]
     (if (= status 302)
@@ -762,7 +765,7 @@
                     :name asg-name
                     :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url region)
+                                               (cluster-index-url environment region)
                                                {:form-params (explode-parameters
                                                               parameters)})]
     (if (= status 302)
@@ -801,7 +804,7 @@
                     :name asg-name
                     :ticket ticket-id}
         {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url region)
+                                               (cluster-index-url environment region)
                                                {:form-params (explode-parameters
                                                               parameters)})]
     (if (= status 302)
@@ -845,7 +848,7 @@
   (let [protected-parameters (protected-create-new-asg-parameters
                               application-name environment image-id ticket-id)]
     (prepare-parameters (merge default-create-new-asg-parameters
-                               user-parameters protected-parameters) region)))
+                               user-parameters protected-parameters) environment region)))
 
 (defn create-new-asg
   "Begins a create new Auto Scaling Group operation for the specified
@@ -866,12 +869,12 @@
          {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [new-asg-name (extract-new-asg-name (get headers "location"))
-            tasks (tasks)
+            tasks (tasks environment)
             log-message (str "Create Auto Scaling Group '" new-asg-name "'")]
         (if-let [found-task
                  (first (filter (fn [t] (= (:name t) log-message)) tasks))]
           (let [task-id (:id found-task)
-                url (task-by-id-url region task-id)]
+                url (task-by-id-url environment region task-id)]
             (store/add-to-deployment-parameters
              id
              {:newAutoScalingGroupName (str application "-" environment)})
@@ -900,7 +903,7 @@
   (let [protected-parameters (protected-create-next-asg-parameters
                               application-name environment image-id ticket-id)]
     (prepare-parameters (merge default-create-next-asg-parameters
-                               user-parameters protected-parameters) region)))
+                               user-parameters protected-parameters) environment region)))
 
 (defn new-asg-name-from-task
   "Examines the `:message` of the first item in the task's `:log` for a string
@@ -928,7 +931,7 @@
                            id)
         {:keys [status headers]
          :as response} (http/simple-post
-                        (cluster-create-next-group-url region)
+                        (cluster-create-next-group-url environment region)
                         {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [task-json-url (str (get headers "location") ".json")

@@ -62,50 +62,50 @@
           (keyword (str "selectedLoadBalancersForVpcId" vpc-id)) "load-balancer"})
 
 (fact "We don't replace security group names when not working in a VPC"
-      (replace-security-group-names {:selectedSecurityGroups ["group-one" "group-two"]} ..region..)
+      (replace-security-group-names {:selectedSecurityGroups ["group-one" "group-two"]} ..environment.. ..region..)
       => {:selectedSecurityGroups ["group-one" "group-two"]})
 
 (fact "We replace security group names when working in a VPC"
       (replace-security-group-names {:subnetPurpose "internal"
-                                     :selectedSecurityGroups ["sg-something" "group"]} ..region..)
+                                     :selectedSecurityGroups ["sg-something" "group"]} ..environment.. ..region..)
       => {:subnetPurpose "internal"
           :selectedSecurityGroups ["sg-something" "sg-group"]}
       (provided
-       (security-groups ..region..)
+       (security-groups ..environment.. ..region..)
        => [{:groupId "sg-group"
             :groupName "group"}]))
 
 (fact "A missing security group throws an exception"
       (replace-security-group-names {:subnetPurpose "internal"
-                                     :selectedSecurityGroups ["sg-something" "group"]} ..region..)
+                                     :selectedSecurityGroups ["sg-something" "group"]} ..environment.. ..region..)
       => (throws ExceptionInfo "Unknown security group name")
       (provided
-       (security-groups ..region..)
+       (security-groups ..environment.. ..region..)
        => []))
 
 (fact "We gracefully handle a security group name specified as a single string"
       (replace-security-group-names {:subnetPurpose "internal"
-                                     :selectedSecurityGroups "group"} ..region..)
+                                     :selectedSecurityGroups "group"} ..environment.. ..region..)
       => {:subnetPurpose "internal"
           :selectedSecurityGroups ["sg-group"]}
       (provided
-       (security-groups ..region..)
+       (security-groups ..environment.. ..region..)
        => [{:groupId "sg-group"
             :groupName "group"}]))
 
 (fact "that we add the whole `:selectedSecurityGroups` key and exploud security group when no groups are given"
-      (add-exploud-security-group {} ..region..)
+      (add-exploud-security-group {} ..environment.. ..region..)
       => {:selectedSecurityGroups ["sg-group"]}
       (provided
-       (security-groups ..region..)
+       (security-groups ..environment.. ..region..)
        => [{:groupId "sg-group"
             :groupName "exploud-healthcheck"}]))
 
 (fact "that we add the exploud security group to any existing ones"
-      (add-exploud-security-group {:selectedSecurityGroups ["sg-something"]} ..region..)
+      (add-exploud-security-group {:selectedSecurityGroups ["sg-something"]} ..environment.. ..region..)
       => {:selectedSecurityGroups ["sg-something" "sg-exploud"]}
       (provided
-       (security-groups ..region..)
+       (security-groups ..environment.. ..region..)
        => [{:groupId "sg-exploud"
             :groupName "exploud-healthcheck"}]))
 
@@ -122,16 +122,16 @@
       => {:something "irrelevant"})
 
 (fact "Preparing params works through all expected transformations"
-      (prepare-parameters ..original.. ..region..)
+      (prepare-parameters ..original.. ..environment.. ..region..)
       => ..zones-replaced..
       (provided
        (remove-nil-values ..original..)
        => ..nil-replaced..
        (replace-load-balancer-key ..nil-replaced..)
        => ..lb-replaced..
-       (replace-security-group-names ..lb-replaced.. ..region..)
+       (replace-security-group-names ..lb-replaced.. ..environment.. ..region..)
        => ..sg-replaced..
-       (add-exploud-security-group ..sg-replaced.. ..region..)
+       (add-exploud-security-group ..sg-replaced.. ..environment.. ..region..)
        => ..sg-added..
        (add-region-to-zones ..sg-added.. ..region..)
        => ..zones-replaced..))
@@ -207,7 +207,7 @@
        => {:status 404}))
 
 (fact "that we can retrieve an instance from Asgard"
-      (instance "region" "id")
+      (instance "environment" "region" "id")
       => {:id "id"
           :something "this"}
       (provided
@@ -217,7 +217,7 @@
            :body "{\"id\":\"id\",\"something\":\"this\"}"}))
 
 (fact "that a missing instance comes back with nil"
-      (instance "region" "id")
+      (instance "environment" "region" "id")
       => nil
       (provided
        (http/simple-get
@@ -249,9 +249,9 @@
        (auto-scaling-group "environment" "region" "asg")
        => {:group {:instances [{:instanceId "i-1"}
                                {:instanceId "i-2"}]}}
-       (instance "region" "i-1")
+       (instance "environment" "region" "i-1")
        => ..instance-1..
-       (instance "region" "i-2")
+       (instance "environment" "region" "i-2")
        => ..instance-2..))
 
 (fact "that a missing ASG gives nil when getting instances from a non-existent ASG"
@@ -271,7 +271,7 @@
            :body "{\"applications\":[{\"name\":\"something\"}]}"}))
 
 (fact "We can retrieve the security groups within a region"
-      (security-groups "region")
+      (security-groups "environment" "region")
       => [{:name "group"}]
       (provided
        (http/simple-get
@@ -280,7 +280,7 @@
            :body "{\"securityGroups\":[{\"name\":\"group\"}]}"}))
 
 (fact "We can retrieve tasks from Asgard"
-      (tasks)
+      (tasks "environment")
       => [{:id "task-1"}
           {:id "task-2"}]
       (provided
@@ -570,7 +570,7 @@
          {:form-params ..exploded-params..})
         => {:status 302
             :headers {"location" "http://dev.asgard:8080/region/autoScaling/show/new-asg-name"}}
-        (tasks)
+        (tasks "environment")
         => [{:name "Something we don't care about"}
             {:id 420 :name "Create Auto Scaling Group 'new-asg-name'"}]
         (store/add-to-deployment-parameters ..ticket.. {:newAutoScalingGroupName "application-environment"})
