@@ -52,6 +52,8 @@
   "The default user we'll say deployments came from (if one isn't provided)."
   "exploud")
 
+(def application-regex #"[a-z]+")
+
 (defn response
   "Accepts a body an optionally a content type and status. Returns a response
    object."
@@ -129,11 +131,13 @@
 
    (PUT "/applications/:application"
         [application description email owner]
-        (let [body (info/upsert-application default-region application
-                                            {:description description
-                                             :email email
-                                             :owner owner})]
-          (response body nil 201)))
+        (if (re-matches application-regex application)
+          (let [body (info/upsert-application default-region application
+                                              {:description description
+                                               :email email
+                                               :owner owner})]
+            (response body nil 201))
+          (error-response "Illegal application name" 400)))
 
    (POST "/applications/:application/deploy"
          [application ami environment message user]

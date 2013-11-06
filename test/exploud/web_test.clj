@@ -136,3 +136,13 @@
       => (contains {:status 200})
       (provided
        (info/active-amis-for-app anything "myapp") => '()))
+
+(fact "that creating an application with an illegal name returns 400."
+      (request :put "/1.x/applications/my-application")
+      => (contains {:status 400}))
+
+(fact "that creating an application with a legal name returns 201."
+      (request :put "/1.x/applications/myapplication")
+      => (contains {:status 201})
+      (provided
+       (info/upsert-application anything "myapplication" anything) => {}))
