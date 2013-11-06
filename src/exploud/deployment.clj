@@ -168,11 +168,11 @@
 
 (defmethod start-task*
   :delete-asg
-  [{:keys [region] deployment-id :id :as deployment} task]
+  [{:keys [environment region] deployment-id :id :as deployment} task]
   (if-let [asg (get-in deployment [:parameters
                                    :oldAutoScalingGroupName])]
     (asgard/delete-asg
-     region asg deployment-id task task-finished task-timed-out)
+     environment region asg deployment-id task task-finished task-timed-out)
     (do
       (let [task (assoc task
                    :end (time/now)

@@ -219,8 +219,8 @@
 (defn- auto-scaling-group-url
   "Gives us a region-based URL we can use to get information about an Auto
    Scaling Group."
-  [region asg-name]
-  (str asgard-url "/" region "/autoScaling/show/" asg-name ".json"))
+  [environment region asg-name]
+  (str (asgard-url-for-environment environment) "/" region "/autoScaling/show/" asg-name ".json"))
 
 (defn- auto-scaling-save-url
   "Gives us a region-based URL we can use to save Auto Scaling Groups."
@@ -368,8 +368,9 @@
 
 (defn auto-scaling-group
   "Retrieves information about an Auto Scaling Group from Asgard."
-  [region asg-name]
+  [environment region asg-name]
   (let [{:keys [status body]} (http/simple-get (auto-scaling-group-url
+                                                environment
                                                 region
                                                 asg-name))]
     (when (= status 200)
@@ -408,8 +409,8 @@
 
 (defn instances-in-asg
   "Retrieves a list of instances in an ASG, or `nil` if the ASG doesn't exist."
-  [region asg-name]
-  (when-let [asg (auto-scaling-group region asg-name)]
+  [environment region asg-name]
+  (when-let [asg (auto-scaling-group environment region asg-name)]
     (let [instances (get-in asg [:group :instances])]
       (map (fn [i] (instance region (:instanceId i))) instances))))
 
@@ -662,7 +663,7 @@
    given. Will start tracking the resulting task URL until completed. You can
    assume that a non-explosive call has been successful and the task is being
    tracked."
-  [region asg-name ticket-id task completed-fn timed-out-fn]
+  [environment region asg-name ticket-id task completed-fn timed-out-fn]
   (let [parameters {:_action_delete ""
                     :name asg-name
                     :ticket ticket-id}
@@ -684,8 +685,8 @@
 ;; attempting to delete exists.
 (with-precondition! #'delete-asg
   :asg-exists
-  (fn [r a _ _ _ _]
-    (auto-scaling-group r a)))
+  (fn [e r a _ _ _ _]
+    (auto-scaling-group e r a)))
 
 ;; Handler for a missing ASG attached to `delete-asg`.
 (with-handler! #'delete-asg
@@ -701,7 +702,7 @@
    given. Will start tracking the resulting task URL until completed. You can
    assume that a non-explosive call has been successful and the task is being
    tracked."
-  [region asg-name ticket-id task new-size completed-fn timed-out-fn]
+  [environment region asg-name ticket-id task new-size completed-fn timed-out-fn]
   (let [parameters {:_action_resize ""
                     :minAndMaxSize new-size
                     :name asg-name
@@ -724,8 +725,8 @@
 ;; to resize exists.
 (with-precondition! #'resize-asg
   :asg-exists
-  (fn [r a _ _ _ _ _]
-    (auto-scaling-group r a)))
+  (fn [e r a _ _ _ _ _]
+    (auto-scaling-group e r a)))
 
 ;; Handler for a missing ASG attached to `resize-asg`.
 (with-handler! #'resize-asg

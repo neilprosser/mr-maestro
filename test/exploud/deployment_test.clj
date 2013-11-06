@@ -191,15 +191,16 @@
        => ..disable-result..))
 
 (fact "that starting a task with an action of `:delete-asg` sets a `:start` value and calls Asgard correctly"
-      (start-task {:id ..deploy-id..
+      (start-task {:environment ..env..
+                   :id ..deploy-id..
                    :parameters {:oldAutoScalingGroupName ..old-asg..}
                    :region ..region..} {:action :delete-asg})
       => ..delete-result..
       (provided
        (time/now)
        => ..start..
-       (asgard/delete-asg ..region.. ..old-asg.. ..deploy-id.. {:action :delete-asg
-                                                                :start ..start..} task-finished task-timed-out)
+       (asgard/delete-asg ..env.. ..region.. ..old-asg.. ..deploy-id.. {:action :delete-asg
+                                                                      :start ..start..} task-finished task-timed-out)
        => ..delete-result..))
 
 (fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and skips the check when we've got zero as the `:min`"

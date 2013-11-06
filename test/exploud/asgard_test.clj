@@ -157,7 +157,7 @@
        => ..corrected-update-time..))
 
 (fact "We can retrieve the details about an Auto Scaling Group from Asgard"
-      (auto-scaling-group "region" "asg-name")
+      (auto-scaling-group "environment" "region" "asg-name")
       => {:name "the-name"}
       (provided
        (http/simple-get
@@ -166,14 +166,14 @@
            :body "{\"name\":\"the-name\"}"}))
 
 (fact "A missing ASG comes back with nil"
-      (auto-scaling-group "region" "asg-name")
+      (auto-scaling-group "environment" "region" "asg-name")
       => nil
       (provided
        (http/simple-get
         "http://dev.asgard:8080/region/autoScaling/show/asg-name.json")
        => {:status 404}))
 
-(fact "that we can retrieve an image from Asagrd"
+(fact "that we can retrieve an image from Asgard"
       (image "region" "id")
       => {:id "id"}
       (provided
@@ -227,10 +227,10 @@
        => {:status 404}))
 
 (fact "that we can retrieve the instances in an ASG"
-      (instances-in-asg "region" "asg")
+      (instances-in-asg "environment" "region" "asg")
       => [..instance-1.. ..instance-2..]
       (provided
-       (auto-scaling-group "region" "asg")
+       (auto-scaling-group "environment" "region" "asg")
        => {:group {:instances [{:instanceId "i-1"}
                                {:instanceId "i-2"}]}}
        (instance "region" "i-1")
@@ -239,10 +239,10 @@
        => ..instance-2..))
 
 (fact "that a missing ASG gives nil when getting instances from a non-existent ASG"
-      (instances-in-asg "region" "asg")
+      (instances-in-asg "environment" "region" "asg")
       => nil
       (provided
-       (auto-scaling-group "region" "asg")
+       (auto-scaling-group "environment" "region" "asg")
        => nil))
 
 (fact "We can get the list of applications in Asgard"
@@ -303,7 +303,7 @@
            :body "[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]"}))
 
 (against-background
- [(auto-scaling-group "region" ..asg..)
+ [(auto-scaling-group "environment" "region" ..asg..)
   => {}
   (explode-parameters {:_action_resize ""
                        :minAndMaxSize ..size..
@@ -324,11 +324,11 @@
   => ..track-result..]
 
  (fact "Resizing ASG returns whatever was returned by `track-until-completed`."
-       (resize-asg "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
+       (resize-asg "environment" "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
        => ..track-result..)
 
  (fact "Non-302 response when resizing ASG throws exception"
-       (resize-asg "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
+       (resize-asg "environment" "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Unexpected status while resizing ASG")
        (provided
         (http/simple-post
@@ -337,10 +337,10 @@
         => {:status 500}))
 
  (fact "Missing ASG when resizing throws exception"
-       (resize-asg "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
+       (resize-asg "environment" "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Auto Scaling Group does not exist.")
        (provided
-        (auto-scaling-group "region" ..asg..)
+        (auto-scaling-group "environment" "region" ..asg..)
         => nil)))
 
 (fact "We can tell whether a task is finished"
@@ -411,7 +411,7 @@
        =throws=> (ex-info "Oh god no!" {:class :other})))
 
 (against-background
- [(auto-scaling-group "region" ..asg..)
+ [(auto-scaling-group "environment" "region" ..asg..)
   => {}
   (explode-parameters {:_action_delete ""
                        :name ..asg..
@@ -430,11 +430,11 @@
   => ..track-result..]
 
  (fact "Deleting ASG returns whatever was returned by `track-until-completed`."
-       (delete-asg "region" ..asg.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
+       (delete-asg "environment" "region" ..asg.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
        => ..track-result..)
 
  (fact "Non-302 response when deleting ASG throws exception"
-       (delete-asg "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (delete-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Unexpected status while deleting ASG")
        (provided
         (http/simple-post
@@ -443,10 +443,10 @@
         => {:status 500}))
 
  (fact "Missing ASG when deleting throws exception"
-       (delete-asg "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (delete-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Auto Scaling Group does not exist.")
        (provided
-        (auto-scaling-group "region" ..asg..)
+        (auto-scaling-group "environment" "region" ..asg..)
         => nil)))
 
 (against-background
