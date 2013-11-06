@@ -58,6 +58,8 @@
         :mongo-connections-max "50"
         :service-vpc-id "vpc-7bc88713"}
 
+  :clean-targets [:target-path "docs"]
+
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
 
