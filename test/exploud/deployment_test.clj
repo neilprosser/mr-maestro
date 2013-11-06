@@ -134,10 +134,6 @@
        (start-task ..deployment.. ..next-task..)
        => ..start-result..))
 
-(fact "that attempting to start a task with an unrecognised `:action` throws up"
-      (start-task ..deployment.. {:action :unrecognised})
-      => (throws ExceptionInfo "Unrecognised action."))
-
 (fact "that getting the task after one that is last gives `nil`"
       (task-after {:tasks [{:id ..task-1..}
                            {:id ..task-2..}]}

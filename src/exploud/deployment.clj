@@ -95,79 +95,92 @@
 (declare task-timed-out)
 (declare finish-deployment)
 
+(defmulti start-task*
+  (fn [deployment {:keys [action] :as task}]
+    (keyword action)))
+
+(defmethod start-task*
+  :create-asg
+  [{:keys [region application environment ami parameters] deployment-id :id} task]
+  (asgard/create-auto-scaling-group region application environment ami parameters deployment-id task
+                                    task-finished task-timed-out))
+
+(defmethod start-task*
+  :wait-for-instance-health
+  [{:keys [application environment hash region] deployment-id :id :as deployment} task]
+  (if (wait-for-instance-health? deployment)
+    (let [service-properties (tyr/application-properties
+                              environment application hash)
+          port (:service.port service-properties 8080)
+          healthcheck (:service.healthcheck.path service-properties
+                                                 "/healthcheck")]
+      (health/wait-until-asg-healthy
+       region
+       (get-in deployment [:parameters :newAutoScalingGroupName])
+       (get-in deployment [:parameters :min])
+       port healthcheck deployment-id task
+       task-finished task-timed-out))
+    (let [updated-log (conj (or (:log task) [])
+                            {:message "Skipping instance healthcheck"
+                             :date (time/now)})
+          task (assoc task :log updated-log)]
+      (task-finished deployment-id task))))
+
+(defmethod start-task*
+  :enable-asg
+  [{:keys [region] deployment-id :id :as deployment} task]
+  (asgard/enable-asg region
+                     (get-in deployment [:parameters :newAutoScalingGroupName])
+                     deployment-id task task-finished task-timed-out))
+
+(defmethod start-task*
+  :wait-for-elb-health
+  [{:keys [region] deployment-id :id :as deployment} task]
+  (if (check-elb-health? deployment)
+    (let [elb-names (util/list-from
+                     (get-in deployment
+                             [:parameters :selectedLoadBalancers]))
+          asg-name (get-in deployment
+                           [:parameters :newAutoScalingGroupName])]
+      (health/wait-until-elb-healthy region elb-names asg-name
+                                     deployment-id task task-finished
+                                     task-timed-out))
+    (let [updated-log (conj (or (:log task) [])
+                            {:message "Skipping ELB healthcheck"
+                             :date (time/now)})
+          task (assoc task :log updated-log)]
+      (task-finished deployment-id task))))
+
+(defmethod start-task*
+  :disable-asg
+  [{:keys [region] deployment-id :id :as deployment} task]
+  (if-let [asg (get-in deployment [:parameters
+                                   :oldAutoScalingGroupName])]
+    (asgard/disable-asg region asg deployment-id task task-finished
+                        task-timed-out)
+    (let [task (assoc task
+                 :end (time/now)
+                 :status "completed")]
+      (store/store-task deployment-id task)
+      (task-finished deployment-id task))))
+
+(defmethod start-task*
+  :delete-asg
+  [{:keys [region] deployment-id :id :as deployment} task]
+  (if-let [asg (get-in deployment [:parameters
+                                   :oldAutoScalingGroupName])]
+    (asgard/delete-asg
+     region asg deployment-id task task-finished task-timed-out)
+    (do
+      (let [task (assoc task
+                   :end (time/now)
+                   :status "completed")])
+      (store/store-task deployment-id task)
+      (task-finished deployment-id task))))
+
 (defn start-task
-  "Starts the given task based on its `:action`."
-  [{:keys [region] deployment-id :id :as deployment} {:keys [action] :as task}]
-  (let [task (assoc task :start (time/now))
-        action (keyword action)]
-    (cond (= action :create-asg)
-          (let [{:keys [ami application environment parameters]} deployment]
-            (asgard/create-auto-scaling-group region application environment ami
-                                              parameters deployment-id task
-                                              task-finished task-timed-out))
-          (= action :wait-for-instance-health)
-          (if (wait-for-instance-health? deployment)
-            (let [{:keys [application environment hash]} deployment
-                  service-properties (tyr/application-properties
-                                      environment application hash)
-                  port (:service.port service-properties 8080)
-                  healthcheck (:service.healthcheck.path service-properties
-                                                         "/healthcheck")]
-              (health/wait-until-asg-healthy
-               region
-               (get-in deployment [:parameters :newAutoScalingGroupName])
-               (get-in deployment [:parameters :min])
-               port healthcheck deployment-id task
-               task-finished task-timed-out))
-            (let [updated-log (conj (or (:log task) [])
-                                    {:message "Skipping instance healthcheck"
-                                     :date (time/now)})
-                  task (assoc task :log updated-log)]
-              (task-finished deployment-id task)))
-          (= action :enable-asg)
-          (asgard/enable-asg
-           region
-           (get-in deployment [:parameters :newAutoScalingGroupName])
-           deployment-id task task-finished task-timed-out)
-          (= action :wait-for-elb-health)
-          (if (check-elb-health? deployment)
-            (let [elb-names (util/list-from
-                             (get-in deployment
-                                     [:parameters :selectedLoadBalancers]))
-                  asg-name (get-in deployment
-                                   [:parameters :newAutoScalingGroupName])]
-              (health/wait-until-elb-healthy region elb-names asg-name
-                                             deployment-id task task-finished
-                                             task-timed-out))
-            (let [updated-log (conj (or (:log task) [])
-                                    {:message "Skipping ELB healthcheck"
-                                     :date (time/now)})
-                  task (assoc task :log updated-log)]
-              (task-finished deployment-id task)))
-          (= action :disable-asg)
-          (if-let [asg (get-in deployment [:parameters
-                                           :oldAutoScalingGroupName])]
-            (asgard/disable-asg region asg deployment-id task task-finished
-                                task-timed-out)
-            (let [task (assoc task
-                         :end (time/now)
-                         :status "completed")]
-              (store/store-task deployment-id task)
-              (task-finished deployment-id task)))
-          (= action :delete-asg)
-          (if-let [asg (get-in deployment [:parameters
-                                           :oldAutoScalingGroupName])]
-            (asgard/delete-asg
-             region asg deployment-id task task-finished task-timed-out)
-            (do
-              (let [task (assoc task
-                           :end (time/now)
-                           :status "completed")])
-              (store/store-task deployment-id task)
-              (task-finished deployment-id task)))
-          :else (throw (ex-info "Unrecognised action."
-                                {:type ::unrecogized-action
-                                 :action action})))))
+  [deployment task]
+  (start-task* deployment (assoc task :start (time/now))))
 
 (defn task-finished
   "Function called when a task has completed. Deals with moving the deployment
