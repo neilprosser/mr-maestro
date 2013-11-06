@@ -118,8 +118,8 @@
 (defn elb-healthy?
   "`true` if all instances in `asg-name` in `elb-name` have a `:state` of
    `InService`."
-  [region elb-name asg-name]
-  (let [elb (asgard/load-balancer region elb-name)
+  [environment region elb-name asg-name]
+  (let [elb (asgard/load-balancer environment region elb-name)
         asg-filter (fn [i] (= (:autoScalingGroupName i) asg-name))
         instances (filter asg-filter (:instanceStates elb))]
     (every? (fn [i] (= "InService" (:state i))) instances)))
@@ -129,9 +129,9 @@
 (defn schedule-elb-check
   "Schedules an ELB healthcheck, which will use `elb-healthy?` to determine
    health of all `elb-names`."
-  [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls
+  [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls
    & [delay]]
-  (let [f #(check-elb-health region elb-names asg-name deployment-id task
+  (let [f #(check-elb-health environment region elb-names asg-name deployment-id task
                              completed-fn timed-out-fn polls)]
     (at-at/after (or delay 5000) f tasks/pool
                  :desc (str "elb-healthcheck-" deployment-id))))
@@ -139,25 +139,25 @@
 (defn check-elb-health
   "This check will look at the members of each ELB which belong to the ASG. If
    they're all showing a `:state` of `InService` it's all good."
-  [region elb-names asg-name deployment-id task completed-fn timed-out-fn polls]
+  [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls]
   (try
     (let [elb-names (util/list-from elb-names)]
       (if-let [elb-name (first elb-names)]
-        (let [healthy? (elb-healthy? region elb-name asg-name)
+        (let [healthy? (elb-healthy? environment region elb-name asg-name)
               message (str "Checking ELB (" elb-name ") health.")
               updated-log (conj (or (:log task) []) {:date (time/now)
-                                             :message message})
+                                                     :message message})
               updated-task (assoc task :log updated-log :status "running")]
           (store/store-task deployment-id updated-task)
           (if healthy?
-            (schedule-elb-check region (rest elb-names) asg-name deployment-id
+            (schedule-elb-check environment region (rest elb-names) asg-name deployment-id
                                 updated-task completed-fn timed-out-fn
                                 (dec polls))
             (cond
              (zero? polls)
              (timed-out-fn deployment-id updated-task)
              :else
-             (schedule-elb-check region elb-names asg-name deployment-id
+             (schedule-elb-check environment region elb-names asg-name deployment-id
                                  updated-task completed-fn timed-out-fn
                                  (dec polls)))))
         (completed-fn deployment-id task)))
@@ -169,15 +169,16 @@
 (defn wait-until-elb-healthy
   "Polls every 5 seconds until `elb-healthy?` comes back `true` for all ELBs or
    until we've done `poll-count` checks."
-  [region elb-names asg-name deployment-id task completed-fn timed-out-fn]
-  (schedule-elb-check region elb-names asg-name deployment-id task completed-fn
+  [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn]
+  (schedule-elb-check environment region elb-names asg-name deployment-id task completed-fn
                       timed-out-fn poll-count))
 
 ;; Pre-hook attached to `wait-until-elb-healthy` to log parameters.
 (with-pre-hook! #'wait-until-elb-healthy
-  (fn [region elb-names asg-name deployment-id task completed-fn timed-out-fn]
+  (fn [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn]
     (log/debug "Waiting until ELB healthy with parameters"
-               {:region region
+               {:environment environment
+                :region region
                 :elb-names elb-names
                 :asg-name asg-name
                 :deployment-id deployment-id

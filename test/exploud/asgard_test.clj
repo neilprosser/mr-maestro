@@ -25,6 +25,22 @@
       (remove-nil-values {:something nil :another "thing"})
       => {:another "thing"})
 
+(fact "that getting the details from a cluster name works"
+      (details-from-name "application-stack")
+      => {:application "application" :stack "stack"})
+
+(fact "that getting the details from an ASG name works"
+      (details-from-name "application-stack-v000")
+      => {:application "application" :stack "stack"})
+
+(fact "that getting the details from a launch-configuration name works"
+      (details-from-name "application-stack-v000-20131106170500")
+      => {:application "application" :stack "stack"})
+
+(fact "that getting the details from something which is invalid gives nil"
+      (details-from-name "whatever233123")
+      => nil)
+
 (fact "We don't replace the selected load balancers when not working in a VPC"
       (replace-load-balancer-key {:selectedLoadBalancers ["load-balancer"]})
       => {:selectedLoadBalancers ["load-balancer"]})
@@ -209,7 +225,7 @@
        => {:status 404}))
 
 (fact "that we can retrieve a load-balancer form Asgard"
-      (load-balancer "region" "elb")
+      (load-balancer "environment" "region" "elb")
       => {:id "id"
           :something "this"}
       (provided
@@ -219,7 +235,7 @@
            :body "{\"id\":\"id\",\"something\":\"this\"}"}))
 
 (fact "that a missing load-balancer comes back with nil"
-      (load-balancer "region" "elb")
+      (load-balancer "environment" "region" "elb")
       => nil
       (provided
        (http/simple-get
@@ -294,10 +310,10 @@
        => ..response..))
 
 (fact "We can get the last ASG for an application"
-      (last-auto-scaling-group "region" "application-environment")
+      (last-auto-scaling-group "environment " "region" "application-environment")
       => {:autoScalingGroupName "application-environment-v023"}
       (provided
-       ( http/simple-get
+       (http/simple-get
          "http://dev.asgard:8080/region/cluster/show/application-environment.json")
        => {:status 200
            :body "[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]"}))
@@ -657,7 +673,7 @@
                                   :timed-out-fn ..timed-out..})
       => ..create-result..
       (provided
-       (last-auto-scaling-group ..region.. "application-environment")
+       (last-auto-scaling-group "environment" ..region.. "application-environment")
        => nil
        (create-new-asg {:region ..region..
                          :application "application"
@@ -682,7 +698,7 @@
                                   :timed-out-fn ..timed-out..})
       => ..create-result..
       (provided
-       (last-auto-scaling-group ..region.. "application-environment")
+       (last-auto-scaling-group "environment" ..region.. "application-environment")
        => {:autoScalingGroupName ..old-asg..}
        (store/add-to-deployment-parameters ..ticket.. {:oldAutoScalingGroupName ..old-asg..})
        => ..store-result..

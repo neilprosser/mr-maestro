@@ -224,13 +224,13 @@
 
 (defn- auto-scaling-save-url
   "Gives us a region-based URL we can use to save Auto Scaling Groups."
-  [region]
-  (str asgard-url "/" region "/autoScaling/save"))
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/autoScaling/save"))
 
 (defn- cluster-url
   "Gives us a region-based URL we can use to get information about a Cluster"
-  [region cluster-name]
-  (str asgard-url "/" region "/cluster/show/" cluster-name ".json"))
+  [environment region cluster-name]
+  (str (asgard-url-for-environment environment) "/" region "/cluster/show/" cluster-name ".json"))
 
 (defn- cluster-create-next-group-url
   "Gives us a region-based URL we can use to create the next Auto Scaling
@@ -262,8 +262,8 @@
 (defn- load-balancer-url
   "Gives us a region-based URL we can use to get information about a load-
    balancer"
-  [region elb-name]
-  (str asgard-url "/" region "/loadBalancer/show/" elb-name ".json"))
+  [environment region elb-name]
+  (str (asgard-url-for-environment environment) "/" region "/loadBalancer/show/" elb-name ".json"))
 
 (defn- security-groups-list-url
   "Gives us a region-based URL we can use to get a list of all Security
@@ -283,18 +283,29 @@
 
 (defn- upsert-application-url
   "Gives us a URL we can use to upsert an application."
-  []
-  (str asgard-url "/application/index"))
+  [environment]
+  (str (asgard-url-for-environment environment) "/application/index"))
 
 (defn- launch-config-list-url
   "Gives us a URL to get a list of all launch configurations."
-  [region]
-  (str asgard-url "/" region "/launchConfiguration/list.json"))
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/launchConfiguration/list.json"))
 
 (defn- launch-config-url
   "Gives us a URL to get the details of the launch config with the given ID."
-  [region config-id]
-  (str asgard-url "/" region "/launchConfiguration/show/" config-id ".json"))
+  [environment region config-id]
+  (str (asgard-url-for-environment environment) "/" region "/launchConfiguration/show/" config-id ".json"))
+
+;; # Helpful things
+
+(defn details-from-name
+  "Attempts to pull the application name and stack from a given name (could be cluster, ASG or launch-configuration).
+   These names are usually in the form `{application}-{stack}(possible other stuff)`. If it succeeds, returns a map
+   containing `:application` and `:stack` otherwise `nil`."
+  [name]
+  (when-let [matches (re-matches #"^([a-z]+)-([a-z]+)(?:-.*)?$" name)]
+    {:application (second matches)
+     :stack (second (next matches))}))
 
 ;; # Task transformations
 
@@ -378,8 +389,9 @@
 
 (defn cluster
   "Retrieves information about a Cluster from Asgard."
-  [region cluster-name]
+  [environment region cluster-name]
   (let [{:keys [status body]} (http/simple-get (cluster-url
+                                                environment
                                                 region
                                                 cluster-name))]
     (when (= status 200)
@@ -416,28 +428,30 @@
 
 (defn last-auto-scaling-group
   "Retrieves the last ASG for a cluster, or `nil` if one doesn't exist."
-  [region cluster-name]
-  (last (cluster region cluster-name)))
+  [environment region cluster-name]
+  (last (cluster environment region cluster-name)))
 
+; TODO Make this use both Asgards
 (defn launch-config
   "Fetches the launch configuration with the given ID in the given region."
   [region config-id]
-  (let [{:keys [body status]} (http/simple-get (launch-config-url region config-id))]
+  (let [{:keys [body status]} (http/simple-get (launch-config-url :poke region config-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
+; TODO Make this use both Asgards
 (defn launch-config-list
   "Fetches all launch configs for the given region."
   [region]
-  (let [{:keys [body status]} (http/simple-get (launch-config-list-url region))]
+  (let [{:keys [body status]} (http/simple-get (launch-config-list-url :poke region))]
     (when (= status 200)
       (json/parse-string body true))))
 
 (defn load-balancer
   "Retrieves information about a load-balancer."
-  [region elb-name]
+  [environment region elb-name]
   (let [{:keys [body status]} (http/simple-get (load-balancer-url
-                                                region elb-name))]
+                                                environment region elb-name))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -469,11 +483,12 @@
 
 ;; # Concerning updating things in Asgard
 
+; TODO Make this use both Asgards
 (defn upsert-application
   "Updates the information on an application in Asgard. This function will
    replace an already existing application or create a new one."
   [application-name {:keys [description email owner]}]
-  (http/simple-post (upsert-application-url)
+  (http/simple-post (upsert-application-url :poke)
                     {:form-params {:description description
                                    :email email
                                    :monitorBucketType "application"
@@ -847,7 +862,7 @@
                                                             id)
         {:keys [status headers] :as response}
         (http/simple-post
-         (auto-scaling-save-url region)
+         (auto-scaling-save-url environment region)
          {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [new-asg-name (extract-new-asg-name (get headers "location"))
@@ -932,8 +947,8 @@
   "If the specified application already has an ASG in the given region and
    environment, create the next one. Otherwise, create a brand-new ASG."
   [{:keys [application environment region] ticket-id :id :as parameters}]
-  (let [asg-name (str application "-" environment)]
-    (if-let [asg (last-auto-scaling-group region asg-name)]
+  (let [cluster-name (str application "-" environment)]
+    (if-let [asg (last-auto-scaling-group environment region cluster-name)]
       (let [old-asg-name (:autoScalingGroupName asg)]
         (store/add-to-deployment-parameters
          ticket-id
