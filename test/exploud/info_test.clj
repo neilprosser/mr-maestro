@@ -63,3 +63,19 @@
       (instances-for-application anything "wibble") => '()
       (provided
        (asgard/all-instances anything) => instances))
+
+(def configs-list [{:launchConfigurationName "wibble-poke-v004-20131101110801"}
+                   {:launchConfigurationName "wobble-poke-v004-20131101110801"}
+                   {:launchConfigurationName "wabble-poke-v004-20131101110801"}
+                   {:launchConfigurationName "wibble-poke-v003-20131030110801"}])
+
+(def active-launch-config {:image {:imageId "ami-07fe1d70"} :group {:createdTime "2013-10-30T09:10:47Z"}})
+
+(def inactive-launch-config {:image {:imageId "ami-17fe1d71"} :group nil})
+
+(fact "that correct active ami is found for application."
+      (active-amis-for-app anything "wibble") => '({:imageId "ami-07fe1d70"})
+      (provided
+       (asgard/launch-config-list anything) => configs-list
+       (asgard/launch-config anything "wibble-poke-v004-20131101110801") => active-launch-config
+       (asgard/launch-config anything "wibble-poke-v003-20131030110801") => inactive-launch-config))
