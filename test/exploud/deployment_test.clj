@@ -167,26 +167,28 @@
        => ..store-result..))
 
 (fact "that starting a task with an action of `:enable-asg` sets a `:start` value and calls Asgard correctly"
-      (start-task {:id ..deploy-id..
+      (start-task {:environment ..env..
+                   :id ..deploy-id..
                    :parameters {:newAutoScalingGroupName ..new-asg..}
                    :region ..region..} {:action :enable-asg})
       => ..enable-result..
       (provided
        (time/now)
        => ..start..
-       (asgard/enable-asg ..region.. ..new-asg.. ..deploy-id.. {:action :enable-asg
+       (asgard/enable-asg ..env.. ..region.. ..new-asg.. ..deploy-id.. {:action :enable-asg
                                                                 :start ..start..} task-finished task-timed-out)
        => ..enable-result..))
 
 (fact "that starting a task with an action of `:disable-asg` sets a `:start` value and calls Asgard correctly"
-      (start-task {:id ..deploy-id..
+      (start-task {:environment ..env..
+                   :id ..deploy-id..
                    :parameters {:oldAutoScalingGroupName ..old-asg..}
                    :region ..region..} {:action :disable-asg})
       => ..disable-result..
       (provided
        (time/now)
        => ..start..
-       (asgard/disable-asg ..region.. ..old-asg.. ..deploy-id.. {:action :disable-asg
+       (asgard/disable-asg ..env.. ..region.. ..old-asg.. ..deploy-id.. {:action :disable-asg
                                                                  :start ..start..} task-finished task-timed-out)
        => ..disable-result..))
 

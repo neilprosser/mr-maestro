@@ -130,8 +130,8 @@
 
 (defmethod start-task*
   :enable-asg
-  [{:keys [region] deployment-id :id :as deployment} task]
-  (asgard/enable-asg region
+  [{:keys [environment region] deployment-id :id :as deployment} task]
+  (asgard/enable-asg environment region
                      (get-in deployment [:parameters :newAutoScalingGroupName])
                      deployment-id task task-finished task-timed-out))
 
@@ -155,11 +155,11 @@
 
 (defmethod start-task*
   :disable-asg
-  [{:keys [region] deployment-id :id :as deployment} task]
+  [{:keys [environment region] deployment-id :id :as deployment} task]
   (if-let [asg (get-in deployment [:parameters
                                    :oldAutoScalingGroupName])]
-    (asgard/disable-asg region asg deployment-id task task-finished
-                        task-timed-out)
+    (asgard/disable-asg environment region asg deployment-id task
+                        task-finished task-timed-out)
     (let [task (assoc task
                  :end (time/now)
                  :status "completed")]

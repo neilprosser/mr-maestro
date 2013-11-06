@@ -450,7 +450,7 @@
         => nil)))
 
 (against-background
- [(auto-scaling-group "region" ..asg..)
+ [(auto-scaling-group "environment" "region" ..asg..)
   => {}
   (explode-parameters {:_action_activate ""
                        :name ..asg..
@@ -469,11 +469,11 @@
   => ..track-result..]
 
  (fact "Enabling ASG returns whatever was returned by `track-until-completed`."
-       (enable-asg "region" ..asg.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
+       (enable-asg "environment"  "region" ..asg.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
        => ..track-result..)
 
  (fact "Non-302 response when enabling ASG throws exception"
-       (enable-asg "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (enable-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Unexpected status while enabling ASG")
        (provided
         (http/simple-post
@@ -482,14 +482,14 @@
         => {:status 500}))
 
  (fact "Missing ASG when enabling throws exception"
-       (enable-asg "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (enable-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Auto Scaling Group does not exist.")
        (provided
-        (auto-scaling-group "region" ..asg..)
+        (auto-scaling-group "environment" "region" ..asg..)
         => nil)))
 
 (against-background
- [(auto-scaling-group "region" ..asg..)
+ [(auto-scaling-group "environment" "region" ..asg..)
   => {}
   (explode-parameters {:_action_deactivate ""
                        :name ..asg..
@@ -508,11 +508,11 @@
   => ..track-result..]
 
  (fact "Disabling ASG returns whatever was returned by `track-until-completed`."
-       (disable-asg "region" ..asg.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
+       (disable-asg "environment" "region" ..asg.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
        => ..track-result..)
 
  (fact "Non-302 response when disabling ASG throws exception"
-       (disable-asg "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (disable-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Unexpected status while disabling ASG")
        (provided
         (http/simple-post
@@ -521,10 +521,10 @@
         => {:status 500}))
 
  (fact "Missing ASG when disabling throws exception"
-       (disable-asg "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (disable-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
        => (throws ExceptionInfo "Auto Scaling Group does not exist.")
        (provided
-        (auto-scaling-group "region" ..asg..)
+        (auto-scaling-group "environment" "region" ..asg..)
         => nil)))
 
 (fact "We can find the new ASG name from the `Location` header"

@@ -742,7 +742,7 @@
    region given. Will start tracking the resulting task URL until completed. You
    can assume that a non-explosive call has been successful and the task is
    being tracked."
-  [region asg-name ticket-id task completed-fn timed-out-fn]
+  [environment region asg-name ticket-id task completed-fn timed-out-fn]
   (let [parameters {:_action_activate ""
                     :name asg-name
                     :ticket ticket-id}
@@ -764,8 +764,8 @@
 ;; to enable exists.
 (with-precondition! #'enable-asg
   :asg-exists
-  (fn [r a _ _ _ _]
-    (auto-scaling-group r a)))
+  (fn [e r a _ _ _ _]
+    (auto-scaling-group e r a)))
 
 ;; Handler for a missing ASG attached to `enable-asg`.
 (with-handler! #'enable-asg
@@ -781,7 +781,7 @@
    the region given. Will start tracking the resulting task URL until completed.
    You can assume that a non-explosive call has been successful and the task is
    being tracked."
-  [region asg-name ticket-id task completed-fn timed-out-fn]
+  [environment region asg-name ticket-id task completed-fn timed-out-fn]
   (let [parameters {:_action_deactivate ""
                     :name asg-name
                     :ticket ticket-id}
@@ -803,8 +803,8 @@
 ;; attempting to disable exists.
 (with-precondition! #'disable-asg
   :asg-exists
-  (fn [r a _ _ _ _]
-    (auto-scaling-group r a)))
+  (fn [e r a _ _ _ _]
+    (auto-scaling-group e r a)))
 
 ;; Handler for a missing ASG attached to `disable-asg`.
 (with-handler! #'disable-asg
