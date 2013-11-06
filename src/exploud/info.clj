@@ -40,3 +40,28 @@
   [region application-name]
   (let [all-instances (asgard/all-instances region)]
     (filter #(is-named? application-name %) all-instances)))
+
+(defn- matching-config-id
+  [config application-name]
+  (let [pattern (re-pattern (str application-name ".*"))
+        config-name (:launchConfigurationName config)]
+    (when (re-matches pattern config-name)
+      config-name)))
+
+(defn- matching-config-ids
+  [configs app-name]
+  (let [app-config-ids (map #(matching-config-id % app-name) configs)]
+    (filter identity app-config-ids)))
+
+(defn- active-images
+  [config-ids region]
+  (let [configs (map #(asgard/launch-config region %) config-ids)
+        active-configs (filter #(identity (:group %)) configs)]
+    (map #(:image %) active-configs) ))
+
+(defn active-amis-for-app
+  [region app-name]
+  (->
+   (asgard/launch-config-list region)
+   (matching-config-ids app-name)
+   (active-images region)))
