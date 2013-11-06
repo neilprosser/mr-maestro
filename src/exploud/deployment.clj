@@ -101,9 +101,11 @@
 
 (defmethod start-task*
   :create-asg
-  [{:keys [region application environment ami parameters] deployment-id :id} task]
-  (asgard/create-auto-scaling-group region application environment ami parameters deployment-id task
-                                    task-finished task-timed-out))
+  [deployment task]
+  (asgard/create-auto-scaling-group (assoc deployment
+                                      :task task
+                                      :completed-fn task-finished
+                                      :timed-out-fn task-timed-out)))
 
 (defmethod start-task*
   :wait-for-instance-health

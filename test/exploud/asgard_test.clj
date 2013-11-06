@@ -161,7 +161,7 @@
       => {:name "the-name"}
       (provided
        (http/simple-get
-        "http://asgard:8080/region/autoScaling/show/asg-name.json")
+        "http://dev.asgard:8080/region/autoScaling/show/asg-name.json")
        => {:status 200
            :body "{\"name\":\"the-name\"}"}))
 
@@ -170,7 +170,7 @@
       => nil
       (provided
        (http/simple-get
-        "http://asgard:8080/region/autoScaling/show/asg-name.json")
+        "http://dev.asgard:8080/region/autoScaling/show/asg-name.json")
        => {:status 404}))
 
 (fact "that we can retrieve an image from Asagrd"
@@ -178,7 +178,7 @@
       => {:id "id"}
       (provided
        (http/simple-get
-        "http://asgard:8080/region/image/show/id.json")
+        "http://dev.asgard:8080/region/image/show/id.json")
        => {:status 200
            :body "{\"id\":\"id\"}"}))
 
@@ -187,7 +187,7 @@
       => nil
       (provided
        (http/simple-get
-        "http://asgard:8080/region/image/show/id.json")
+        "http://dev.asgard:8080/region/image/show/id.json")
        => {:status 404}))
 
 (fact "that we can retrieve an instance from Asgard"
@@ -196,7 +196,7 @@
           :something "this"}
       (provided
        (http/simple-get
-        "http://asgard:8080/region/instance/show/id.json")
+        "http://dev.asgard:8080/region/instance/show/id.json")
        => {:status 200
            :body "{\"id\":\"id\",\"something\":\"this\"}"}))
 
@@ -205,7 +205,7 @@
       => nil
       (provided
        (http/simple-get
-        "http://asgard:8080/region/instance/show/id.json")
+        "http://dev.asgard:8080/region/instance/show/id.json")
        => {:status 404}))
 
 (fact "that we can retrieve a load-balancer form Asgard"
@@ -214,7 +214,7 @@
           :something "this"}
       (provided
        (http/simple-get
-        "http://asgard:8080/region/loadBalancer/show/elb.json")
+        "http://dev.asgard:8080/region/loadBalancer/show/elb.json")
        => {:status 200
            :body "{\"id\":\"id\",\"something\":\"this\"}"}))
 
@@ -223,7 +223,7 @@
       => nil
       (provided
        (http/simple-get
-        "http://asgard:8080/region/loadBalancer/show/elb.json")
+        "http://dev.asgard:8080/region/loadBalancer/show/elb.json")
        => {:status 404}))
 
 (fact "that we can retrieve the instances in an ASG"
@@ -250,7 +250,7 @@
       => {:applications [{:name "something"}]}
       (provided
        (http/simple-get
-        "http://asgard:8080/application/list.json")
+        "http://dev.asgard:8080/application/list.json")
        => {:status 200
            :body "{\"applications\":[{\"name\":\"something\"}]}"}))
 
@@ -259,7 +259,7 @@
       => [{:name "group"}]
       (provided
        (http/simple-get
-        "http://asgard:8080/region/security/list.json")
+        "http://dev.asgard:8080/region/security/list.json")
        => {:status 200
            :body "{\"securityGroups\":[{\"name\":\"group\"}]}"}))
 
@@ -269,7 +269,7 @@
           {:id "task-2"}]
       (provided
        (http/simple-get
-        "http://asgard:8080/task/list.json")
+        "http://dev.asgard:8080/task/list.json")
        => {:status 200
            :body "{\"runningTaskList\":[{\"id\":\"task-1\"}],
                    \"completedTaskList\":[{\"id\":\"task-2\"}]}"}))
@@ -281,7 +281,7 @@
       => ..response..
       (provided
        (http/simple-post
-        "http://asgard:8080/application/index"
+        "http://dev.asgard:8080/application/index"
         {:form-params {:description "description"
                        :email "email"
                        :monitorBucketType "application"
@@ -298,7 +298,7 @@
       => {:autoScalingGroupName "application-environment-v023"}
       (provided
        ( http/simple-get
-         "http://asgard:8080/region/cluster/show/application-environment.json")
+         "http://dev.asgard:8080/region/cluster/show/application-environment.json")
        => {:status 200
            :body "[{\"autoScalingGroupName\":\"application-environment-v09\"},{\"autoScalingGroupName\":\"application-environment-v023\"}]"}))
 
@@ -311,7 +311,7 @@
                        :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
-   "http://asgard:8080/region/cluster/index"
+   "http://dev.asgard:8080/region/cluster/index"
    {:form-params ..asgard-params..})
   => {:status 302
       :headers {"location" "task-url"}}
@@ -332,7 +332,7 @@
        => (throws ExceptionInfo "Unexpected status while resizing ASG")
        (provided
         (http/simple-post
-         "http://asgard:8080/region/cluster/index"
+         "http://dev.asgard:8080/region/cluster/index"
          {:form-params ..asgard-params..})
         => {:status 500}))
 
@@ -418,7 +418,7 @@
                        :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
-   "http://asgard:8080/region/cluster/index"
+   "http://dev.asgard:8080/region/cluster/index"
    {:form-params ..asgard-params..})
   => {:status 302
       :headers {"location" "task-url"}}
@@ -438,7 +438,7 @@
        => (throws ExceptionInfo "Unexpected status while deleting ASG")
        (provided
         (http/simple-post
-         "http://asgard:8080/region/cluster/index"
+         "http://dev.asgard:8080/region/cluster/index"
          {:form-params ..asgard-params..})
         => {:status 500}))
 
@@ -457,7 +457,7 @@
                        :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
-   "http://asgard:8080/region/cluster/index"
+   "http://dev.asgard:8080/region/cluster/index"
    {:form-params ..asgard-params..})
   => {:status 302
       :headers {"location" "task-url"}}
@@ -477,7 +477,7 @@
        => (throws ExceptionInfo "Unexpected status while enabling ASG")
        (provided
         (http/simple-post
-         "http://asgard:8080/region/cluster/index"
+         "http://dev.asgard:8080/region/cluster/index"
          {:form-params ..asgard-params..})
         => {:status 500}))
 
@@ -496,7 +496,7 @@
                        :ticket ..ticket..})
   => ..asgard-params..
   (http/simple-post
-   "http://asgard:8080/region/cluster/index"
+   "http://dev.asgard:8080/region/cluster/index"
    {:form-params ..asgard-params..})
   => {:status 302
       :headers {"location" "task-url"}}
@@ -516,7 +516,7 @@
        => (throws ExceptionInfo "Unexpected status while disabling ASG")
        (provided
         (http/simple-post
-         "http://asgard:8080/region/cluster/index"
+         "http://dev.asgard:8080/region/cluster/index"
          {:form-params ..asgard-params..})
         => {:status 500}))
 
@@ -538,30 +538,46 @@
   => ..exploded-params..]
 
  (fact "Create new ASG happy path"
-       (create-new-asg "region" "application" "environment" ..ami.. ..user-params.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
+       (create-new-asg {:region "region"
+                        :application "application"
+                        :environment "environment"
+                        :ami ..ami..
+                        :parameters ..user-params..
+                        :id ..ticket..
+                        :task {:id ..task-id..}
+                        :completed-fn ..completed..
+                        :timed-out-fn ..timed-out..})
        => "new-asg-name"
        (provided
         (http/simple-post
-         "http://asgard:8080/region/autoScaling/save"
+         "http://dev.asgard:8080/region/autoScaling/save"
          {:form-params ..exploded-params..})
         => {:status 302
-            :headers {"location" "http://asgard:8080/region/autoScaling/show/new-asg-name"}}
+            :headers {"location" "http://dev.asgard:8080/region/autoScaling/show/new-asg-name"}}
         (tasks)
         => [{:name "Something we don't care about"}
             {:id 420 :name "Create Auto Scaling Group 'new-asg-name'"}]
         (store/add-to-deployment-parameters ..ticket.. {:newAutoScalingGroupName "application-environment"})
         => ..store-result..
         (track-until-completed ..ticket.. {:id ..task-id..
-                                           :url "http://asgard:8080/region/task/show/420.json"
+                                           :url "http://dev.asgard:8080/region/task/show/420.json"
                                            :asgardParameters ..asgard-params..} 3600 ..completed.. ..timed-out..)
         => ..track-result..))
 
  (fact "Non-302 response when creating new ASG throws exception"
-       (create-new-asg "region" "application" "environment" ..ami.. ..user-params.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (create-new-asg {:region "region"
+                        :application "application"
+                        :environment "environment"
+                        :ami ..ami..
+                        :parameters ..user-params..
+                        :id ..ticket..
+                        :task ..task..
+                        :completed-fn ..completed..
+                        :timed-out-fn ..timed-out..})
        => (throws ExceptionInfo "Unexpected status while creating new ASG")
        (provided
         (http/simple-post
-         "http://asgard:8080/region/autoScaling/save"
+         "http://dev.asgard:8080/region/autoScaling/save"
          {:form-params ..exploded-params..})
         => {:status 500})))
 
@@ -587,47 +603,96 @@
   => ..exploded-params..]
 
  (fact "Create next ASG happy path"
-       (create-next-asg "region" "application" "environment" ..ami.. ..user-params.. ..ticket.. {:id ..task-id..} ..completed.. ..timed-out..)
+       (create-next-asg {:region "region"
+                         :application "application"
+                         :environment "environment"
+                         :ami ..ami..
+                         :parameters ..user-params..
+                         :id ..ticket..
+                         :task {:id ..task-id..}
+                         :completed-fn ..completed..
+                         :timed-out-fn ..timed-out..})
        => ..track-result..
        (provided
         (http/simple-post
-         "http://asgard:8080/region/cluster/createNextGroup"
+         "http://dev.asgard:8080/region/cluster/createNextGroup"
          {:form-params ..exploded-params..})
         => {:status 302
-            :headers {"location" "http://asgard:8080/region/task/show/426"}}
-        (new-asg-name-from-task "http://asgard:8080/region/task/show/426.json")
+            :headers {"location" "http://dev.asgard:8080/region/task/show/426"}}
+        (new-asg-name-from-task "http://dev.asgard:8080/region/task/show/426.json")
         => ..new-asg..
         (store/add-to-deployment-parameters ..ticket.. {:newAutoScalingGroupName ..new-asg..})
         => ..store-result..
         (track-until-completed ..ticket.. {:id ..task-id..
-                                           :url "http://asgard:8080/region/task/show/426.json"
+                                           :url "http://dev.asgard:8080/region/task/show/426.json"
                                            :asgardParameters ..asgard-params..} 3600 ..completed.. ..timed-out..)
         => ..track-result..))
 
  (fact "Non-302 response when creating next ASG throws exception"
-       (create-next-asg "region" "application" "environment" ..ami.. ..user-params.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (create-next-asg {:region "region"
+                         :application "application"
+                         :environment "environment"
+                         :ami ..ami..
+                         :parameters ..user-params..
+                         :id ..ticket..
+                         :task ..task..
+                         :completed-fn ..completed..
+                         :timed-out-fn ..timed-out..})
        => (throws ExceptionInfo "Unexpected status while creating next ASG")
        (provided
         (http/simple-post
-         "http://asgard:8080/region/cluster/createNextGroup"
+         "http://dev.asgard:8080/region/cluster/createNextGroup"
          {:form-params ..exploded-params..})
         => {:status 500})))
 
+(fact "that creating a new ASG for an application which doesn't already have one creates a new one"
+      (create-auto-scaling-group {:region ..region..
+                                  :application "application"
+                                  :environment "environment"
+                                  :ami ..ami..
+                                  :parameters ..params..
+                                  :id ..ticket..
+                                  :task ..task..
+                                  :completed-fn ..completed..
+                                  :timed-out-fn ..timed-out..})
+      => ..create-result..
+      (provided
+       (last-auto-scaling-group ..region.. "application-environment")
+       => nil
+       (create-new-asg {:region ..region..
+                         :application "application"
+                         :environment "environment"
+                         :ami ..ami..
+                         :parameters ..params..
+                         :id ..ticket..
+                         :task ..task..
+                         :completed-fn ..completed..
+                         :timed-out-fn ..timed-out..})
+       => ..create-result..))
+
 (fact "that creating a new ASG for an application which already has one puts the name of the old one in the params and creates the next one"
-      (create-auto-scaling-group ..region..
-                                 "application"
-                                 "environment"
-                                 ..ami..
-                                 ..params..
-                                 ..ticket..
-                                 ..task..
-                                 ..completed..
-                                 ..timed-out..)
+      (create-auto-scaling-group {:region ..region..
+                                  :application "application"
+                                  :environment "environment"
+                                  :ami ..ami..
+                                  :parameters ..params..
+                                  :id ..ticket..
+                                  :task ..task..
+                                  :completed-fn ..completed..
+                                  :timed-out-fn ..timed-out..})
       => ..create-result..
       (provided
        (last-auto-scaling-group ..region.. "application-environment")
        => {:autoScalingGroupName ..old-asg..}
        (store/add-to-deployment-parameters ..ticket.. {:oldAutoScalingGroupName ..old-asg..})
        => ..store-result..
-       (create-next-asg ..region.. "application" "environment" ..ami.. ..params.. ..ticket.. ..task.. ..completed.. ..timed-out..)
+       (create-next-asg {:region ..region..
+                         :application "application"
+                         :environment "environment"
+                         :ami ..ami..
+                         :parameters ..params..
+                         :id ..ticket..
+                         :task ..task..
+                         :completed-fn ..completed..
+                         :timed-out-fn ..timed-out..})
        => ..create-result..))

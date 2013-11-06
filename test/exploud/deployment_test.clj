@@ -88,7 +88,15 @@
       (provided
        (time/now)
        => ..start..
-       (asgard/create-auto-scaling-group ..region.. ..app.. ..env.. ..ami.. ..params.. ..deploy-id.. {:action :create-asg :start ..start..} task-finished task-timed-out)
+       (asgard/create-auto-scaling-group {:ami ..ami..
+                                          :application ..app..
+                                          :environment ..env..
+                                          :id ..deploy-id..
+                                          :parameters ..params..
+                                          :region ..region..
+                                          :task {:action :create-asg :start ..start..}
+                                          :completed-fn task-finished
+                                          :timed-out-fn task-timed-out})
        => ..create-result..))
 
 (fact "that completing a deployment adds an `:end` date to it"

@@ -192,9 +192,18 @@
 
 ;; # Concerning Asgard URL generation
 
+(def asgards-by-environment
+  "A map of Asgards by the environment they serve."
+  {:poke (env :service-dev-asgard-url)
+   :prod (env :service-prod-asgard-url)})
+
+(defn asgard-url-for-environment
+  "The URL describing the Asgard to use for a given environment."
+  [environment]
+  ((keyword environment) asgards-by-environment (:poke asgards-by-environment)))
+
 (def asgard-url
-  "The URL where Asgard is deployed."
-  (env :service-asgard-url))
+  (:poke asgards-by-environment))
 
 (defn- application-url
   "Gives us a region-based URL we can use to get information about an
@@ -766,7 +775,7 @@
 ;; # Concerning disabling traffic for ASGs
 
 (defn disable-asg
-  "Begins an disable traffic operation on the specified Auto Scaling Group in
+  "Begins a disable traffic operation on the specified Auto Scaling Group in
    the region given. Will start tracking the resulting task URL until completed.
    You can assume that a non-explosive call has been successful and the task is
    being tracked."
@@ -827,14 +836,13 @@
    the newly-created ASG. Will start tracking the resulting task URL until
    completed. You can assume that a non-explosive call has been successful and
    the task is being tracked."
-  [region application-name environment image-id user-parameters ticket-id task
-   completed-fn timed-out-fn]
+  [{:keys [ami application environment id parameters region task completed-fn timed-out-fn]}]
   (let [asgard-parameters (create-new-asg-asgard-parameters region
-                                                            application-name
+                                                            application
                                                             environment
-                                                            image-id
-                                                            user-parameters
-                                                            ticket-id)
+                                                            ami
+                                                            parameters
+                                                            id)
         {:keys [status headers] :as response}
         (http/simple-post
          (auto-scaling-save-url region)
@@ -848,10 +856,10 @@
           (let [task-id (:id found-task)
                 url (task-by-id-url region task-id)]
             (store/add-to-deployment-parameters
-             ticket-id
-             {:newAutoScalingGroupName (str application-name "-" environment)})
+             id
+             {:newAutoScalingGroupName (str application "-" environment)})
             (track-until-completed
-             ticket-id
+             id
              (merge task {:url url
                           :asgardParameters asgard-parameters})
              task-track-count
@@ -893,15 +901,14 @@
    traffic to the newly-created ASG. Will start tracking the resulting task URL
    until completed. You can assume that a non-explosive call has been successful
    and the task is being tracked."
-  [region application-name environment image-id parameters ticket-id task
-   completed-fn timed-out-fn]
+  [{:keys [ami application environment id parameters region task completed-fn timed-out-fn]}]
   (let [asgard-parameters (create-next-asg-asgard-parameters
                            region
-                           application-name
+                           application
                            environment
-                           image-id
+                           ami
                            parameters
-                           ticket-id)
+                           id)
         {:keys [status headers]
          :as response} (http/simple-post
                         (cluster-create-next-group-url region)
@@ -909,13 +916,9 @@
     (if (= status 302)
       (let [task-json-url (str (get headers "location") ".json")
             new-asg-name (new-asg-name-from-task task-json-url)]
-        (store/add-to-deployment-parameters
-         ticket-id
-         {:newAutoScalingGroupName new-asg-name})
-        (track-until-completed ticket-id
-                               (merge task
-                                      {:url task-json-url
-                                       :asgardParameters asgard-parameters})
+        (store/add-to-deployment-parameters id {:newAutoScalingGroupName new-asg-name})
+        (track-until-completed id (merge task {:url task-json-url
+                                               :asgardParameters asgard-parameters})
                                task-track-count completed-fn timed-out-fn))
       (throw (ex-info "Unexpected status while creating next ASG"
                       {:type ::unexpected-response
@@ -926,29 +929,17 @@
 (defn create-auto-scaling-group
   "If the specified application already has an ASG in the given region and
    environment, create the next one. Otherwise, create a brand-new ASG."
-  [region application environment ami parameters ticket-id task completed-fn
-   timed-out-fn]
+  [{:keys [application environment region] ticket-id :id :as parameters}]
   (let [asg-name (str application "-" environment)]
     (if-let [asg (last-auto-scaling-group region asg-name)]
       (let [old-asg-name (:autoScalingGroupName asg)]
         (store/add-to-deployment-parameters
          ticket-id
          {:oldAutoScalingGroupName old-asg-name})
-        (create-next-asg region application environment ami parameters ticket-id
-                         task completed-fn timed-out-fn))
-      (create-new-asg region application environment ami parameters ticket-id
-                      task completed-fn timed-out-fn))))
+        (create-next-asg parameters))
+      (create-new-asg parameters))))
 
 ;; Pre-hook attached to `create-auto-scaling-group` which logs the parameters.
 (with-pre-hook! #'create-auto-scaling-group
-  (fn [region application environment ami parameters ticket-id task
-      completed-fn timed-out-fn]
-    (log/debug "Creating ASG with parameters" {:region region
-                                               :application application
-                                               :environment environment
-                                               :ami ami
-                                               :parameters parameters
-                                               :ticket-id ticket-id
-                                               :task task
-                                               :completed-fn completed-fn
-                                               :timed-out-fn timed-out-fn})))
+  (fn [parameters]
+    (log/debug "Creating ASG with parameters" parameters)))
