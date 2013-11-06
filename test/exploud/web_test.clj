@@ -130,3 +130,9 @@
       => (contains {:status 200})
       (provided
        (info/instances-for-application anything "myapp") => '()))
+
+(fact "That getting active amis for a given app works."
+      (request :get "/1.x/images/myapp")
+      => (contains {:status 200})
+      (provided
+       (info/active-amis-for-app anything "myapp") => '()))
