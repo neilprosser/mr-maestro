@@ -202,9 +202,6 @@
   [environment]
   ((keyword environment) asgards-by-environment (:poke asgards-by-environment)))
 
-(def asgard-url
-  (:poke asgards-by-environment))
-
 (defn- application-url
   "Gives us a region-based URL we can use to get information about an
    application."
