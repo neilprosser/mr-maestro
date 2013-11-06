@@ -79,3 +79,8 @@
        (asgard/launch-config-list anything) => configs-list
        (asgard/launch-config anything "wibble-poke-v004-20131101110801") => active-launch-config
        (asgard/launch-config anything "wibble-poke-v003-20131030110801") => inactive-launch-config))
+
+(fact "that no active ami is found for non-existent application."
+      (active-amis-for-app anything "waffle") => '()
+      (provided
+       (asgard/launch-config-list anything) => configs-list))
