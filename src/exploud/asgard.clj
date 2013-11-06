@@ -208,8 +208,8 @@
 (defn- application-url
   "Gives us a region-based URL we can use to get information about an
    application."
-  [region application-name]
-  (str asgard-url "/" region "/application/show/" application-name ".json"))
+  [environment region application-name]
+  (str (asgard-url-for-environment environment) "/" region "/application/show/" application-name ".json"))
 
 (defn- application-list-url
   "Gives us a URL we can use to retrieve the list of applications."
@@ -351,8 +351,9 @@
 
 (defn application
   "Retrieves information about an application from Asgard."
-  [region application-name]
+  [environment region application-name]
   (let [{:keys [status body]} (http/simple-get (application-url
+                                                environment
                                                 region
                                                 application-name))]
     (when (= status 200)

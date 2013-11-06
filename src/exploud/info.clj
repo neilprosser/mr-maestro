@@ -12,8 +12,8 @@
 
 (defn application
   "The information about a particular application."
-  [region application-name]
-  (if-let [full-application (asgard/application region application-name)]
+  [environment region application-name]
+  (if-let [full-application (asgard/application environment region application-name)]
     (merge {:name application-name}
            (select-keys (:app full-application)
                         [:description :email :owner]))))
@@ -26,7 +26,7 @@
   (let [onix-application (onix/upsert-application application-name)
         tyranitar-application (tyr/upsert-application application-name)]
     (asgard/upsert-application application-name details)
-    (merge (application region application-name) tyranitar-application)))
+    (merge (application "poke" region application-name) tyranitar-application)))
 
 (defn- is-named?
   "Checks if the given instance has the given name (ignoring version)."

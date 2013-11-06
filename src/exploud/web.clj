@@ -44,6 +44,10 @@
   [version]
   (alter-var-root #'*version* (fn [_] version)))
 
+(def default-environment
+  "The default environment we'll use for queries."
+  "poke")
+
 (def default-region
   "The default region we'll deploy to (temporarily)."
   "eu-west-1")
@@ -121,7 +125,7 @@
 
    (GET "/applications/:application"
         [application]
-        (response (info/application default-region application)))
+        (response (info/application default-environment default-region application)))
 
    (PUT "/applications/:application"
         [application description email owner]

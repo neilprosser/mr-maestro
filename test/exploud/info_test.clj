@@ -14,20 +14,20 @@
        => ..applications..))
 
 (fact "that getting an application which doesn't exist returns nil"
-      (application "region" "application")
+      (application "environment" "region" "application")
       => nil
       (provided
-       (asgard/application "region" "application")
+       (asgard/application "environment" "region" "application")
        => nil))
 
 (fact "that getting an application returns whatever Asgard gives back and munges it a bit"
-      (application "eu-west-1" "application")
+      (application "environment" "eu-west-1" "application")
       => {:description "description"
           :email "email"
           :name "application"
           :owner "owner"}
       (provided
-       (asgard/application "eu-west-1" "application")
+       (asgard/application "environment" "eu-west-1" "application")
        => {:app {:description "description"
                  :email "email"
                  :owner "owner"}}))
@@ -42,7 +42,7 @@
        => {:tyranitar "business"}
        (asgard/upsert-application "application" ..details..)
        => ..asgard..
-       (application "region" "application")
+       (application "poke" "region" "application")
        => {:asgard "business"}))
 
 (def instances [{:ec2Instance {:tags [{:key "Name" :value "myapp"} {:key "color" :value "red"}]}}
