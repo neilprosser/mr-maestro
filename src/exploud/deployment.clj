@@ -66,7 +66,7 @@
 (defn wait-for-instance-health?
   "If the "
   [{:keys [parameters]}]
-  (if-let [min (:min parameters 0)]
+  (if-let [min (or (:min parameters) asgard/default-minimum)]
     (pos? min)
     false))
 
@@ -120,7 +120,7 @@
        environment
        region
        (get-in deployment [:parameters :newAutoScalingGroupName])
-       (get-in deployment [:parameters :min])
+       (or (get-in deployment [:parameters :min]) asgard/default-minimum)
        port healthcheck deployment-id task
        task-finished task-timed-out))
     (let [updated-log (conj (or (:log task) [])

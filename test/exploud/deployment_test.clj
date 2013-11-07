@@ -265,16 +265,38 @@
                                        :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
 
-(fact "that when deciding whether we should check instance health we return false when we have no `:min`"
-      (wait-for-instance-health? {:parameters {}})
-      => false)
+(fact "that starting a task with an action of `:wait-for-instance-health` sets a `:start` value and does the right thing when we have no `:min` in parameters"
+      (start-task {:id ..deploy-id..
+                   :parameters {:min nil
+                                :newAutoScalingGroupName ..new-asg..
+                                :healthCheckType "ELB"
+                                :selectedLoadBalancers ..elb..}
+                   :region ..region..
+                   :environment ..env..
+                   :application ..app..
+                   :hash ..hash..} {:action :wait-for-instance-health})
+      => ..wait-result..
+      (provided
+       (time/now)
+       => ..start..
+       (tyr/application-properties ..env.. ..app.. ..hash..)
+       => {}
+       (health/wait-until-asg-healthy ..env.. ..region.. ..new-asg.. 1 8080 "/healthcheck" ..deploy-id..
+                                      {:action :wait-for-instance-health
+                                       :start ..start..} task-finished task-timed-out)
+       => ..wait-result..))
 
-(fact "that when deciding whether we should check instance health we return false when we have a nil value of `:min`"
+(fact "that when deciding whether we should check instance health we return true when we have no `:min`"
+      (wait-for-instance-health? {:parameters {}})
+      => true)
+
+(fact "that when deciding whether we should check instance health we return true when we have a nil value of `:min`"
       (wait-for-instance-health? {:parameters {:min nil}})
-      => false)
+      => true)
 
 (fact "that when deciding whether we should check instance health we return true when we have a positive value for `:min`"
-      (wait-for-instance-health? {:parameters {:min 1}}))
+      (wait-for-instance-health? {:parameters {:min 1}})
+      => true)
 
 (fact "that when deciding whether to check ELB health we return true when we have selectedLoadBalancers and a healthCheckType of ELB"
       (check-elb-health? {:parameters {:healthCheckType "ELB"

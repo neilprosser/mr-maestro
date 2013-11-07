@@ -33,6 +33,10 @@
 
 ;; # General def-age
 
+(def default-minimum
+  "The default minimum number of instances to start if nothing is provided by the user."
+  1)
+
 (def vpc-id
   "The VPC ID we'll be deploying into."
   (env :service-vpc-id))
@@ -131,13 +135,13 @@
    creating the next ASG."
   {:azRebalance "enabled"
    :defaultCooldown 10
-   :desiredCapacity 1
+   :desiredCapacity default-minimum
    :healthCheckGracePeriod 600
    :healthCheckType "EC2"
    :instanceType "t1.micro"
    :kernelId ""
-   :max 1
-   :min 1
+   :max default-minimum
+   :min default-minimum
    :pricing "ON_DEMAND"
    :ramdiskId ""
    :selectedLoadBalancers nil
