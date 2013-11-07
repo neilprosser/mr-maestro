@@ -117,6 +117,7 @@
           healthcheck (:service.healthcheck.path service-properties
                                                  "/healthcheck")]
       (health/wait-until-asg-healthy
+       environment
        region
        (get-in deployment [:parameters :newAutoScalingGroupName])
        (get-in deployment [:parameters :min])
@@ -137,14 +138,14 @@
 
 (defmethod start-task*
   :wait-for-elb-health
-  [{:keys [region] deployment-id :id :as deployment} task]
+  [{:keys [environment region] deployment-id :id :as deployment} task]
   (if (check-elb-health? deployment)
     (let [elb-names (util/list-from
                      (get-in deployment
                              [:parameters :selectedLoadBalancers]))
           asg-name (get-in deployment
                            [:parameters :newAutoScalingGroupName])]
-      (health/wait-until-elb-healthy region elb-names asg-name
+      (health/wait-until-elb-healthy environment region elb-names asg-name
                                      deployment-id task task-finished
                                      task-timed-out))
     (let [updated-log (conj (or (:log task) [])

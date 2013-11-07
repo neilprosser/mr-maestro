@@ -239,7 +239,7 @@
        (tyr/application-properties ..env.. ..app.. ..hash..)
        => {:service.port 8082
            :service.healthcheck.path "/1.x/status"}
-       (health/wait-until-asg-healthy ..region.. ..new-asg.. 1 8082 "/1.x/status" ..deploy-id..
+       (health/wait-until-asg-healthy ..env.. ..region.. ..new-asg.. 1 8082 "/1.x/status" ..deploy-id..
                                       {:action :wait-for-instance-health
                                        :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
@@ -260,7 +260,7 @@
        => ..start..
        (tyr/application-properties ..env.. ..app.. ..hash..)
        => {}
-       (health/wait-until-asg-healthy ..region.. ..new-asg.. 2 8080 "/healthcheck" ..deploy-id..
+       (health/wait-until-asg-healthy ..env.. ..region.. ..new-asg.. 2 8080 "/healthcheck" ..deploy-id..
                                       {:action :wait-for-instance-health
                                        :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
@@ -301,7 +301,8 @@
       => false)
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and does the right when using a single ELB"
-      (start-task {:id ..deploy-id..
+      (start-task {:environment ..env..
+                   :id ..deploy-id..
                    :parameters {:newAutoScalingGroupName ..new-asg..
                                 :healthCheckType "ELB"
                                 :selectedLoadBalancers "elb"}
@@ -310,13 +311,14 @@
       (provided
        (time/now)
        => ..start..
-       (health/wait-until-elb-healthy ..region.. ["elb"] ..new-asg..
+       (health/wait-until-elb-healthy ..env.. ..region.. ["elb"] ..new-asg..
                                       ..deploy-id.. {:action :wait-for-elb-health
                                                      :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
 
 (fact "that starting a task with an action of `:wait-for-elb-health` sets a `:start` value and does the right when using a multiple ELBs"
-      (start-task {:id ..deploy-id..
+      (start-task {:environment ..env..
+                   :id ..deploy-id..
                    :parameters {:newAutoScalingGroupName ..new-asg..
                                 :healthCheckType "ELB"
                                 :selectedLoadBalancers ["elb1"
@@ -326,7 +328,7 @@
       (provided
        (time/now)
        => ..start..
-       (health/wait-until-elb-healthy ..region.. ["elb1" "elb2"] ..new-asg..
+       (health/wait-until-elb-healthy ..env.. ..region.. ["elb1" "elb2"] ..new-asg..
                                       ..deploy-id.. {:action :wait-for-elb-health
                                                      :start ..start..} task-finished task-timed-out)
        => ..wait-result..))
