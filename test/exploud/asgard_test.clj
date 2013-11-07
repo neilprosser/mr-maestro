@@ -294,7 +294,7 @@
       (upsert-application "application" {:description "description"
                                          :email "email"
                                          :owner "owner"})
-      => ..response..
+      => nil
       (provided
        (http/simple-post
         "http://dev.asgard:8080/application/index"
@@ -307,7 +307,19 @@
                        :type "Web Service"
                        :_action_update ""}
          :follow-redirects false})
-       => ..response..))
+       => ..dev-response..
+       (http/simple-post
+        "http://prod.asgard:8080/application/index"
+        {:form-params {:description "description"
+                       :email "email"
+                       :monitorBucketType "application"
+                       :name "application"
+                       :owner "owner"
+                       :ticket ""
+                       :type "Web Service"
+                       :_action_update ""}
+         :follow-redirects false})
+       => ..prod-response..))
 
 (fact "We can get the last ASG for an application"
       (last-auto-scaling-group "environment " "region" "application-environment")

@@ -483,21 +483,21 @@
 
 ;; # Concerning updating things in Asgard
 
-; TODO Make this use both Asgards
 (defn upsert-application
   "Updates the information on an application in Asgard. This function will
    replace an already existing application or create a new one."
   [application-name {:keys [description email owner]}]
-  (http/simple-post (upsert-application-url :poke)
-                    {:form-params {:description description
-                                   :email email
-                                   :monitorBucketType "application"
-                                   :name application-name
-                                   :owner owner
-                                   :ticket ""
-                                   :type "Web Service"
-                                   :_action_update ""}
-                     :follow-redirects false}))
+  (doseq [environment [:poke :prod]]
+    (http/simple-post (upsert-application-url environment)
+                      {:form-params {:description description
+                                     :email email
+                                     :monitorBucketType "application"
+                                     :name application-name
+                                     :owner owner
+                                     :ticket ""
+                                     :type "Web Service"
+                                     :_action_update ""}
+                       :follow-redirects false})))
 
 ;; # Concerning parameter transformation
 
