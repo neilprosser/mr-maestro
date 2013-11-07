@@ -33,3 +33,12 @@
   "Turns `/this/that` into `this/that`."
   [thing]
   (second (re-find #"^/*(.+)" thing)))
+
+(defn append-to-task-log
+  "Appends the given message to the task's `:log`, creating a new one if it
+   doesn't exist."
+  [message task]
+  (let [updated-log (conj (or (:log task) [])
+                          {:message message
+                           :date (time/now)})]
+    (assoc task :log updated-log)))

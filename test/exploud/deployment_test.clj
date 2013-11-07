@@ -109,7 +109,7 @@
        => ..store-result..))
 
 (fact "that finishing a task which is the last one in the deployment finishes that deployment"
-      (task-finished ..deploy-id.. {:id ..task-id..})
+      (task-finished ..deploy-id.. {:id ..task-id.. :status "completed"})
       => ..finish-result..
       (provided
        (time/now)
@@ -126,7 +126,7 @@
        => ..finish-result..))
 
 (fact "that finishing a task which is not the last one in the deployment starts the next task"
-      (task-finished ..deploy-id.. {:id ..task-id..})
+      (task-finished ..deploy-id.. {:id ..task-id.. :status "completed"})
       => ..start-result..
       (provided
        (time/now)
@@ -217,7 +217,8 @@
        (time/now)
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping instance healthcheck"
-                                             :date ..start..}]
+                                            :date ..start..}]
+                                     :status "skipped"
                                      :action :wait-for-instance-health
                                      :start ..start..})
        => ..completed-result..))
@@ -367,6 +368,7 @@
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
                                             :date ..start..}]
+                                     :status "skipped"
                                      :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))
@@ -382,6 +384,7 @@
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
                                             :date ..start..}]
+                                     :status "skipped"
                                      :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))
@@ -396,6 +399,7 @@
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping ELB healthcheck"
                                             :date ..start..}]
+                                     :status "skipped"
                                      :action :wait-for-elb-health
                                      :start ..start..})
        => ..finish-result..))

@@ -1,7 +1,6 @@
 (ns exploud.healthchecks
   "## Involved in the business of checking health"
-  (:require [clj-time.core :as time]
-            [clojure.tools.logging :as log]
+  (:require [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [exploud
              [asgard :as asgard]
@@ -72,16 +71,14 @@
                                  healthcheck-path)
           message (str "Checking healthcheck on port " port " and path /"
                        (util/strip-first-forward-slash healthcheck-path) ".")
-          updated-log (conj (or (:log task) []) {:date (time/now)
-                                                 :message message})
-          updated-task (assoc task :log updated-log :status "running")]
+          updated-task (assoc (util/append-to-task-log message task)
+                         :status "running")]
       (store/store-task deployment-id updated-task)
       (if healthy?
-        (completed-fn deployment-id updated-task)
-        (cond (zero? polls)
-              (timed-out-fn deployment-id updated-task)
-              :else
-              (schedule-asg-check environment region asg-name min-instances port
+        (completed-fn deployment-id (assoc updated-task :status "completed"))
+        (if (zero? polls)
+          (timed-out-fn deployment-id updated-task)
+          (schedule-asg-check environment region asg-name min-instances port
                                   healthcheck-path deployment-id updated-task
                                   completed-fn timed-out-fn (dec polls)))))
     (catch Exception e
@@ -146,22 +143,19 @@
       (if-let [elb-name (first elb-names)]
         (let [healthy? (elb-healthy? environment region elb-name asg-name)
               message (str "Checking ELB (" elb-name ") health.")
-              updated-log (conj (or (:log task) []) {:date (time/now)
-                                                     :message message})
-              updated-task (assoc task :log updated-log :status "running")]
+              updated-task (assoc (util/append-to-task-log message task)
+                             :status "running")]
           (store/store-task deployment-id updated-task)
           (if healthy?
             (schedule-elb-check environment region (rest elb-names) asg-name deployment-id
                                 updated-task completed-fn timed-out-fn
                                 (dec polls))
-            (cond
-             (zero? polls)
+            (if (zero? polls)
              (timed-out-fn deployment-id updated-task)
-             :else
              (schedule-elb-check environment region elb-names asg-name deployment-id
                                  updated-task completed-fn timed-out-fn
                                  (dec polls)))))
-        (completed-fn deployment-id task)))
+        (completed-fn deployment-id (assoc task :status "completed"))))
     (catch Exception e
       (do
         (log/error "Caught exception" e (map str (.getStackTrace e)))

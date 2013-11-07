@@ -144,5 +144,6 @@
                 {:tasks {$elemMatch {$nor [{:status "completed"}
                                            {:status "failed"}
                                            {:status "terminated"}
-                                           {:status "pending"}]}}}
+                                           {:status "pending"}
+                                           {:status "skipped"}]}}}
                 ["tasks.$"]))

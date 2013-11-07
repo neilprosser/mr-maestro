@@ -123,10 +123,8 @@
        (or (get-in deployment [:parameters :min]) asgard/default-minimum)
        port healthcheck deployment-id task
        task-finished task-timed-out))
-    (let [updated-log (conj (or (:log task) [])
-                            {:message "Skipping instance healthcheck"
-                             :date (time/now)})
-          task (assoc task :log updated-log)]
+    (let [task (assoc (util/append-to-task-log "Skipping instance healthcheck" task)
+                 :status "skipped")]
       (task-finished deployment-id task))))
 
 (defmethod start-task*
@@ -148,10 +146,8 @@
       (health/wait-until-elb-healthy environment region elb-names asg-name
                                      deployment-id task task-finished
                                      task-timed-out))
-    (let [updated-log (conj (or (:log task) [])
-                            {:message "Skipping ELB healthcheck"
-                             :date (time/now)})
-          task (assoc task :log updated-log)]
+    (let [task (assoc (util/append-to-task-log "Skipping ELB healthcheck" task)
+                 :status "skipped")]
       (task-finished deployment-id task))))
 
 (defmethod start-task*
@@ -161,10 +157,8 @@
                                    :oldAutoScalingGroupName])]
     (asgard/disable-asg environment region asg deployment-id task
                         task-finished task-timed-out)
-    (let [task (assoc task
-                 :end (time/now)
-                 :status "completed")]
-      (store/store-task deployment-id task)
+    (let [task (assoc (util/append-to-task-log "No old ASG to disable" task)
+                 :status "skipped")]
       (task-finished deployment-id task))))
 
 (defmethod start-task*
@@ -175,10 +169,8 @@
     (asgard/delete-asg
      environment region asg deployment-id task task-finished task-timed-out)
     (do
-      (let [task (assoc task
-                   :end (time/now)
-                   :status "completed")])
-      (store/store-task deployment-id task)
+      (let [task (assoc (util/append-to-task-log "No old ASG to delete")
+                   :status "skipped")])
       (task-finished deployment-id task))))
 
 (defn start-task
@@ -190,8 +182,7 @@
    to the next phase."
   [deployment-id {task-id :id :as task}]
   (store/store-task deployment-id (assoc task
-                                    :end (time/now)
-                                    :status "completed"))
+                                    :end (time/now)))
   (let [deployment (store/get-deployment deployment-id)]
     (let [next-task (task-after deployment task-id)]
       (if next-task
