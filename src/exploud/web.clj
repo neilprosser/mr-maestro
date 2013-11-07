@@ -97,11 +97,11 @@
 
    (GET "/instances/:app-name"
         [app-name]
-        (response (info/instances-for-application default-region app-name)))
+        (response {:instances (info/instances-for-application default-region app-name)}))
 
    (GET "/images/:app-name"
         [app-name]
-        (response (info/active-amis-for-app default-region app-name)))
+        (response {:images (info/active-amis-for-app default-region app-name)}))
 
    (GET "/deployments"
         [application start-from start-to size from]
