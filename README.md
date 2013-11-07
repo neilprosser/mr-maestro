@@ -26,6 +26,7 @@ All images of an application in JSON form.
 
 `GET /1.x/deployments`
 Query deployments. Query parameters allowed are:
+
   * `application` - the application to filter by
   * `start-from` - the lower bound of a date filter on deployment start time.
   * `start-to` - the upper bound of a date filter on deployment start time.
@@ -46,6 +47,7 @@ Upsert an application to Asgard, Onix and Tyranitar.
 
 `POST /1.x/applications/:application/deploy`
 Begin the deployment of an application. JSON body must include the following:
+
   * `ami` - the image to use for deployment
   * `environment` - the environment to deploy to
   * `message` - a message which describes why the deployment is happening
