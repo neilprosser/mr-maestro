@@ -53,5 +53,12 @@ Begin the deployment of an application. JSON body must include the following:
   * `message` - a message which describes why the deployment is happening
   * `user` - the user who is making the deployment
 
+`POST /1.x/applications/:application/rollback`
+Begin a rollback of an application (a rollback is considered to be a deployment of the penultimate completed deployment for the application and environment). JSON body must include the following:
+
+  * `environment` - the environment to deploy to
+  * `message` - a message which describes why the deployment is happening
+  * `user` - the user who is making the deployment
+
 `GET /1.x/tasks`
 A text representation of the tasks the system is currently tracking.
