@@ -213,11 +213,13 @@
 (defn prepare-deployment
   "Prepares a deployment of the `application` in an `environment` within the
    given `region`. It'll mark the deployment as being done by `user` and will
-   use `ami` when telling what Asgard should deploy then store it.
+   use `ami` when telling what Asgard should deploy then store it. Accepts an
+   optional commit `hash` which will be used for grabbing properties from
+   Tyranitar. If hash is `nil` the latest properties will be used.
 
    Will return the newly-created deployment."
-  [region application environment user ami message]
-  (let [hash (tyr/last-commit-hash environment application)
+  [region application environment user ami hash message]
+  (let [hash (or hash (tyr/last-commit-hash environment application))
         parameters (tyr/deployment-params environment application hash)
         tasks (create-standard-deployment-tasks)
         deployment {:ami ami
@@ -238,7 +240,7 @@
 ;; application matches the application being deployed.
 (with-precondition! #'prepare-deployment
   :ami-name-matches
-  (fn [region application _ _ ami _]
+  (fn [region application _ _ ami _ _]
     (let [ami-application (or (get-in (asgard/image region ami) [:image :name]) "")]
       (= application (second (re-find #"^ent-([^-]+)-" ami-application))))))
 
@@ -246,11 +248,31 @@
 ;; application doesn't match the one being deployed.
 (with-handler! #'prepare-deployment
   {:precondition :ami-name-matches}
-  (fn [e region application _ _ ami _]
+  (fn [e region application _ _ ami _ _]
     (throw (ex-info "Image does not match application" {:type ::mismatched-image
                                                         :region region
                                                         :application application
                                                         :ami ami}))))
+
+(defn prepare-rollback
+  "Prepares a rollback of the `application` in an `environment` within the
+   given `region`. It'll mark the deployment as being done by `user`. A rollback
+   looks for the penultimate completed deployment which matches the given
+   criteria and creates a copy of it.
+
+   Will return the newly-created deployment."
+  [region application environment user message]
+  (if-let [penultimate (first (store/get-completed-deployments {:application application
+                                                                :environment environment
+                                                                :size 1
+                                                                :from 1}))]
+    (let [{:keys [ami hash]} penultimate]
+      (prepare-deployment region application environment user ami hash message))
+    (throw (ex-info "No penultimate completed deployment to rollback to"
+                    {:type ::no-rollback
+                     :region region
+                     :application application
+                     :environment environment}))))
 
 (defn start-deployment
   "Kicks off the first task of the deployment with `deployment-id`."

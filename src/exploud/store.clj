@@ -40,6 +40,14 @@
     (merge query {:application application})
     query))
 
+(defn add-environment-to-query
+  "If `environment` has been provided, merge it into `query`. Returns the
+   query."
+  [query environment]
+  (if environment
+    (merge query {:environment environment})
+    query))
+
 (defn add-dates-to-query
   "Creates a date-range query for `field` from `start` and `end` and merge into
    `query` if necessary. Returns the query."
@@ -55,16 +63,29 @@
 
 (defn get-deployments
   "Retrieves deployments."
-  [{:keys [application start-from start-to size from]}]
+  [{:keys [application environment start-from start-to size from]}]
   (map swap-mongo-id (with-collection (deployments-collection)
                        (find (-> {}
                                  (add-application-to-query application)
+                                 (add-environment-to-query environment)
                                  (add-dates-to-query :start
                                                      start-from
                                                      start-to)))
                        (limit (or size 10))
                        (skip (or from 0))
                        (sort (array-map :start -1)))))
+
+(defn get-completed-deployments
+  "Retrieves deployments which have been completed."
+  [{:keys [application environment size from]}]
+  (map swap-mongo-id (with-collection (deployments-collection)
+                       (find (-> {}
+                                 (add-application-to-query application)
+                                 (add-environment-to-query environment)
+                                 (merge {:end {$exists true}})))
+                       (limit (or size 10))
+                       (skip (or from 0))
+                       (sort (array-map :end -1)))))
 
 (defn get-deployment
   "Retrieves a deployment by its ID."

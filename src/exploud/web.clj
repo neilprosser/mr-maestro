@@ -104,8 +104,9 @@
         (response {:images (info/active-amis-for-app default-region app-name)}))
 
    (GET "/deployments"
-        [application start-from start-to size from]
+        [application environment start-from start-to size from]
         (let [parameters {:application application
+                          :environment environment
                           :start-from start-from
                           :start-to start-to
                           :size size
@@ -116,8 +117,25 @@
                        :details details} nil 400)
             (response {:deployments (store/get-deployments
                                      {:application application
+                                      :environment environment
                                       :start-from (fmt/parse start-from)
                                       :start-to (fmt/parse start-to)
+                                      :size (util/string->number size)
+                                      :from (util/string->number from)})}))))
+
+   (GET "/completed-deployments"
+        [application environment size from]
+        (let [parameters {:application application
+                          :environment environment
+                          :size size
+                          :from from}
+              result (apply b/validate parameters v/query-param-validators)]
+          (if-let [details (first result)]
+            (response {:message "Query parameter validation failed"
+                       :details details} nil 400)
+            (response {:deployments (store/get-completed-deployments
+                                     {:application application
+                                      :environment environment
                                       :size (util/string->number size)
                                       :from (util/string->number from)})}))))
 
@@ -144,14 +162,26 @@
           (error-response "Illegal application name" 400)))
 
    (POST "/applications/:application/deploy"
-         [application ami environment message user]
-         (let [{:keys [id] :as deployment} (dep/prepare-deployment
-                                            default-region
-                                            application
-                                            environment
-                                            (or user default-user)
-                                            ami
-                                            message)]
+         [application ami environment hash message user]
+         (let [{:keys [id]} (dep/prepare-deployment
+                             default-region
+                             application
+                             environment
+                             (or user default-user)
+                             ami
+                             hash
+                             message)]
+           (dep/start-deployment id)
+           (response {:id id})))
+
+   (POST "/applications/:application/rollback"
+         [application environment message user]
+         (let [{:keys [id]} (dep/prepare-rollback
+                             default-region
+                             application
+                             environment
+                             (or user default-user)
+                             message)]
            (dep/start-deployment id)
            (response {:id id})))
 

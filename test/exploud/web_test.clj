@@ -28,6 +28,7 @@
       => (contains {:body {:deployments []}})
       (provided
        (store/get-deployments {:application nil
+                               :environment nil
                                :start-from nil
                                :start-to nil
                                :size nil
@@ -43,6 +44,7 @@
       => (contains {:body {:deployments []}})
       (provided
        (store/get-deployments {:application nil
+                               :environment nil
                                :start-from nil
                                :start-to nil
                                :size 12
@@ -62,6 +64,7 @@
       => (contains {:body {:deployments []}})
       (provided
        (store/get-deployments {:application nil
+                               :environment nil
                                :start-from nil
                                :start-to nil
                                :size nil
@@ -73,6 +76,7 @@
       => (contains {:body {:deployments []}})
       (provided
        (store/get-deployments {:application nil
+                               :environment nil
                                :start-from nil
                                :start-to nil
                                :size nil
@@ -96,6 +100,7 @@
        (fmt/parse nil)
        => nil
        (store/get-deployments {:application nil
+                               :environment nil
                                :start-from ..date..
                                :start-to nil
                                :size nil
@@ -115,6 +120,7 @@
        (fmt/parse nil)
        => nil
        (store/get-deployments {:application nil
+                               :environment nil
                                :start-from nil
                                :start-to ..date..
                                :size nil

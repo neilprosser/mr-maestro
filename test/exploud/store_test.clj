@@ -53,6 +53,15 @@
        (mq/exec (contains {:query {:application "application"}}))
        => [{:_id "id"}]))
 
+(fact "that we can get deployments by environment"
+      (get-deployments {:environment "environment"})
+      => [{:id "id"}]
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:query {:environment "environment"}}))
+       => [{:_id "id"}]))
+
 (fact "that we can get deployments after a particular date"
       (get-deployments {:start-from ..start..})
       => [{:id "id"}]
@@ -78,6 +87,68 @@
        (deployments-collection)
        => ..collection..
        (mq/exec (contains {:query {:start {$gte ..start.. $lt ..end..}}}))
+       => [{:_id "id"}]))
+
+(fact "that we can get completed deployments using the default settings"
+      (get-completed-deployments {})
+      => [{:id "id"}]
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 0
+                           :limit 10
+                           :query {:end {$exists true}}
+                           :sort {:end -1}}))
+       => [{:_id "id"}]))
+
+(fact "that we can get completed deployments for an application"
+      (get-completed-deployments {:application "application"})
+      => [{:id "id"}]
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 0
+                           :limit 10
+                           :query {:application "application"
+                                   :end {$exists true}}
+                           :sort {:end -1}}))
+       => [{:_id "id"}]))
+
+(fact "that we can get completed deployments for an environment"
+      (get-completed-deployments {:environment "environment"})
+      => [{:id "id"}]
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 0
+                           :limit 10
+                           :query {:environment "environment"
+                                   :end {$exists true}}
+                           :sort {:end -1}}))
+       => [{:_id "id"}]))
+
+(fact "that we can get completed deployments and limit the number of results"
+      (get-completed-deployments {:size 14})
+      => [{:id "id"}]
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 0
+                           :limit 14
+                           :query {:end {$exists true}}
+                           :sort {:end -1}}))
+       => [{:_id "id"}]))
+
+(fact "that we can get completed deployments and skip some results"
+      (get-completed-deployments {:from 3})
+      => [{:id "id"}]
+      (provided
+       (deployments-collection)
+       => ..collection..
+       (mq/exec (contains {:skip 3
+                           :limit 10
+                           :query {:end {$exists true}}
+                           :sort {:end -1}}))
        => [{:_id "id"}]))
 
 (fact "that we can get deployments by ID"

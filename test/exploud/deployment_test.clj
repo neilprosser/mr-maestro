@@ -25,8 +25,8 @@
            (filter (fn [t] (= (:action t) "pending")))
            empty?))
 
-(fact "that we obtain the properties for a deployment correctly and store the right things"
-      (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..message..)
+(fact "that we obtain the properties for a deployment with no hash correctly and store the right things"
+      (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. nil ..message..)
       => {:ami ..ami..
           :application "app"
           :created ..created..
@@ -63,6 +63,105 @@
                                 :tasks ..tasks..
                                 :user ..user..})
        => ..deploy-id..))
+
+(fact "that we obtain the properties for a deployment with a hash correctly and store the right things"
+      (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..hash.. ..message..)
+      => {:ami ..ami..
+          :application "app"
+          :created ..created..
+          :environment ..env..
+          :hash ..hash..
+          :id ..deploy-id..
+          :message ..message..
+          :parameters ..params..
+          :region ..region..
+          :tasks ..tasks..
+          :user ..user..}
+      (provided
+       (asgard/image ..region.. ..ami..)
+       => {:image {:name "ent-app-0.23"}}
+       (tyr/deployment-params ..env.. "app" ..hash..)
+       => ..params..
+       (create-standard-deployment-tasks)
+       => ..tasks..
+       (util/generate-id)
+       => ..deploy-id..
+       (time/now)
+       => ..created..
+       (store/store-deployment {:ami ..ami..
+                                :application "app"
+                                :created ..created..
+                                :environment ..env..
+                                :hash ..hash..
+                                :id ..deploy-id..
+                                :message ..message..
+                                :parameters ..params..
+                                :region ..region..
+                                :tasks ..tasks..
+                                :user ..user..})
+       => ..deploy-id..))
+
+(fact "that we get the details for a rollback and store the right things"
+      (prepare-rollback ..region.. "app" ..env.. ..user.. ..message..)
+      => {:ami ..old-ami..
+          :application "app"
+          :created ..created..
+          :environment ..env..
+          :hash ..old-hash..
+          :id ..deploy-id..
+          :message ..message..
+          :parameters ..params..
+          :region ..region..
+          :tasks ..tasks..
+          :user ..user..}
+      (provided
+       (store/get-completed-deployments {:application "app"
+                                         :environment ..env..
+                                         :size 1
+                                         :from 1})
+       => [{:ami ..old-ami..
+            :application "app"
+            :created ..old-created..
+            :environment ..old-env..
+            :hash ..old-hash..
+            :id ..old-deploy-id..
+            :message ..old-message..
+            :parameters ..old-params..
+            :region ..old-region..
+            :tasks ..old-tasks..
+            :user ..old-user..}]
+       (asgard/image ..region.. ..old-ami..)
+       => {:image {:name "ent-app-0.23"}}
+       (tyr/deployment-params ..env.. "app" ..old-hash..)
+       => ..params..
+       (create-standard-deployment-tasks)
+       => ..tasks..
+       (util/generate-id)
+       => ..deploy-id..
+       (time/now)
+       => ..created..
+       (store/store-deployment {:ami ..old-ami..
+                                :application "app"
+                                :created ..created..
+                                :environment ..env..
+                                :hash ..old-hash..
+                                :id ..deploy-id..
+                                :message ..message..
+                                :parameters ..params..
+                                :region ..region..
+                                :tasks ..tasks..
+                                :user ..user..})
+       => ..deploy-id..))
+
+(fact "that we throw a wobbly when there is no penultimate completed deployment"
+      (prepare-rollback ..region.. "app" ..env.. ..user.. ..message..)
+      => (throws ExceptionInfo "No penultimate completed deployment to rollback to")
+      (provided
+       (store/get-completed-deployments {:application "app"
+                                         :environment ..env..
+                                         :size 1
+                                         :from 1})
+       => []))
 
 (fact "that when we start the deployment we add a start date to the deployment and save it"
       (start-deployment ..deploy-id..)
@@ -405,7 +504,7 @@
        => ..finish-result..))
 
 (fact "that preparing a deployment and providing an AMI which doesn't match the application being deployed throws a wobbly"
-      (prepare-deployment "region" "application" "environment" "user" "ami" "message")
+      (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
       => (throws ExceptionInfo "Image does not match application")
       (provided
        (asgard/image "region" "ami")
