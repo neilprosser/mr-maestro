@@ -28,6 +28,7 @@ All images of an application in JSON form.
 Query deployments. Query parameters allowed are:
 
   * `application` - the application to filter by
+  * `environment` - the environment to filter by
   * `start-from` - the lower bound of a date filter on deployment start time.
   * `start-to` - the upper bound of a date filter on deployment start time.
   * `size` - the number of deployments to retrieve (default: 10)
