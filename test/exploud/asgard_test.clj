@@ -279,6 +279,19 @@
        => {:status 200
            :body "{\"securityGroups\":[{\"name\":\"group\"}]}"}))
 
+(fact "We can retrieve a list of stacks from each Asgard"
+      (stacks "region")
+      => #{"a" "b" "c" "d" "e"}
+      (provided
+       (http/simple-get
+        "http://dev.asgard:8080/region/stack/list.json")
+       => {:status 200
+           :body "{\"allStackNames\":[\"e\",\"a\"]}"}
+       (http/simple-get
+        "http://prod.asgard:8080/region/stack/list.json")
+       => {:status 200
+           :body "{\"allStackNames\":[\"b\",\"c\",\"d\"]}"}))
+
 (fact "We can retrieve tasks from Asgard"
       (tasks "environment")
       => [{:id "task-1"}

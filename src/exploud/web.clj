@@ -185,6 +185,10 @@
            (dep/start-deployment id)
            (response {:id id})))
 
+   (GET "/environments"
+        []
+        (response {:environments (info/environments default-region)}))
+
    (GET "/tasks"
         []
         (response (with-out-str (at-at/show-schedule tasks/pool)))))

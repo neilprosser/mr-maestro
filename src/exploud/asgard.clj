@@ -273,6 +273,11 @@
   [environment region]
   (str (asgard-url-for-environment environment) "/" region "/security/list.json"))
 
+(defn- stacks-url
+  "Gives us a region-based URL we can use to get a list of all Stacks."
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/stack/list.json"))
+
 (defn- tasks-url
   "Gives us a region-based URL we can use to get tasks."
   [environment]
@@ -466,6 +471,18 @@
                                                 environment region))]
     (when (= status 200)
       (:securityGroups (json/parse-string body true)))))
+
+(defn- stacks-for-environment
+  "Retrieves a list of stacks from a specific Asgard."
+  [environment region]
+  (let [{:keys [body status]} (http/simple-get (stacks-url environment region))]
+                          (when (= status 200)
+                            (:allStackNames (json/parse-string body true)))))
+
+(defn stacks
+  "Retrieves a list of stacks from all Asgards."
+  [region]
+  (apply sorted-set (merge (flatten (map (fn [e] (stacks-for-environment e region)) [:poke :prod])))))
 
 (defn task-by-url
   "Retrieves a task by its URL."

@@ -69,3 +69,8 @@
    (asgard/launch-config-list region)
    (matching-config-ids app-name)
    (active-images region)))
+
+(defn environments
+  "Retrieves a list of all the environments (or stacks) that all Asgards know about."
+  [region]
+  (asgard/stacks region))

@@ -61,5 +61,8 @@ Begin a rollback of an application (a rollback is considered to be a deployment 
   * `message` - a message which describes why the deployment is happening
   * `user` - the user who is making the deployment
 
+`GET /1.x/environments`
+All environments in JSON form.
+
 `GET /1.x/tasks`
 A text representation of the tasks the system is currently tracking.

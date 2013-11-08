@@ -84,3 +84,10 @@
       (active-amis-for-app anything "waffle") => '()
       (provided
        (asgard/launch-config-list anything) => configs-list))
+
+(fact "that we can get environments"
+      (environments "region")
+      => ..environments..
+      (provided
+       (asgard/stacks "region")
+       => ..environments..))
