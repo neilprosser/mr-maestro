@@ -176,20 +176,28 @@
       (task-finished deployment-id task))))
 
 (defn start-task
+  "Entry point for starting tasks, makes sure there's a `:start` date on it
+   and gets things moving."
   [deployment task]
   (start-task* deployment (assoc task :start (time/now))))
+
+(defn successful?
+  "Whether the task has finished successfully."
+  [{:keys [status]}]
+  (or (= "completed" status)
+      (= "skipped" status)))
 
 (defn task-finished
   "Function called when a task has completed. Deals with moving the deployment
    to the next phase."
   [deployment-id {task-id :id :as task}]
-  (store/store-task deployment-id (assoc task
-                                    :end (time/now)))
+  (store/store-task deployment-id (assoc task :end (time/now)))
   (let [deployment (store/get-deployment deployment-id)]
-    (let [next-task (task-after deployment task-id)]
-      (if next-task
+    (if (successful? task)
+      (if-let [next-task (task-after deployment task-id)]
         (start-task deployment next-task)
-        (finish-deployment deployment)))))
+        (finish-deployment deployment))
+      (finish-deployment deployment))))
 
 ;; Pre-hook attached to `task-finished` to log parameters.
 (with-pre-hook! #'task-finished
@@ -287,7 +295,8 @@
     nil))
 
 (defn finish-deployment
-  "Puts an `:end` date on the deployment and we all breathe a sigh of relief!"
+  "Puts an `:end` date on the deployment and we all breathe a sigh of relief. Unless
+   it failed of course."
   [deployment]
   (store/store-deployment (assoc deployment :end (time/now)))
   nil)

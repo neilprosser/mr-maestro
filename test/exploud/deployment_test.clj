@@ -241,6 +241,38 @@
        (start-task ..deployment.. ..next-task..)
        => ..start-result..))
 
+(fact "that finishing a task which is skipped continues the deployment"
+      (task-finished ..deploy-id.. {:id ..task-id.. :status "skipped"})
+      => ..start-result..
+      (provided
+       (time/now)
+       => ..end..
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :end ..end..
+                                        :status "skipped"})
+       => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => ..deployment..
+       (task-after ..deployment.. ..task-id..)
+       => ..next-task..
+       (start-task ..deployment.. ..next-task..)
+       => ..start-result..))
+
+(fact "that finishing a task which is not completed halts the deployment"
+      (task-finished ..deploy-id.. {:id ..task-id.. :status "failed"})
+      => ..finish-result..
+      (provided
+       (time/now)
+       => ..end..
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :end ..end..
+                                        :status "failed"})
+       => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => ..deployment..
+       (finish-deployment ..deployment..)
+       => ..finish-result..))
+
 (fact "that getting the task after one that is last gives `nil`"
       (task-after {:tasks [{:id ..task-1..}
                            {:id ..task-2..}]}
