@@ -32,10 +32,12 @@
      created ASG are passing their healthchecks (by showing a 200 status)
    - __enable-asg__ - enable traffic to the newly-created ASG
    - __wait-for-elb-health__ - if adding instances to any ELBs, wait until
-     __all__ instances in the newly-created ASG are listed as healthy in the
-     ELBs, if not adding instances to any ELBs this is a no-op
-   - __disable-asg__ - disable traffic to the old ASG
-   - __delete-asg__ - delete the old ASG, terminating any instances within it"
+     the minimum number of instances in the newly-created ASG are listed as
+     healthy in the ELBs, if not adding instances to any ELBs this is a no-op
+   - __disable-asg__ - disable traffic to the old ASG, if there was no previous
+     ASG this is a no-op
+   - __delete-asg__ - delete the old ASG, terminating any instances within it,
+     if there was no previous ASG this is a no-op"
   []
   [(new-task :create-asg)
    (new-task :wait-for-instance-health)
