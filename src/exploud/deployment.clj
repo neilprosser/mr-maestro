@@ -6,6 +6,8 @@
                                with-post-hook!
                                with-pre-hook!
                                with-precondition!]]
+            [postal.core :as mail]
+            [environ.core :refer [env]]
             [exploud
              [asgard :as asgard]
              [healthchecks :as health]
@@ -356,9 +358,26 @@
     (start-task deployment first-task)
     nil))
 
+(defn- build-message-body
+  "Creates a message body from parameters contained in the given deployment."
+  [deployment]
+  (let [app-name (get-in deployment [:parameters :name])
+        {environment :environment user :user image :ami} deployment]
+    (format "Application %s has been deployed to %s by %s using %s." app-name environment user image)))
+
+(defn send-completion-message
+  "Sends a 'deployment completed' email to the configured notification destination for the given deployment."
+  [deployment]
+  (mail/send-message {:host (env :service-smtp-host)}
+                     {:from (env :service-mail-from)
+                      :to (get-in deployment [:parameters :notificationDestination])
+                      :subject "Application Deployment Completed"
+                      :body (build-message-body deployment)}))
+
 (defn finish-deployment
   "Puts an `:end` date on the deployment and we all breathe a sigh of relief. Unless
    it failed of course."
   [deployment]
   (store/store-deployment (assoc deployment :end (time/now)))
+  (send-completion-message deployment)
   nil)

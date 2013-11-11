@@ -271,7 +271,9 @@
        (time/now)
        => ..end..
        (store/store-deployment {:end ..end..})
-       => ..store-result..))
+       => ..store-result..
+       (send-completion-message anything)
+       => anything))
 
 (fact "that finishing a task which is the last one in the deployment finishes that deployment"
       (task-finished ..deploy-id.. {:id ..task-id.. :status "completed"})

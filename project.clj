@@ -13,6 +13,7 @@
                  [com.yammer.metrics/metrics-logback "2.2.0"]
                  [com.ovi.common.metrics/metrics-graphite "2.1.22"]
                  [dire "0.5.1"]
+                 [com.draines/postal "1.11.1"]
                  [environ "0.4.0"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
@@ -55,6 +56,8 @@
         :service-prod-asgard-url "http://prod.asgard:8080"
         :service-onix-url "http://onix:8080"
         :service-tyranitar-url "http://tyranitar:8080"
+        :service-smtp-host "smtp.brislabs.com"
+        :service-mail-from "noreply@brislabs.com"
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"
         :service-vpc-id "vpc-7bc88713"}
