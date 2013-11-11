@@ -17,11 +17,14 @@
 
 (defn new-task
   "Creates a new task with a random ID, the given `:action` and a `:status` of
-   `pending`."
-  [action]
-  {:id (util/generate-id)
-   :action action
-   :status "pending"})
+   `pending`.
+
+   Accepts a map `extras` which will be merged with the generated map."
+  [action & [extras]]
+  (merge extras
+         {:id (util/generate-id)
+          :action action
+          :status "pending"}))
 
 (defn create-standard-deployment-tasks
   "Creates a standard deployment using the following actions:
@@ -45,6 +48,55 @@
    (new-task :wait-for-elb-health)
    (new-task :disable-asg)
    (new-task :delete-asg)])
+
+(defmulti create-undo
+  (fn [task]
+    (:action task)))
+
+(defmethod create-undo
+  :create-asg
+  [task]
+  [(new-task :delete-asg {:undo true})])
+
+(defmethod create-undo
+  :wait-for-instance-health
+  [task]
+  [])
+
+(defmethod create-undo
+  :enable-asg
+  [task]
+  [(new-task :disable-asg {:undo true})])
+
+(defmethod create-undo
+  :wait-for-elb-health
+  [task]
+  [])
+
+(defmethod create-undo
+  :disable-asg
+  [task]
+  [(new-task :enable-asg {:undo true})
+   (new-task :wait-for-elb-health {:undo true})])
+
+(defmethod create-undo
+  :delete-asg
+  [task]
+  [(new-task :create-asg {:undo true})
+   (new-task :wait-for-instance-health {:undo true})])
+
+(defn- pending?
+  "Whether a task has a `:status` of pending."
+  [{:keys [status]}]
+  (= "pending" status))
+
+(defn create-undo-tasks
+  "Takes a list of tasks and attempts to create a suitable undo plan which will
+   reverse all actions already completed or started."
+  [tasks]
+  (let [active-tasks (vec (remove pending? tasks))
+        undo-tasks (reverse (remove nil? (flatten (map #(reverse (create-undo %)) active-tasks))))]
+    (apply merge active-tasks undo-tasks)))
 
 (defn task-after
   "Given a deployment and a task ID will find the task which occurs after the
@@ -282,6 +334,17 @@
                      :region region
                      :application application
                      :environment environment}))))
+
+(defn prepare-undo
+  "Takes a deployment and edits the list of tasks to reverse tasks that have been started.
+
+   Returns the edited deployment."
+  [{:keys [tasks] :as deployment}]
+  (if (zero? (count tasks))
+    deployment
+    (let [updated-tasks (create-undo-tasks tasks)]
+      (store/store-deployment (assoc deployment :tasks updated-tasks))
+      nil)))
 
 (defn start-deployment
   "Kicks off the first task of the deployment with `deployment-id`."

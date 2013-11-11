@@ -25,6 +25,72 @@
            (filter (fn [t] (= (:action t) "pending")))
            empty?))
 
+(fact "creating the undo tasks for a deployment which has stopped at `:create-asg` creates a task which deletes that ASG"
+      (create-undo-tasks [{:action :create-asg :status "failed"}
+                          {:action :whatever :status "pending"}])
+      => [{:action :create-asg :status "failed"}
+          {:action :delete-asg :id ..id.. :status "pending" :undo true}]
+      (provided
+       (util/generate-id)
+       => ..id..))
+
+(fact "creating the undo tasks for a deployment which has stopped at `:wait-for-instance-health` creates nothing"
+      (create-undo-tasks [{:action :wait-for-instance-health :status "failed"}])
+      => [{:action :wait-for-instance-health :status "failed"}])
+
+(fact "creating the undo tasks for a deployment which has stopped at `:enable-asg` creates a task which disables that ASG"
+      (create-undo-tasks [{:action :enable-asg :status "failed"}])
+      => [{:action :enable-asg :status "failed"}
+          {:action :disable-asg :id ..id.. :status "pending" :undo true}]
+      (provided
+       (util/generate-id)
+       => ..id..))
+
+(fact "creating the undo tasks for a deployment which has stopped at `:wait-for-elb-health` creates nothing"
+      (create-undo-tasks [{:action :wait-for-elb-health :status "failed"}])
+      => [{:action :wait-for-elb-health :status "failed"}])
+
+(fact "creating the undo tasks for a deployment which has stopped at `:disable-asg` creates tasks which enable that ASG and wait for the instances to be healthy in the ELB"
+      (create-undo-tasks [{:action :disable-asg :status "failed"}])
+      => [{:action :disable-asg :status "failed"}
+          {:action :enable-asg :id ..id.. :status "pending" :undo true}
+          {:action :wait-for-elb-health :id ..id.. :status "pending" :undo true}]
+      (provided
+       (util/generate-id)
+       => ..id..))
+
+(fact "creating the undo tasks for a deployment which has stopped at `:delete-asg` creates tasks which create that ASG and wait for it to be healthy"
+      (create-undo-tasks [{:action :delete-asg :status "failed"}])
+      => [{:action :delete-asg :status "failed"}
+          {:action :create-asg :id ..id.. :status "pending" :undo true}
+          {:action :wait-for-instance-health :id ..id.. :status "pending" :undo true}]
+      (provided
+       (util/generate-id)
+       => ..id..))
+
+(fact "creating the undo tasks for a realistic deployment which has stopped at `:delete-asg` creates the right tasks"
+      (create-undo-tasks [{:action :create-asg :status "completed"}
+                          {:action :wait-for-instance-health :status "completed"}
+                          {:action :enable-asg :status "completed"}
+                          {:action :wait-for-elb-health :status "skipped"}
+                          {:action :disable-asg :status "completed"}
+                          {:action :delete-asg :status "failed"}])
+      => [{:action :create-asg :status "completed"}
+          {:action :wait-for-instance-health :status "completed"}
+          {:action :enable-asg :status "completed"}
+          {:action :wait-for-elb-health :status "skipped"}
+          {:action :disable-asg :status "completed"}
+          {:action :delete-asg :status "failed"}
+          {:action :create-asg :id ..id.. :status "pending" :undo true}
+          {:action :wait-for-instance-health :id ..id.. :status "pending" :undo true}
+          {:action :enable-asg :id ..id.. :status "pending" :undo true}
+          {:action :wait-for-elb-health :id ..id.. :status "pending" :undo true}
+          {:action :disable-asg :id ..id.. :status "pending" :undo true}
+          {:action :delete-asg :id ..id.. :status "pending" :undo true}]
+      (provided
+       (util/generate-id)
+       => ..id..))
+
 (fact "that we obtain the properties for a deployment with no hash correctly and store the right things"
       (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. nil ..message..)
       => {:ami ..ami..
@@ -541,3 +607,16 @@
       (provided
        (asgard/image "region" "ami")
        => {:image {:name "ent-somethingelse-0.12"}}))
+
+(fact "that preparing an undo for a deployment with no tasks gives back the deployment"
+      (prepare-undo {:tasks []})
+      => {:tasks []})
+
+(fact "that preparing an undo for a deployment with tasks does the right thing"
+      (prepare-undo {:tasks [..task..]})
+      => nil
+      (provided
+       (create-undo-tasks [..task..])
+       => ..edited-tasks..
+       (store/store-deployment {:tasks ..edited-tasks..})
+       => ..store-result..))
