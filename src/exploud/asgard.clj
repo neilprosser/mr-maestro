@@ -964,16 +964,25 @@
 
 ;; # Concerning creating ASGs for an application
 
+(defn extract-hash
+  "Extracts the Tyranitar hash from the given string. It'll look for `export HASH=` followed by the hash."
+  [user-data]
+  (when user-data
+    (second (re-find #"export HASH=([^\s]+)" user-data))))
+
 (defn create-auto-scaling-group
   "If the specified application already has an ASG in the given region and
    environment, create the next one. Otherwise, create a brand-new ASG."
   [{:keys [application environment region] ticket-id :id :as parameters}]
   (let [cluster-name (str application "-" environment)]
-    (if-let [asg (last-auto-scaling-group environment region cluster-name)]
-      (let [old-asg-name (:autoScalingGroupName asg)]
+    (if-let [old-asg (last-auto-scaling-group environment region cluster-name)]
+      (let [old-asg-name (:autoScalingGroupName old-asg)
+            old-launch-config (launch-config region (:launchConfigurationName old-asg))]
         (store/add-to-deployment-parameters
          ticket-id
-         {:oldAutoScalingGroupName old-asg-name})
+         {:oldAutoScalingGroupName old-asg-name
+          :oldHash (extract-hash (get-in old-launch-config [:lc :userData]))
+          :oldAmi (get-in old-launch-config [:image :imageId])})
         (create-next-asg parameters))
       (create-new-asg parameters))))
 

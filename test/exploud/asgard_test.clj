@@ -724,8 +724,11 @@
       => ..create-result..
       (provided
        (last-auto-scaling-group "environment" ..region.. "application-environment")
-       => {:autoScalingGroupName ..old-asg..}
-       (store/add-to-deployment-parameters ..ticket.. {:oldAutoScalingGroupName ..old-asg..})
+       => {:autoScalingGroupName ..old-asg.. :launchConfigurationName ..lc..}
+       (launch-config ..region.. ..lc..)
+       => {:image {:imageId "old-ami"}
+           :lc {:userData "export HASH=old-hash export SOMETHING=woo"}}
+       (store/add-to-deployment-parameters ..ticket.. {:oldAutoScalingGroupName ..old-asg.. :oldAmi "old-ami" :oldHash "old-hash"})
        => ..store-result..
        (create-next-asg {:region ..region..
                          :application "application"
