@@ -119,6 +119,27 @@
   (fn [t]
     (log/debug "Task after came back as" t)))
 
+;; # Concerning mail
+
+(defn- build-message-body
+  "Creates a message body from parameters contained in the given deployment."
+  [deployment]
+  (let [app-name (get-in deployment [:parameters :name])
+        {environment :environment user :user image :ami} deployment]
+    (format "Application %s has been deployed to %s by %s using %s." app-name environment user image)))
+
+(defn send-completion-message
+  "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
+  [deployment]
+  (when (seq (env :service-smtp-host))
+    (let [host (env :service-smtp-host)
+          from (env :service-mail-from)]
+      (mail/send-message {:host host}
+                         {:from from
+                          :to (get-in deployment [:parameters :notificationDestination])
+                          :subject "Application Deployment Completed"
+                          :body (build-message-body deployment)}))))
+
 (defn wait-for-instance-health?
   "If the "
   [{:keys [parameters]}]
@@ -357,22 +378,6 @@
     (store/store-deployment deployment)
     (start-task deployment first-task)
     nil))
-
-(defn- build-message-body
-  "Creates a message body from parameters contained in the given deployment."
-  [deployment]
-  (let [app-name (get-in deployment [:parameters :name])
-        {environment :environment user :user image :ami} deployment]
-    (format "Application %s has been deployed to %s by %s using %s." app-name environment user image)))
-
-(defn send-completion-message
-  "Sends a 'deployment completed' email to the configured notification destination for the given deployment."
-  [deployment]
-  (mail/send-message {:host (env :service-smtp-host)}
-                     {:from (env :service-mail-from)
-                      :to (get-in deployment [:parameters :notificationDestination])
-                      :subject "Application Deployment Completed"
-                      :body (build-message-body deployment)}))
 
 (defn finish-deployment
   "Puts an `:end` date on the deployment and we all breathe a sigh of relief. Unless

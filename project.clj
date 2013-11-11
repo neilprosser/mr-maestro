@@ -56,7 +56,7 @@
         :service-prod-asgard-url "http://prod.asgard:8080"
         :service-onix-url "http://onix:8080"
         :service-tyranitar-url "http://tyranitar:8080"
-        :service-smtp-host "smtp.brislabs.com"
+        :service-smtp-host ""
         :service-mail-from "noreply@brislabs.com"
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"
