@@ -56,7 +56,10 @@
   "The default user we'll say deployments came from (if one isn't provided)."
   "exploud")
 
-(def application-regex #"[a-z]+")
+(def application-regex
+  "The regular expression which we'll use to determine whether an application
+   name is valid."
+  #"[a-z]+")
 
 (defn response
   "Accepts a body an optionally a content type and status. Returns a response

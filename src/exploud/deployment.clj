@@ -52,6 +52,8 @@
    (new-task :delete-asg)])
 
 (defmulti create-undo
+  "Creates any tasks necessary to undo a given task. Figures out what to create
+   by looking at the `:action` of `task`."
   (fn [task]
     (:action task)))
 
@@ -115,6 +117,7 @@
   (fn [d id]
     (log/debug "Getting task after" id "in" d)))
 
+;; Post-hook attached to `task-after` to log the task which comes back (if there is one).
 (with-post-hook! #'task-after
   (fn [t]
     (log/debug "Task after came back as" t)))
@@ -141,7 +144,8 @@
                           :body (build-message-body deployment)}))))
 
 (defn wait-for-instance-health?
-  "If the "
+  "Determines whether we should check for instance health. Will return `false` if
+   the deployment hasn't started any instances."
   [{:keys [parameters]}]
   (if-let [min (or (:min parameters) asgard/default-minimum)]
     (pos? min)
@@ -173,6 +177,7 @@
 (declare finish-deployment)
 
 (defmulti start-task*
+  "Starts a task by performing the functions required based on its `:action`."
   (fn [deployment {:keys [action] :as task}]
     (keyword action)))
 
