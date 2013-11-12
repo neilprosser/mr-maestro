@@ -25,13 +25,20 @@
   [instance]
   (get-in instance [:instance :privateIpAddress]))
 
+(defn- create-url
+  "Ahem... Nothing to see here. Move along please..."
+  [ip port healthcheck-path]
+  (if-not (re-find #"^10\.124\." ip)
+    (str "http://" ip ":" port "/" healthcheck-path)
+    (str "http://jeff.brislabs.com/healthcheck-joy/" ip ":" port "/" healthcheck-path)))
+
 (defn instance-healthy?
   "`true` if the healthcheck returns `200`, otherwise `false."
   [instance port healthcheck-path]
   (try+
    (let [ip (instance-ip instance)
          healthcheck-path (util/strip-first-forward-slash healthcheck-path)
-         url (str "http://" ip ":" port "/" healthcheck-path)
+         url (create-url ip port healthcheck-path)
          {:keys [status]} (http/simple-get url {:socket-timeout 2000})]
      (= status 200))
    (catch ExceptionInfo _

@@ -27,6 +27,24 @@
        (http/simple-get "http://ip:port/healthcheck" {:socket-timeout 2000})
        =throws=> (ex-info "Whoops!" {:type :exploud.http/socket-timeout})))
 
+(fact "that when checking the health of an instance with an IP address which doesn't start with `10.124` we use the direct IP to get hold of the information."
+      (instance-healthy? ..instance.. "port" "healthcheck")
+      => true
+      (provided
+       (instance-ip ..instance..)
+       => "10.123.71.23"
+       (http/simple-get "http://10.123.71.23:port/healthcheck" {:socket-timeout 2000})
+       => {:status 200}))
+
+(fact "that when checking the health of an instance with an IP address starting with `10.124` we use the hack method to get hold of the information."
+      (instance-healthy? ..instance.. "port" "healthcheck")
+      => true
+      (provided
+       (instance-ip ..instance..)
+       => "10.124.71.23"
+       (http/simple-get "http://jeff.brislabs.com/healthcheck-joy/10.124.71.23:port/healthcheck" {:socket-timeout 2000})
+       => {:status 200}))
+
 (fact "that when checking ASG health no instances returns true if none are wanted"
       (asg-healthy? "environment" "region" "asg" 0 8080 "healthcheck")
       => true
