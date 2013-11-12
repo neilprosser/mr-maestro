@@ -127,8 +127,7 @@
 (defn- build-message-body
   "Creates a message body from parameters contained in the given deployment."
   [deployment]
-  (let [app-name (get-in deployment [:parameters :name])
-        {environment :environment user :user image :ami} deployment]
+  (let [{app-name :application environment :environment user :user image :ami} deployment]
     (format "Application %s has been deployed to %s by %s using %s." app-name environment user image)))
 
 (defn send-completion-message
