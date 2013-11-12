@@ -42,24 +42,24 @@
       => nil)
 
 (fact "We don't replace the selected load balancers when not working in a VPC"
-      (replace-load-balancer-key {:selectedLoadBalancers ["load-balancer"]})
+      (replace-load-balancer-key {:selectedLoadBalancers ["load-balancer"]} :poke)
       => {:selectedLoadBalancers ["load-balancer"]})
 
 (fact "We replace the selected load balancers when working in a VPC"
       (replace-load-balancer-key {:subnetPurpose "internal"
-                                  :selectedLoadBalancers ["load-balancer"]})
+                                  :selectedLoadBalancers ["load-balancer"]} :prod)
       => {:subnetPurpose "internal"
-          (keyword (str "selectedLoadBalancersForVpcId" vpc-id)) ["load-balancer"]})
+          (keyword (str "selectedLoadBalancersForVpcIdvpc-prod")) ["load-balancer"]})
 
 (fact "We gracefully handle no load balancer when working in a VPC"
-      (replace-load-balancer-key {:subnetPurpose "internal"})
+      (replace-load-balancer-key {:subnetPurpose "internal"} :poke)
       => {:subnetPurpose "internal"})
 
 (fact "We gracefully handle a single load balancer specified as a string"
       (replace-load-balancer-key {:subnetPurpose "internal"
-                                  :selectedLoadBalancers "load-balancer"})
+                                  :selectedLoadBalancers "load-balancer"} :poke)
       => {:subnetPurpose "internal"
-          (keyword (str "selectedLoadBalancersForVpcId" vpc-id)) "load-balancer"})
+          (keyword (str "selectedLoadBalancersForVpcIdvpc-dev")) "load-balancer"})
 
 (fact "We don't replace security group names when not working in a VPC"
       (replace-security-group-names {:selectedSecurityGroups ["group-one" "group-two"]} ..environment.. ..region..)
@@ -127,7 +127,7 @@
       (provided
        (remove-nil-values ..original..)
        => ..nil-replaced..
-       (replace-load-balancer-key ..nil-replaced..)
+       (replace-load-balancer-key ..nil-replaced.. ..environment..)
        => ..lb-replaced..
        (replace-security-group-names ..lb-replaced.. ..environment.. ..region..)
        => ..sg-replaced..

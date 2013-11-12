@@ -37,10 +37,6 @@
   "The default minimum number of instances to start if nothing is provided by the user."
   1)
 
-(def vpc-id
-  "The VPC ID we'll be deploying into."
-  (env :service-vpc-id))
-
 (def asgard-log-date-formatter
   "The formatter used by Asgard in log messages."
   (fmt/formatter "YYYY-MM-dd_HH:mm:ss"))
@@ -193,6 +189,18 @@
    :name (str application-name "-" environment)
    :ticket ticket-id
    :trafficAllowed ""})
+
+;; # Concerning VPC IDs
+
+(def vpc-ids-by-environment
+  "A map of VPC IDs by the environment they serve."
+  {:poke (env :service-dev-vpc-id)
+   :prod (env :service-prod-vpc-id)})
+
+(defn vpc-id-for-environment
+  "The VPC ID we'll be deploying into."
+  [environment]
+  ((keyword environment) vpc-ids-by-environment (:poke vpc-ids-by-environment)))
 
 ;; # Concerning Asgard URL generation
 
@@ -531,12 +539,13 @@
   "If `:subnetPurpose` is `internal` and `:selectedLoadBalancers` is found
    within `parameters` the key name will be switched with
    `:selectedLoadBalancersForVpcId{vpc-id}"
-  [parameters]
+  [parameters environment]
   (if (and (= "internal" (:subnetPurpose parameters))
            (:selectedLoadBalancers parameters))
-    (set/rename-keys parameters
-                     {:selectedLoadBalancers
-                      (keyword (str "selectedLoadBalancersForVpcId" vpc-id))})
+    (let [vpc-id (vpc-id-for-environment environment)]
+      (set/rename-keys parameters
+                       {:selectedLoadBalancers
+                        (keyword (str "selectedLoadBalancersForVpcId" vpc-id))}))
     parameters))
 
 (defn is-security-group-id?
@@ -608,7 +617,7 @@
   [parameters environment region]
   (-> parameters
       remove-nil-values
-      replace-load-balancer-key
+      (replace-load-balancer-key environment)
       (replace-security-group-names environment region)
       (add-exploud-security-group environment region)
       (add-region-to-zones region)))

@@ -60,7 +60,8 @@
         :service-mail-from "noreply@brislabs.com"
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"
-        :service-vpc-id "vpc-7bc88713"}
+        :service-dev-vpc-id "vpc-dev"
+        :service-prod-vpc-id "vpc-prod"}
 
   :clean-targets [:target-path "docs"]
 
