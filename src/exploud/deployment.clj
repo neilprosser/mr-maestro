@@ -249,7 +249,7 @@
                                    :oldAutoScalingGroupName])]
     (asgard/delete-asg
      environment region asg deployment-id task task-finished task-timed-out)
-    (let [task (assoc (util/append-to-task-log "No old ASG to delete")
+    (let [task (assoc (util/append-to-task-log "No old ASG to delete" task)
                  :status "skipped")]
       (task-finished deployment-id task))))
 
