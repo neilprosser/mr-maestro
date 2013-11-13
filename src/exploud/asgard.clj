@@ -269,6 +269,16 @@
   [environment region instance-id]
   (str (asgard-url-for-environment environment) "/" region "/instance/show/" instance-id ".json"))
 
+(defn- launch-config-url
+  "Gives us a URL to get the details of the launch config with the given ID."
+  [environment region config-id]
+  (str (asgard-url-for-environment environment) "/" region "/launchConfiguration/show/" config-id ".json"))
+
+(defn- launch-config-list-url
+  "Gives us a URL to get a list of all launch configurations."
+  [environment region]
+  (str (asgard-url-for-environment environment) "/" region "/launchConfiguration/list.json"))
+
 (defn- load-balancer-url
   "Gives us a region-based URL we can use to get information about a load-
    balancer"
@@ -300,16 +310,6 @@
   "Gives us a URL we can use to upsert an application."
   [environment]
   (str (asgard-url-for-environment environment) "/application/index"))
-
-(defn- launch-config-list-url
-  "Gives us a URL to get a list of all launch configurations."
-  [environment region]
-  (str (asgard-url-for-environment environment) "/" region "/launchConfiguration/list.json"))
-
-(defn- launch-config-url
-  "Gives us a URL to get the details of the launch config with the given ID."
-  [environment region config-id]
-  (str (asgard-url-for-environment environment) "/" region "/launchConfiguration/show/" config-id ".json"))
 
 ;; # Helpful things
 
@@ -448,21 +448,25 @@
   [environment region cluster-name]
   (last (cluster environment region cluster-name)))
 
-; TODO Make this use both Asgards
 (defn launch-config
   "Fetches the launch configuration with the given ID in the given region."
   [region config-id]
-  (let [{:keys [body status]} (http/simple-get (launch-config-url :poke region config-id))]
+  (let [environment (keyword (:stack (details-from-name config-id)))
+        {:keys [body status]} (http/simple-get (launch-config-url environment region config-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
-; TODO Make this use both Asgards
+(defn- launch-config-list*
+  "Fetches all launch configurations for a given region and environment."
+  [environment region]
+  (let [{:keys [body status]} (http/simple-get (launch-config-list-url environment region))]
+    (when (= status 200)
+      (json/parse-string body true))))
+
 (defn launch-config-list
   "Fetches all launch configs for the given region."
   [region]
-  (let [{:keys [body status]} (http/simple-get (launch-config-list-url :poke region))]
-    (when (= status 200)
-      (json/parse-string body true))))
+  (apply reduce merge (map (fn [e] (vec (launch-config-list* e region))) [:poke :prod])))
 
 (defn load-balancer
   "Retrieves information about a load-balancer."

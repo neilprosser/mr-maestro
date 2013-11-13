@@ -224,6 +224,25 @@
         "http://dev.asgard:8080/region/instance/show/id.json")
        => {:status 404}))
 
+(fact "that getting a launch configuration works"
+      (launch-config "region" "application-prod-v012-20131123092312")
+      => {:whatever "works"}
+      (provided
+       (http/simple-get
+        "http://prod.asgard:8080/region/launchConfiguration/show/application-prod-v012-20131123092312.json")
+       => {:status 200 :body "{\"whatever\":\"works\"}"}))
+
+(fact "that getting the list of launch configurations works"
+      (launch-config-list "region")
+      => [{:from "poke"} {:from "prod"}]
+      (provided
+       (http/simple-get
+        "http://dev.asgard:8080/region/launchConfiguration/list.json")
+       => {:status 200 :body "[{\"from\":\"poke\"}]"}
+       (http/simple-get
+        "http://prod.asgard:8080/region/launchConfiguration/list.json")
+       => {:status 200 :body "[{\"from\":\"prod\"}]"}))
+
 (fact "that we can retrieve a load-balancer form Asgard"
       (load-balancer "environment" "region" "elb")
       => {:id "id"
