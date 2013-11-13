@@ -1,5 +1,7 @@
 (ns exploud.deployment_test
   (:require [clj-time.core :as time]
+            [environ.core :refer [env]]
+            [postal.core :as mail]
             [exploud
              [asgard :as asgard]
              [deployment :refer :all]
@@ -274,6 +276,25 @@
        => ..store-result..
        (send-completion-message anything)
        => anything))
+
+(def deployment {:application "myapp"
+                 :environment "test"
+                 :user "auser"
+                 :ami "ami-1234abcd"
+                 :parameters {:notificationDestination "someone@example.com"}})
+
+(fact "that messages are correctly formatted for sending."
+      (send-completion-message deployment) => nil
+      (provided
+       (env :service-smtp-host) => "dummy-value"
+       (env :service-mail-from) => "noreply@brislabs.com"
+       (mail/send-message {:host "dummy-value"}
+                          {:from "noreply@brislabs.com"
+                           :to "someone@example.com"
+                           :subject "Application Deployment Completed"
+                           :body "Application myapp has been deployed to test by auser using ami-1234abcd."})
+       => nil))
+
 
 (fact "that finishing a task which is the last one in the deployment finishes that deployment"
       (task-finished ..deploy-id.. {:id ..task-id.. :status "completed"})

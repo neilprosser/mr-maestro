@@ -127,8 +127,8 @@
 (defn- build-message-body
   "Creates a message body from parameters contained in the given deployment."
   [deployment]
-  (let [{app-name :application environment :environment user :user image :ami} deployment]
-    (format "Application %s has been deployed to %s by %s using %s." app-name environment user image)))
+  (let [{:keys [application environment user ami]} deployment]
+    (format "Application %s has been deployed to %s by %s using %s." application environment user ami)))
 
 (defn send-completion-message
   "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
