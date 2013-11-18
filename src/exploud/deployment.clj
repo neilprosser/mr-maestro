@@ -6,11 +6,11 @@
                                with-post-hook!
                                with-pre-hook!
                                with-precondition!]]
-            [postal.core :as mail]
             [environ.core :refer [env]]
             [exploud
              [asgard :as asgard]
              [healthchecks :as health]
+             [notification :as notification]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]))
@@ -121,26 +121,6 @@
 (with-post-hook! #'task-after
   (fn [t]
     (log/debug "Task after came back as" t)))
-
-;; # Concerning mail
-
-(defn- build-message-body
-  "Creates a message body from parameters contained in the given deployment."
-  [deployment]
-  (let [{:keys [application environment user ami]} deployment]
-    (format "Application %s has been deployed to %s by %s using %s." application environment user ami)))
-
-(defn send-completion-message
-  "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
-  [deployment]
-  (when (seq (env :service-smtp-host))
-    (let [host (env :service-smtp-host)
-          from (env :service-mail-from)]
-      (mail/send-message {:host host}
-                         {:from from
-                          :to (get-in deployment [:parameters :notificationDestination])
-                          :subject "Application Deployment Completed"
-                          :body (build-message-body deployment)}))))
 
 (defn wait-for-instance-health?
   "Determines whether we should check for instance health. Will return `false` if
@@ -388,5 +368,5 @@
    it failed of course."
   [deployment]
   (store/store-deployment (assoc deployment :end (time/now)))
-  (send-completion-message deployment)
+  (notification/send-completion-message deployment)
   nil)

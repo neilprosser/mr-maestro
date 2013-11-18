@@ -63,6 +63,7 @@
         :service-tyranitar-url "http://tyranitar:8080"
         :service-smtp-host ""
         :service-mail-from "noreply@brislabs.com"
+        :service-mail-to "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"
         :service-dev-vpc-id "vpc-dev"
