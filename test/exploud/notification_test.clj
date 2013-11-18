@@ -6,7 +6,7 @@
 
 (def deployment {:ami "ami-1234abcd"
                  :application "myapp"
-                 :environment "test"
+                 :environment "prod"
                  :id "some-id"
                  :message "Some message"
                  :user "auser"})
@@ -56,7 +56,11 @@
        (mail/send-message {:host "dummy-value"}
                           {:from "noreply@brislabs.com"
                            :to "to@address.com"
-                           :subject "Entertainment Deployment: myapp ami-1234abcd to test"
-                           :body "body"
-                           :Content-Type "text/html; charset=\"UTF-8\""})
+                           :subject "Entertainment Deployment: myapp ami-1234abcd to prod"
+                           :body [{:type "text/html; charset=\"UTF-8\""
+                                   :content "body"}]})
        => nil))
+
+(fact "that we don't send when the environment is something other than `:prod`"
+      (send-completion-message (assoc deployment :environment :something-else))
+      => nil)

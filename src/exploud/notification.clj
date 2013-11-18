@@ -6,7 +6,7 @@
 (defn build-message-title
   "Creates a message title from parameters contained in the given deployment."
   [{:keys [ami application environment]}]
-  (format "Entertainment Deployment: %s %s to %s" application ami environment))
+  (format "Entertainment Deployment: %s %s to %s" application ami (name environment)))
 
 (defn build-message-body
   "Creates a message body from parameters contained in the given deployment."
@@ -46,13 +46,14 @@
 
 (defn send-completion-message
   "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
-  [deployment]
-  (when (seq (env :service-smtp-host))
-    (let [host (env :service-smtp-host)
-          from (env :service-mail-from)]
-      (mail/send-message {:host host}
-                         {:from from
-                          :to (env :service-mail-to)
-                          :subject (build-message-title deployment)
-                          :body (build-message-body deployment)
-                          :Content-Type "text/html; charset=\"UTF-8\""}))))
+  [{:keys [environment] :as deployment}]
+  (when (= :prod (keyword environment))
+    (when (seq (env :service-smtp-host))
+      (let [host (env :service-smtp-host)
+            from (env :service-mail-from)]
+        (mail/send-message {:host host}
+                           {:from from
+                            :to (env :service-mail-to)
+                            :subject (build-message-title deployment)
+                            :body [{:type "text/html; charset=\"UTF-8\""
+                                    :content (build-message-body deployment)}]})))))
