@@ -540,11 +540,11 @@
   (into {} (filter (fn [[k v]] (not (nil? v))) (seq map))))
 
 (defn replace-load-balancer-key
-  "If `:subnetPurpose` is `internal` and `:selectedLoadBalancers` is found
+  "If `:subnetPurpose` is set and `:selectedLoadBalancers` is found
    within `parameters` the key name will be switched with
    `:selectedLoadBalancersForVpcId{vpc-id}"
   [parameters environment]
-  (if (and (= "internal" (:subnetPurpose parameters))
+  (if (and (:subnetPurpose parameters)
            (:selectedLoadBalancers parameters))
     (let [vpc-id (vpc-id-for-environment environment)]
       (set/rename-keys parameters
@@ -579,11 +579,11 @@
     (get-security-group-id security-group environment region)))
 
 (defn replace-security-group-names
-  "If `:subnetPurpose` is `internal` and `:securityGroupNames` is found within
+  "If `:subnetPurpose` is set and `:securityGroupNames` is found within
    `parameters` the value will be checked for security group names and replaced
    with their IDs (since we can't use security group names in a VPC)."
   [parameters environment region]
-  (if (= "internal" (:subnetPurpose parameters))
+  (if (:subnetPurpose parameters)
     (if-let [security-group-names (util/list-from
                                    (:selectedSecurityGroups parameters))]
       (let [security-group-ids (map (fn [sg]
