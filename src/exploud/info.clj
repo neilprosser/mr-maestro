@@ -25,10 +25,10 @@
    stores."
   [region application-name details]
   (let [onix-application (onix/upsert-application application-name)
-        tyranitar-application (tyr/upsert-application application-name)]
-    (shuppet/upsert-application application-name)
+        tyranitar-application (tyr/upsert-application application-name)
+        shuppet-application (shuppet/upsert-application application-name)]
     (asgard/upsert-application application-name details)
-    (merge (application "poke" region application-name) tyranitar-application)))
+    (merge (application "poke" region application-name) tyranitar-application shuppet-application)))
 
 (defn- is-named?
   "Checks if the given instance has the given name (ignoring version)."

@@ -35,14 +35,14 @@
 
 (fact "that upserting an application attempts to put it into Onix, Tyranitar and Asgard"
       (upsert-application "region" "application" ..details..)
-      => {:tyranitar "business" :asgard "business"}
+      => {:tyranitar "business" :asgard "business" :shuppet "business"}
       (provided
        (onix/upsert-application "application")
        => ..onix..
        (tyr/upsert-application "application")
        => {:tyranitar "business"}
        (shuppet/upsert-application "application")
-       => ..shuppet..
+       => {:shuppet "business"}
        (asgard/upsert-application "application" ..details..)
        => ..asgard..
        (application "poke" "region" "application")
