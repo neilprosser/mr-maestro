@@ -60,6 +60,7 @@
         :service-dev-asgard-url "http://dev.asgard:8080"
         :service-prod-asgard-url "http://prod.asgard:8080"
         :service-onix-url "http://onix:8080"
+        :service-shuppet-url "http://shuppet:8080"
         :service-tyranitar-url "http://tyranitar:8080"
         :service-smtp-host ""
         :service-mail-from "exploud@brislabs.com"

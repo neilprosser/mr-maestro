@@ -3,7 +3,8 @@
   (:require [exploud
              [asgard :as asgard]
              [onix :as onix]
-             [tyranitar :as tyr]]))
+             [tyranitar :as tyr]
+             [shuppet :as shuppet]]))
 
 (defn applications
   "The list of applications Onix knows about."
@@ -25,6 +26,7 @@
   [region application-name details]
   (let [onix-application (onix/upsert-application application-name)
         tyranitar-application (tyr/upsert-application application-name)]
+    (shuppet/upsert-application application-name)
     (asgard/upsert-application application-name details)
     (merge (application "poke" region application-name) tyranitar-application)))
 

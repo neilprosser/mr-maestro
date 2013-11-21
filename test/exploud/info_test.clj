@@ -3,7 +3,8 @@
              [asgard :as asgard]
              [info :refer :all]
              [onix :as onix]
-             [tyranitar :as tyr]]
+             [tyranitar :as tyr]
+             [shuppet :as shuppet]]
             [midje.sweet :refer :all]))
 
 (fact "that getting applications returns whatever Onix gives back"
@@ -40,6 +41,8 @@
        => ..onix..
        (tyr/upsert-application "application")
        => {:tyranitar "business"}
+       (shuppet/upsert-application "application")
+       => ..shuppet..
        (asgard/upsert-application "application" ..details..)
        => ..asgard..
        (application "poke" "region" "application")
