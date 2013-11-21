@@ -20,8 +20,8 @@
                         [:description :email :owner]))))
 
 (defn upsert-application
-  "Upserts an application into Onix, Tyranitar and Asgard. This function can be
-   run many times, it won't fail if the application is present in any of the
+  "Upserts an application into Onix, Tyranitar, Shuppet and Asgard. This function
+   can be run many times, it won't fail if the application is present in any of the
    stores."
   [region application-name details]
   (let [onix-application (onix/upsert-application application-name)
