@@ -565,7 +565,7 @@
                                                    (:groupName sg)))
                                         security-groups))]
       (:groupId found-group)
-      (throw (ex-info "Unknown security group name"
+      (throw (ex-info (str "Unknown security group name: " security-group)
                       {:type ::unknown-security-group
                        :name security-group
                        :region region})))))
@@ -678,7 +678,7 @@
               (zero? count) (timed-out-fn ticket-id task)
               :else (track-until-completed ticket-id task (dec count)
                                            completed-fn timed-out-fn)))
-      (throw (ex-info "No task found" {:type ::task-missing :url url})))
+      (throw (ex-info (str "No task found for URL: " url) {:type ::task-missing :url url})))
     (catch Exception e
       (do
         (log/error "Caught exception" e (map str (.getStackTrace e)))
@@ -726,7 +726,7 @@
                                           (str (get headers "location") ".json")
                                           :asgardParameters parameters})
                              task-track-count completed-fn timed-out-fn)
-      (throw (ex-info "Unexpected status while deleting ASG"
+      (throw (ex-info (str "Unexpected status while deleting ASG: " status)
                       {:type ::unexpected-response
                        :response response})))))
 
@@ -766,7 +766,7 @@
                                           (str (get headers "location") ".json")
                                           :asgardParameters parameters})
                              task-track-count completed-fn timed-out-fn)
-      (throw (ex-info "Unexpected status while resizing ASG"
+      (throw (ex-info (str "Unexpected status while resizing ASG: " status)
                       {:type ::unexpected-response
                        :response response})))))
 
@@ -805,7 +805,7 @@
                                           (str (get headers "location") ".json")
                                           :asgardParameters parameters})
                              task-track-count completed-fn timed-out-fn)
-      (throw (ex-info "Unexpected status while enabling ASG"
+      (throw (ex-info (str "Unexpected status while enabling ASG: " status)
                       {:type ::unexpected-response
                        :response response})))))
 
@@ -844,7 +844,7 @@
                                           (str (get headers "location") ".json")
                                           :asgardParameters parameters})
                              task-track-count completed-fn timed-out-fn)
-      (throw (ex-info "Unexpected status while disabling ASG"
+      (throw (ex-info (str "Unexpected status while disabling ASG: " status)
                       {:type ::unexpected-response
                        :response response})))))
 
@@ -916,12 +916,12 @@
              task-track-count
              completed-fn
              timed-out-fn))
-          (throw (ex-info "No task found"
+          (throw (ex-info (str "No 'Create Autoscaling Group' task found for " new-asg-name)
                           {:type ::task-missing
                            :tasks tasks
                            :log-message log-message})))
         new-asg-name)
-      (throw (ex-info "Unexpected status while creating new ASG"
+      (throw (ex-info (str "Unexpected status while creating new ASG: " status)
                       {:type ::unexpected-response
                        :response response})))))
 
@@ -971,7 +971,7 @@
         (track-until-completed id (merge task {:url task-json-url
                                                :asgardParameters asgard-parameters})
                                task-track-count completed-fn timed-out-fn))
-      (throw (ex-info "Unexpected status while creating next ASG"
+      (throw (ex-info (str "Unexpected status while creating next ASG: " status)
                       {:type ::unexpected-response
                        :response response})))))
 

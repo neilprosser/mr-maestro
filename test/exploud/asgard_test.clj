@@ -78,7 +78,7 @@
 (fact "A missing security group throws an exception"
       (replace-security-group-names {:subnetPurpose "internal"
                                      :selectedSecurityGroups ["sg-something" "group"]} ..environment.. ..region..)
-      => (throws ExceptionInfo "Unknown security group name")
+      => (throws ExceptionInfo "Unknown security group name: group")
       (provided
        (security-groups ..environment.. ..region..)
        => []))
@@ -389,7 +389,7 @@
 
  (fact "Non-302 response when resizing ASG throws exception"
        (resize-asg "environment" "region" ..asg.. ..ticket.. {:id ..task-id..} ..size.. ..completed.. ..timed-out..)
-       => (throws ExceptionInfo "Unexpected status while resizing ASG")
+       => (throws ExceptionInfo "Unexpected status while resizing ASG: 500")
        (provided
         (http/simple-post
          "http://dev.asgard:8080/region/cluster/index"
@@ -495,7 +495,7 @@
 
  (fact "Non-302 response when deleting ASG throws exception"
        (delete-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
-       => (throws ExceptionInfo "Unexpected status while deleting ASG")
+       => (throws ExceptionInfo "Unexpected status while deleting ASG: 500")
        (provided
         (http/simple-post
          "http://dev.asgard:8080/region/cluster/index"
@@ -534,7 +534,7 @@
 
  (fact "Non-302 response when enabling ASG throws exception"
        (enable-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
-       => (throws ExceptionInfo "Unexpected status while enabling ASG")
+       => (throws ExceptionInfo "Unexpected status while enabling ASG: 500")
        (provided
         (http/simple-post
          "http://dev.asgard:8080/region/cluster/index"
@@ -573,7 +573,7 @@
 
  (fact "Non-302 response when disabling ASG throws exception"
        (disable-asg "environment" "region" ..asg.. ..ticket.. ..task.. ..completed.. ..timed-out..)
-       => (throws ExceptionInfo "Unexpected status while disabling ASG")
+       => (throws ExceptionInfo "Unexpected status while disabling ASG: 500")
        (provided
         (http/simple-post
          "http://dev.asgard:8080/region/cluster/index"
@@ -634,7 +634,7 @@
                         :task ..task..
                         :completed-fn ..completed..
                         :timed-out-fn ..timed-out..})
-       => (throws ExceptionInfo "Unexpected status while creating new ASG")
+       => (throws ExceptionInfo "Unexpected status while creating new ASG: 500")
        (provided
         (http/simple-post
          "http://dev.asgard:8080/region/autoScaling/save"
@@ -698,7 +698,7 @@
                          :task ..task..
                          :completed-fn ..completed..
                          :timed-out-fn ..timed-out..})
-       => (throws ExceptionInfo "Unexpected status while creating next ASG")
+       => (throws ExceptionInfo "Unexpected status while creating next ASG: 500")
        (provided
         (http/simple-post
          "http://dev.asgard:8080/region/cluster/createNextGroup"
