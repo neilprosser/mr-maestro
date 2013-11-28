@@ -24,8 +24,6 @@
              [instrument :refer [instrument]]]
             [nokia.ring-utils
              [error :refer [wrap-error-handling error-response]]
-             [metrics :refer [wrap-per-resource-metrics replace-outside-app
-                              replace-guid replace-mongoid replace-number]]
              [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
             [overtone.at-at :as at-at]
             [ring.middleware
@@ -219,8 +217,4 @@
       (wrap-json-params)
       (wrap-keyword-params)
       (wrap-params)
-      (wrap-per-resource-metrics [replace-guid
-                                  replace-mongoid
-                                  replace-number
-                                  (replace-outside-app "/1.x")])
       (expose-metrics-as-json)))
