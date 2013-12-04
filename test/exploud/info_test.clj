@@ -45,6 +45,8 @@
        => {:shuppet "business"}
        (asgard/upsert-application "application" ..details..)
        => ..asgard..
+       (shuppet/apply-config "application")
+       => ..shuppet-apply..
        (application "poke" "region" "application")
        => {:asgard "business"}))
 

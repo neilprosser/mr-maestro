@@ -22,3 +22,26 @@
          (provided
           (http/simple-post anything) =>  {:status 500
                                            :body ..body..}))
+
+(fact "apply fails when shuppet fails to return environment list"
+      (apply-config ..name..) => (throws ExceptionInfo)
+      (provided
+       (http/simple-get anything) => {:status 500}))
+
+(fact "apply fails when shuppet fails to apply a configuration"
+      (apply-config ..name..) => (throws ExceptionInfo)
+      (provided
+       (envs-url) => ..envs-url..
+       (apply-url anything ..name..) => ..apply-url..
+       (http/simple-get ..envs-url..) => {:status 200
+                                          :body "{\"environments\":[\"poke\"]}"}
+       (http/simple-get ..apply-url..) => {:status 500}))
+
+(fact "responses are returned when shuppet applies a config"
+      (apply-config ..name..) => [{:status 200}]
+      (provided
+       (envs-url) => ..envs-url..
+       (apply-url anything ..name..) => ..apply-url..
+       (http/simple-get ..envs-url..) => {:status 200
+                                          :body "{\"environments\":[\"poke\"]}"}
+       (http/simple-get ..apply-url..) => {:status 200}))
