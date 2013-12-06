@@ -144,6 +144,10 @@
         [deployment-id]
         (response (store/get-deployment deployment-id)))
 
+   (POST "/deployments/:deployment-id"
+         [deployment-id deployment]
+         (response (store/store-deployment deployment)))
+
    (GET "/applications"
         []
         (response (info/applications)))
