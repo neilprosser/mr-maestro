@@ -9,7 +9,8 @@
                  :environment "prod"
                  :id "some-id"
                  :message "Some message"
-                 :user "auser"})
+                 :user "auser"
+                 :version "0.12"})
 
 (fact "that the body is created correctly"
       (build-message-body deployment)
@@ -30,6 +31,10 @@
       <tr>
         <td>Application:</td>
         <td>myapp</td>
+      </tr>
+      <tr>
+        <td>Version:</td>
+        <td>0.12</td>
       </tr>
       <tr>
         <td>Ami:</td>
@@ -56,7 +61,7 @@
        (mail/send-message {:host "dummy-value"}
                           {:from "noreply@brislabs.com"
                            :to "to@address.com"
-                           :subject "Entertainment Deployment: myapp ami-1234abcd to prod"
+                           :subject "prod: myapp v0.12 deployed"
                            :body [{:type "text/html; charset=\"UTF-8\""
                                    :content "body"}]})
        => nil))

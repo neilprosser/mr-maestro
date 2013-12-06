@@ -5,12 +5,12 @@
 
 (defn build-message-title
   "Creates a message title from parameters contained in the given deployment."
-  [{:keys [ami application environment]}]
-  (format "Entertainment Deployment: %s %s to %s" application ami (name environment)))
+  [{:keys [ami application environment version]}]
+  (format "%s: %s v%s deployed" (name environment) application version))
 
 (defn build-message-body
   "Creates a message body from parameters contained in the given deployment."
-  [{:keys [ami application id message user]}]
+  [{:keys [ami application id message user version]}]
   (format "<html>
   <head>
     <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">
@@ -30,6 +30,10 @@
         <td>%s</td>
       </tr>
       <tr>
+        <td>Version:</td>
+        <td>%s</td>
+      </tr>
+      <tr>
         <td>Ami:</td>
         <td>%s</td>
       </tr>
@@ -42,7 +46,7 @@
         <td><a href=\"http://jeff.brislabs.com/exploud/#/deployments/%s\">%s</a></td>
       </tr>
   </body>
-</html>" user application ami message id id))
+</html>" user application version ami message id id))
 
 (defn send-completion-message
   "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
