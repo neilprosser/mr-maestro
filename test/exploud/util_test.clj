@@ -3,6 +3,13 @@
             [exploud.util :refer :all]
             [midje.sweet :refer :all]))
 
+(fact "that extracting details from an AMI name works"
+      (ami-details "ent-exploud-0.19-1-2013-10-24_18-41-23")
+      => {:name "exploud"
+          :version "0.19"
+          :iteration "1"
+          :bake-date (time/date-time 2013 10 24 18 41 23)})
+
 (fact "given a collection `list-from` gives back the collection"
       (list-from ["hello" "world"])
       => ["hello" "world"])

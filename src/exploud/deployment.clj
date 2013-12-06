@@ -301,6 +301,8 @@
   [region application environment user ami hash message]
   (let [hash (or hash (tyr/last-commit-hash environment application))
         % (check-tyranitar-files application environment hash)
+        image (asgard/image region ami)
+        {:keys [version]} (util/ami-details (get-in image [:image :name]))
         parameters (tyr/deployment-params environment application hash)
         tasks (create-standard-deployment-tasks)
         deployment {:ami ami
@@ -313,7 +315,8 @@
                     :parameters parameters
                     :region region
                     :tasks tasks
-                    :user user}]
+                    :user user
+                    :version version}]
     (store/store-deployment deployment)
     deployment))
 
@@ -322,7 +325,8 @@
 (with-precondition! #'prepare-deployment
   :ami-name-matches
   (fn [region application _ _ ami _ _]
-    (let [ami-application (or (get-in (asgard/image region ami) [:image :name]) "")]
+    (let [image (asgard/image region ami)
+          ami-application (or (get-in image [:image :name]) "")]
       (= application (second (re-find #"^ent-([^-]+)-" ami-application))))))
 
 ;; Handler attached to `prepare-deployment` to throw an error if the AMI

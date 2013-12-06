@@ -105,10 +105,11 @@
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
-          :user ..user..}
+          :user ..user..
+          :version "0.23"}
       (provided
        (asgard/image ..region.. ..ami..)
-       => {:image {:name "ent-app-0.23"}}
+       => {:image {:name "ent-app-0.23-1-2013-10-12_19-23-12"}}
        (tyr/last-commit-hash ..env.. "app")
        => ..hash..
        (tyr/application-properties ..env.. "app" ..hash..)
@@ -133,7 +134,8 @@
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
-                                :user ..user..})
+                                :user ..user..
+                                :version "0.23"})
        => ..deploy-id..))
 
 (fact "that we obtain the properties for a deployment with a hash correctly and store the right things"
@@ -148,10 +150,11 @@
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
-          :user ..user..}
+          :user ..user..
+          :version "0.23"}
       (provided
        (asgard/image ..region.. ..ami..)
-       => {:image {:name "ent-app-0.23"}}
+       => {:image {:name "ent-app-0.23-1-2012-03-01_01-12-54"}}
        (tyr/application-properties ..env.. "app" ..hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..hash..)
@@ -174,7 +177,8 @@
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
-                                :user ..user..})
+                                :user ..user..
+                                :version "0.23"})
        => ..deploy-id..))
 
 (fact "that an invalid file from Tyranitar fails throws up"
@@ -182,7 +186,7 @@
       => (throws ExceptionInfo "One or more Tyranitar files are invalid")
       (provided
        (asgard/image ..region.. ..ami..)
-       => {:image {:name "ent-app-0.23"}}
+       => {:image {:name "ent-app-0.23-4-2011-12-09_08-12-00"}}
        (tyr/application-properties ..env.. "app" ..hash..)
        =throws=> (Exception.)))
 
@@ -198,7 +202,8 @@
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
-          :user ..user..}
+          :user ..user..
+          :version "0.23"}
       (provided
        (store/get-completed-deployments {:application "app"
                                          :environment ..env..
@@ -214,9 +219,10 @@
             :parameters ..old-params..
             :region ..old-region..
             :tasks ..old-tasks..
-            :user ..old-user..}]
+            :user ..old-user..
+            :version "0.23"}]
        (asgard/image ..region.. ..old-ami..)
-       => {:image {:name "ent-app-0.23"}}
+       => {:image {:name "ent-app-0.23-1-2014-05-23_12-00-00"}}
        (tyr/application-properties ..env.. "app" ..old-hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..old-hash..)
@@ -239,7 +245,8 @@
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
-                                :user ..user..})
+                                :user ..user..
+                                :version "0.23"})
        => ..deploy-id..))
 
 (fact "that we throw a wobbly when there is no penultimate completed deployment"

@@ -3,6 +3,22 @@
   (:require [clj-time.core :as time])
   (:import java.util.UUID))
 
+(defn string->number
+  "Attempts to turn a string into a number, or nil if not a number."
+  [string]
+  (if string
+    (let [n (read-string (str string))]
+      (when (number? n) n))))
+
+(defn ami-details
+  "Extracts details from the name of an AMI in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
+  [name]
+  (let [matches (re-find #"^ent-([^-]+)-([\.0-9]+)-([0-9]+)-([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
+    {:name (nth matches 1)
+     :version (nth matches 2)
+     :iteration (nth matches 3)
+     :bake-date (time/date-time (string->number (nth matches 4)) (string->number (nth matches 5)) (string->number (nth matches 6)) (string->number (nth matches 7)) (string->number (nth matches 8)) (string->number (nth matches 9)))}))
+
 (defn generate-id
   "Create a random ID for a deployment or task."
   []
@@ -21,13 +37,6 @@
    []
    :else
    [thing]))
-
-(defn string->number
-  "Attempts to turn a string into a number, or nil if not a number."
-  [string]
-  (if string
-    (let [n (read-string (str string))]
-      (when (number? n) n))))
 
 (defn strip-first-forward-slash
   "Turns `/this/that` into `this/that`."
