@@ -278,6 +278,18 @@
 
 ;; # Concerning deployments
 
+(defn check-tyranitar-files
+  [application environment hash]
+  (try
+    (tyr/application-properties environment application hash)
+    (tyr/deployment-params environment application hash)
+    (tyr/launch-data environment application hash)
+    (catch Exception e
+      (throw (ex-info "One or more Tyranitar files are invalid" {:type ::invalid-file
+                                                                 :application application
+                                                                 :environment environment
+                                                                 :hash hash})))))
+
 (defn prepare-deployment
   "Prepares a deployment of the `application` in an `environment` within the
    given `region`. It'll mark the deployment as being done by `user` and will
@@ -288,6 +300,7 @@
    Will return the newly-created deployment."
   [region application environment user ami hash message]
   (let [hash (or hash (tyr/last-commit-hash environment application))
+        % (check-tyranitar-files application environment hash)
         parameters (tyr/deployment-params environment application hash)
         tasks (create-standard-deployment-tasks)
         deployment {:ami ami

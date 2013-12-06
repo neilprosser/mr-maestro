@@ -111,8 +111,12 @@
        => {:image {:name "ent-app-0.23"}}
        (tyr/last-commit-hash ..env.. "app")
        => ..hash..
+       (tyr/application-properties ..env.. "app" ..hash..)
+       => ..props..
        (tyr/deployment-params ..env.. "app" ..hash..)
        => ..params..
+       (tyr/launch-data ..env.. "app" ..hash..)
+       => ..launch-data..
        (create-standard-deployment-tasks)
        => ..tasks..
        (util/generate-id)
@@ -148,8 +152,12 @@
       (provided
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23"}}
+       (tyr/application-properties ..env.. "app" ..hash..)
+       => ..props..
        (tyr/deployment-params ..env.. "app" ..hash..)
        => ..params..
+       (tyr/launch-data ..env.. "app" ..hash..)
+       => ..launch-data..
        (create-standard-deployment-tasks)
        => ..tasks..
        (util/generate-id)
@@ -168,6 +176,15 @@
                                 :tasks ..tasks..
                                 :user ..user..})
        => ..deploy-id..))
+
+(fact "that an invalid file from Tyranitar fails throws up"
+      (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..hash.. ..message..)
+      => (throws ExceptionInfo "One or more Tyranitar files are invalid")
+      (provided
+       (asgard/image ..region.. ..ami..)
+       => {:image {:name "ent-app-0.23"}}
+       (tyr/application-properties ..env.. "app" ..hash..)
+       =throws=> (Exception.)))
 
 (fact "that we get the details for a rollback and store the right things"
       (prepare-rollback ..region.. "app" ..env.. ..user.. ..message..)
@@ -200,8 +217,12 @@
             :user ..old-user..}]
        (asgard/image ..region.. ..old-ami..)
        => {:image {:name "ent-app-0.23"}}
+       (tyr/application-properties ..env.. "app" ..old-hash..)
+       => ..props..
        (tyr/deployment-params ..env.. "app" ..old-hash..)
        => ..params..
+       (tyr/launch-data ..env.. "app" ..old-hash..)
+       => ..launch-data..
        (create-standard-deployment-tasks)
        => ..tasks..
        (util/generate-id)
