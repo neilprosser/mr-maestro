@@ -3,7 +3,9 @@
   (:require [bouncer.core :as b]
             [cheshire.core :as json]
             [clj-time.format :as fmt]
-            [clojure.string :refer [split]]
+            [clojure
+             [string :refer [split]]
+             [walk :refer [keywordize-keys postwalk]]]
             [clojure.tools.logging :as log]
             [compojure
              [core :refer [defroutes context GET PUT POST DELETE]]
@@ -146,7 +148,8 @@
 
    (POST "/deployments/:deployment-id"
          [deployment-id deployment]
-         (response (store/store-deployment deployment)))
+         (store/store-deployment (postwalk (fn [v] (if (string? v) (try (if-let [vd (fmt/parse (fmt/formatters :date-time) v)] vd v) (catch Exception e v)) v)) (keywordize-keys deployment)))
+         (response deployment))
 
    (GET "/applications"
         []
