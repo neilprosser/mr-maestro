@@ -2,7 +2,7 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
-  :dependencies [[bouncer "0.3.0-alpha1"]
+                 [bouncer "0.3.0-alpha1"]
                  [ch.qos.logback/logback-classic "1.0.13"]
                  [cheshire "5.2.0"]
                  [clj-http "0.7.7"]
@@ -36,9 +36,9 @@
   :exclusions [commons-logging
                log4j]
 
-  :profiles {:dev {:dependencies [[midje "1.5.1"]]
+  :profiles {:dev {:dependencies [[midje "1.6.0"]]
                    :plugins [[lein-rpm "0.0.5"]
-                             [lein-midje "3.1.1"]
+                             [lein-midje "3.1.3"]
                              [jonase/kibit "0.0.8"]]}}
 
   :plugins [[lein-cloverage "1.0.2"]
