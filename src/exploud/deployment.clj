@@ -54,8 +54,7 @@
 (defmulti create-undo
   "Creates any tasks necessary to undo a given task. Figures out what to create
    by looking at the `:action` of `task`."
-  (fn [task]
-    (:action task)))
+  :action)
 
 (defmethod create-undo
   :create-asg
@@ -279,6 +278,7 @@
 ;; # Concerning deployments
 
 (defn check-tyranitar-files
+  "Attempt to load the files from Tyranitar. If any fails, throw an exception."
   [application environment hash]
   (try
     (tyr/application-properties environment application hash)

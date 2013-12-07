@@ -1,5 +1,5 @@
 (ns exploud.shuppet
-  "## integration with Shuppet"
+  "## Integration with Shuppet"
   (:require [cheshire.core :as json]
             [environ.core :refer [env]]
             [exploud.http :as http]))
@@ -9,20 +9,22 @@
   (env :service-shuppet-url))
 
 (defn create-application-url
-  "URL to create a new app in Shuppet."
+  "The URL to create a new app in Shuppet."
   [app-name]
   (str shuppet-url "/1.x/apps/" app-name))
 
 (defn apply-url
+  "The URL we use to apply configuration."
   [environment app-name]
   (str shuppet-url "/1.x/envs/" environment "/apps/" app-name "/apply"))
 
 (defn envs-url
+  "The URL to find environments in Shuppet."
   []
   (str shuppet-url "/1.x/envs"))
 
 (defn apply-config
-  "tells shuppet to apply a config to all environments"
+  "tells shuppet to apply a config to all environments."
   [app-name]
   (let [{:keys [body status] :as response} (http/simple-get (envs-url))]
     (if (= 200 status)
@@ -41,6 +43,7 @@
                        :response response})))))
 
 (defn upsert-application
+  "Insert an application into Shuppet if it doesn't exist, or update it if it does."
   [app-name]
   (let [{:keys [body status] :as response}
         (http/simple-post (create-application-url app-name))]
