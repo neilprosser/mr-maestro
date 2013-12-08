@@ -70,7 +70,9 @@
      :headers {"Content-Type" (or content-type
                                   "application/json; charset=utf-8")}
      :body body}
-    {:status 404}))
+    (if status
+      {:status status}
+      {:status 404})))
 
 (defroutes routes
   "The RESTful routes we provide."
@@ -149,7 +151,12 @@
    (POST "/deployments/:deployment-id"
          [deployment-id deployment]
          (store/store-deployment (postwalk (fn [v] (if (string? v) (try (if-let [vd (fmt/parse (fmt/formatters :date-time) v)] vd v) (catch Exception e v)) v)) (keywordize-keys deployment)))
-         (response deployment))
+         (response nil nil 201))
+
+   (DELETE "/deployments/:deployment-id"
+           [deployment-id]
+           (store/delete-deployment deployment-id)
+           (response nil nil 204))
 
    (GET "/applications"
         []

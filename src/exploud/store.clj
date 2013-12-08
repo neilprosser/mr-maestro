@@ -114,6 +114,18 @@
   (fn [d]
     (log/debug "Storing deployment" d)))
 
+(defn delete-deployment
+  "Deletes a deployment."
+  [deployment-id]
+  (mc/remove-by-id "deployments" deployment-id)
+  nil)
+
+;; A pre-hook attached to `delete-deployment` which logs what we're about to
+;; delete.
+(with-pre-hook! #'delete-deployment
+  (fn [id]
+    (log/debug "Deleting deployment" id)))
+
 (defn add-to-deployment-parameters
   "Gets a deployment with `deployment-id` and will merge the given `parameters`
    into the existing `:parameters` from the deployment. Then save it back."

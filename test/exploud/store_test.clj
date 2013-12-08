@@ -165,6 +165,13 @@
                                      {:_id ..deploy-id..
                                       :something "whatever"}) => ..result..))
 
+(fact "that we can delete a deployment"
+      (delete-deployment "id")
+      => nil
+      (provided
+       (mc/remove-by-id "deployments" "id")
+       => ..delete-result..))
+
 (fact "that updating a task in a deployment works"
       (update-task-in-deployment {:tasks
                                   [{:id ..id-1.. :log []}
