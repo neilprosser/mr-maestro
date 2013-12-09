@@ -22,20 +22,24 @@
       (list-from nil)
       => [])
 
-(fact "that string->number doesn't blow up if given nil"
-      (string->number nil)
+(fact "that string->int doesn't blow up if given nil"
+      (string->int nil)
       => nil)
 
-(fact "that string->number doesn't blow up if given a number"
-      (string->number 1232)
+(fact "that string->int doesn't blow up if given a number"
+      (string->int 1232)
       => 1232)
 
-(fact "that string->number turns a numeric string into a number"
-      (string->number "1232")
+(fact "that string->int doesn't blow up if given a zero-padded number"
+      (string->int "09")
+      => 9)
+
+(fact "that string->int turns a numeric string into a number"
+      (string->int "1232")
       => 1232)
 
-(fact "that string->number turns a non-numeric string into nil"
-      (string->number "adsfsa")
+(fact "that string->int turns a non-numeric string into nil"
+      (string->int "adsfsa")
       => nil)
 
 (fact "that strip-first-forward-slash works if the string starts with /"

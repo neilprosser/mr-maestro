@@ -9,7 +9,7 @@
   "Whether a given input is zero or more."
   [input]
   (if input
-    (if-let [number (util/string->number input)]
+    (if-let [number (util/string->int input)]
       (or (zero? number) (v/positive number))
       false)
     true))
@@ -18,7 +18,7 @@
   "Whether a given input is a positive number."
   [input]
   (if input
-    (if-let [number (util/string->number input)]
+    (if-let [number (util/string->int input)]
       (v/positive number)
       false)
     true))

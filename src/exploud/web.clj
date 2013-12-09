@@ -125,8 +125,8 @@
                                       :environment environment
                                       :start-from (fmt/parse start-from)
                                       :start-to (fmt/parse start-to)
-                                      :size (util/string->number size)
-                                      :from (util/string->number from)})}))))
+                                      :size (util/string->int size)
+                                      :from (util/string->int from)})}))))
 
    (GET "/completed-deployments"
         [application environment size from]
@@ -141,8 +141,8 @@
             (response {:deployments (store/get-completed-deployments
                                      {:application application
                                       :environment environment
-                                      :size (util/string->number size)
-                                      :from (util/string->number from)})}))))
+                                      :size (util/string->int size)
+                                      :from (util/string->int from)})}))))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]
