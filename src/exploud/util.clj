@@ -49,7 +49,6 @@
   "Appends the given message to the task's `:log`, creating a new one if it
    doesn't exist."
   [message task]
-  (let [updated-log (conj (or (:log task) [])
-                          {:message message
-                           :date (time/now)})]
+  (let [updated-log (conj (vec (:log task))
+                          {:message message :date (time/now)})]
     (assoc task :log updated-log)))
