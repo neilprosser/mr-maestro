@@ -43,16 +43,17 @@
   "The ARN of the role we want to assume."
   (env :aws-prod-role-arn))
 
-(defn assume-role
-  "Attempts to assume a role in the production account, returning the credentials."
-  []
-  (:credentials (sts/assume-role {:role-arn role-arn
-                                  :role-session-name "exploud"})))
-
 (defn use-current-role?
   "Whether we should use the current IAM role or should assume a role in another account."
   [environment]
   (not= :prod (keyword environment)))
+
+(defn alternative-credentials-if-necessary
+  "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."
+  [environment]
+  (if-not (use-current-role? environment)
+    (:credentials (sts/assume-role {:role-arn role-arn
+                                    :role-session-name "exploud"}))))
 
 (defn account-id
   "Get the account ID we should use for an environment. We'll default to whatever `:poke` uses in the event of not knowing."
@@ -84,26 +85,17 @@
 (defn asg-created
   "Send a message stating that an ASG has been created."
   [region environment asg-name]
-  (if (use-current-role? environment)
-    (let [config {:endpoint region}]
-      (sqs/send-message config
-                        :queue-url (announcement-queue-url region environment)
-                        :delay-seconds 0
-                        :message-body (json/generate-string (asg-created-message asg-name)))
-      (auto/put-notification-configuration config
-                                           :auto-scaling-group-name asg-name
-                                           :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
-                                           :topic-arn (autoscaling-topic environment)))
-    (let [config (merge (assume-role) {:endpoint region})]
-      (sqs/send-message config
-                        :queue-url (announcement-queue-url region environment)
-                        :delay-seconds 0
-                        :message-body (json/generate-string (asg-created-message asg-name)))
-      (auto/put-notification-configuration config
-                                           :auto-scaling-group-name asg-name
-                                           :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
-                                           :topic-arn (autoscaling-topic environment))))
-  nil)
+  (let [config (merge (alternative-credentials-if-necessary environment)
+                      {:endpoint region})]
+    (sqs/send-message config
+                      :queue-url (announcement-queue-url region environment)
+                      :delay-seconds 0
+                      :message-body (json/generate-string (asg-created-message asg-name)))
+    (auto/put-notification-configuration config
+                                         :auto-scaling-group-name asg-name
+                                         :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
+                                         :topic-arn (autoscaling-topic environment))
+    nil))
 
 ;; Pre-hook attached to `asg-created` to log parameters.
 (with-pre-hook! #'asg-created
@@ -113,18 +105,13 @@
 (defn asg-deleted
   "Send a message stating that an ASG has been deleted."
   [region environment asg-name]
-  (if (use-current-role? environment)
-    (let [config {:endpoint region}]
-      (sqs/send-message config
-                        :queue-url (announcement-queue-url region environment)
-                        :delay-seconds 0
-                        :message-body (json/generate-string (asg-deleted-message asg-name))))
-    (let [config (merge (assume-role) {:endpoint region})]
-      (sqs/send-message config
-                        :queue-url (announcement-queue-url region environment)
-                        :delay-seconds 0
-                        :message-body (json/generate-string (asg-deleted-message asg-name)))))
-  nil)
+  (let [config (merge (alternative-credentials-if-necessary environment)
+                      {:endpoint region})]
+    (sqs/send-message config
+                      :queue-url (announcement-queue-url region environment)
+                      :delay-seconds 0
+                      :message-body (json/generate-string (asg-deleted-message asg-name)))
+    nil))
 
 ;; Pre-hook attached to `asg-deleted` to log parameters.
 (with-pre-hook! #'asg-deleted
