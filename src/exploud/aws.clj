@@ -1,6 +1,7 @@
 (ns exploud.aws
   (:require [amazonica.core :refer [with-credential]]
             [amazonica.aws
+             [autoscaling :as auto]
              [securitytoken :as sts]
              [sqs :as sqs]]
             [cheshire.core :as json]
@@ -21,9 +22,22 @@
   (env :aws-prod-account-id))
 
 (def account-ids
-  "Our make of account IDs by environment."
+  "Our map of account IDs by environment."
   {:poke poke-account-id
    :prod prod-account-id})
+
+(def poke-autoscaling-topic-arn
+  "The `poke` autoscaling topic ARN"
+  (env :aws-poke-autoscaling-topic-arn))
+
+(def prod-autoscaling-topic-arn
+  "The `prod` autoscaling topic ARN"
+  (env :aws-prod-autoscaling-topic-arn))
+
+(def autoscaling-topics
+  "Our map of autoscaling topics by environment."
+  {:poke poke-autoscaling-topic-arn
+   :prod prod-autoscaling-topic-arn})
 
 (def role-arn
   "The ARN of the role we want to assume."
@@ -44,6 +58,11 @@
   "Get the account ID we should use for an environment. We'll default to whatever `:poke` uses in the event of not knowing."
   [environment]
   ((keyword environment) account-ids (:poke account-ids)))
+
+(defn autoscaling-topic
+  "Get the autoscaling topic ARN we should use for an environment. We'll default ot wahtever `:poke` uses in the event of not knowing."
+  [environment]
+  ((keyword environment) autoscaling-topics (:poke autoscaling-topics)))
 
 (defn announcement-queue-url
   "Create the URL for an announcement queue in a region and for an environment."
@@ -66,14 +85,24 @@
   "Send a message stating that an ASG has been created."
   [region environment asg-name]
   (if (use-current-role? environment)
-    (sqs/send-message :queue-url (announcement-queue-url region environment)
-                      :delay-seconds 0
-                      :message-body (json/generate-string (asg-created-message asg-name)))
-    (let [credentials (assume-role)]
-      (sqs/send-message credentials
+    (let [config {:endpoint region}]
+      (sqs/send-message config
                         :queue-url (announcement-queue-url region environment)
                         :delay-seconds 0
-                        :message-body (json/generate-string (asg-created-message asg-name)))))
+                        :message-body (json/generate-string (asg-created-message asg-name)))
+      (auto/put-notification-configuration config
+                                           :auto-scaling-group-name asg-name
+                                           :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
+                                           :topic-arn (autoscaling-topic environment)))
+    (let [config (merge (assume-role) {:endpoint region})]
+      (sqs/send-message config
+                        :queue-url (announcement-queue-url region environment)
+                        :delay-seconds 0
+                        :message-body (json/generate-string (asg-created-message asg-name)))
+      (auto/put-notification-configuration config
+                                           :auto-scaling-group-name asg-name
+                                           :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
+                                           :topic-arn (autoscaling-topic environment))))
   nil)
 
 ;; Pre-hook attached to `asg-created` to log parameters.
@@ -85,11 +114,13 @@
   "Send a message stating that an ASG has been deleted."
   [region environment asg-name]
   (if (use-current-role? environment)
-    (sqs/send-message :queue-url (announcement-queue-url region environment)
-                      :delay-seconds 0
-                      :message-body (json/generate-string (asg-deleted-message asg-name)))
-    (let [credentials (assume-role)]
-      (sqs/send-message credentials
+    (let [config {:endpoint region}]
+      (sqs/send-message config
+                        :queue-url (announcement-queue-url region environment)
+                        :delay-seconds 0
+                        :message-body (json/generate-string (asg-deleted-message asg-name))))
+    (let [config (merge (assume-role) {:endpoint region})]
+      (sqs/send-message config
                         :queue-url (announcement-queue-url region environment)
                         :delay-seconds 0
                         :message-body (json/generate-string (asg-deleted-message asg-name)))))

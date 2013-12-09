@@ -1,5 +1,6 @@
 (ns exploud.aws_test
   (:require [amazonica.aws
+             [autoscaling :as auto]
              [securitytoken :as sts]
              [sqs :as sqs]]
             [cheshire.core :as json]
@@ -29,10 +30,16 @@
       (provided
        (asg-created-message "asg")
        => {:Message "create"}
-       (sqs/send-message :queue-url "https://region.queue.amazonaws.com/poke-account-id/autoscale-announcements"
+       (sqs/send-message {:endpoint "region"}
+                         :queue-url "https://region.queue.amazonaws.com/poke-account-id/autoscale-announcements"
                          :delay-seconds 0
                          :message-body "{\"Message\":\"create\"}")
-       => ..send-result..))
+       => ..send-result..
+       (auto/put-notification-configuration {:endpoint "region"}
+                                            :auto-scaling-group-name "asg"
+                                            :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
+                                            :topic-arn "poke-autoscaling-topic-arn")
+       => ..put-result..))
 
 (fact "that notifying of creation works when we have to assume another role."
       (asg-created "region" :prod "asg")
@@ -42,12 +49,17 @@
        => {:Message "create"}
        (sts/assume-role {:role-arn "prod-role-arn"
                          :role-session-name "exploud"})
-       => {:credentials ..creds..}
-       (sqs/send-message ..creds..
+       => {:credentials {:access-key "key" :secret-key "secret"}}
+       (sqs/send-message {:endpoint "region" :access-key "key" :secret-key "secret"}
                          :queue-url "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements"
                          :delay-seconds 0
                          :message-body "{\"Message\":\"create\"}")
-       => ..send-result..))
+       => ..send-result..
+       (auto/put-notification-configuration {:endpoint "region" :access-key "key" :secret-key "secret"}
+                                            :auto-scaling-group-name "asg"
+                                            :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
+                                            :topic-arn "prod-autoscaling-topic-arn")
+       => ..put-result..))
 
 
 (fact "that notifying of deletion works when we don't have to assume another role."
@@ -56,7 +68,8 @@
       (provided
        (asg-deleted-message "asg")
        => {:Message "delete"}
-       (sqs/send-message :queue-url "https://region.queue.amazonaws.com/poke-account-id/autoscale-announcements"
+       (sqs/send-message {:endpoint "region"}
+                         :queue-url "https://region.queue.amazonaws.com/poke-account-id/autoscale-announcements"
                          :delay-seconds 0
                          :message-body "{\"Message\":\"delete\"}")
        => ..send-result..))
@@ -69,8 +82,8 @@
        => {:Message "delete"}
        (sts/assume-role {:role-arn "prod-role-arn"
                          :role-session-name "exploud"})
-       => {:credentials ..creds..}
-       (sqs/send-message ..creds..
+       => {:credentials {:access-key "key" :secret-key "secret"}}
+       (sqs/send-message {:endpoint "region" :access-key "key" :secret-key "secret"}
                          :queue-url "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements"
                          :delay-seconds 0
                          :message-body "{\"Message\":\"delete\"}")

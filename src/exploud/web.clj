@@ -207,15 +207,7 @@
 
    (GET "/tasks"
         []
-        (response (with-out-str (at-at/show-schedule tasks/pool))))
-
-   (POST "/messages/created/:environment/:asg"
-         [environment asg]
-         (aws/asg-created default-region environment asg))
-
-   (POST "/messages/deleted/:environment/:asg"
-         [environment asg]
-         (aws/asg-deleted default-region environment asg)))
+        (response (with-out-str (at-at/show-schedule tasks/pool)))))
 
   (route/not-found (error-response "Resource not found" 404)))
 

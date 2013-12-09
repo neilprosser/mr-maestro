@@ -71,7 +71,9 @@
         :service-dev-vpc-id "vpc-dev"
         :service-prod-vpc-id "vpc-prod"
         :aws-poke-account-id "poke-account-id"
+        :aws-poke-autoscaling-topic-arn "poke-autoscaling-topic-arn"
         :aws-prod-account-id "prod-account-id"
+        :aws-prod-autoscaling-topic-arn "prod-autoscaling-topic-arn"
         :aws-prod-role-arn "prod-role-arn"}
 
   :clean-targets [:target-path "docs"]
