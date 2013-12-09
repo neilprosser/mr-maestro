@@ -53,7 +53,7 @@
 (def default-key-name
   "The default SSH key we'll use on the instances that are launched. This key
    will be replaced by our usual security measures so isn't really useful."
-  "nprosser-key")
+  "exploud")
 
 (def all-create-new-asg-keys
   "A set of the all parameters we can provide to Asgard when creating a new
