@@ -289,9 +289,10 @@
   (let [deployment (store/get-deployment deployment-id)]
     (if (successful? task)
       (do (finish-task deployment task)
-          (if-let [next-task (task-after deployment task-id)]
-            (start-task deployment next-task)
-            (finish-deployment deployment)))
+          (let [deployment (store/get-deployment deployment-id)]
+            (if-let [next-task (task-after deployment task-id)]
+              (start-task deployment next-task)
+              (finish-deployment deployment))))
       (finish-deployment deployment))))
 
 ;; Pre-hook attached to `task-finished` to log parameters.
