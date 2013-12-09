@@ -3,6 +3,7 @@
             [environ.core :refer [env]]
             [exploud
              [asgard :as asgard]
+             [aws :as aws]
              [deployment :refer :all]
              [healthchecks :as health]
              [notification :as notification]
@@ -306,12 +307,13 @@
        => anything))
 
 (fact "that finishing a task which is the last one in the deployment finishes that deployment"
-      (task-finished ..deploy-id.. {:id ..task-id.. :status "completed"})
+      (task-finished ..deploy-id.. {:id ..task-id.. :action :delete-asg :status "completed"})
       => ..finish-result..
       (provided
        (time/now)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :action :delete-asg
                                         :end ..end..
                                         :status "completed"})
        => ..store-result..
@@ -323,12 +325,13 @@
        => ..finish-result..))
 
 (fact "that finishing a task which is not the last one in the deployment starts the next task"
-      (task-finished ..deploy-id.. {:id ..task-id.. :status "completed"})
+      (task-finished ..deploy-id.. {:id ..task-id.. :action :enable-asg :status "completed"})
       => ..start-result..
       (provided
        (time/now)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :action :enable-asg
                                         :end ..end..
                                         :status "completed"})
        => ..store-result..
@@ -340,12 +343,13 @@
        => ..start-result..))
 
 (fact "that finishing a task which is skipped continues the deployment"
-      (task-finished ..deploy-id.. {:id ..task-id.. :status "skipped"})
+      (task-finished ..deploy-id.. {:id ..task-id.. :action :enable-asg :status "skipped"})
       => ..start-result..
       (provided
        (time/now)
        => ..end..
        (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :action :enable-asg
                                         :end ..end..
                                         :status "skipped"})
        => ..store-result..
@@ -369,6 +373,62 @@
        (store/get-deployment ..deploy-id..)
        => ..deployment..
        (finish-deployment ..deployment..)
+       => ..finish-result..))
+
+(fact "that finishing a `:create-asg` task hooks into AWS notifications"
+      (task-finished ..deploy-id.. {:id ..task-id.. :action :create-asg :status "completed"})
+      => ..finish-result..
+      (provided
+       (time/now)
+       => ..end..
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :action :create-asg
+                                        :end ..end..
+                                        :status "completed"})
+       => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => {:environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region..}
+       (store/store-task ..deploy-id.. {:log [{:message "Notifying creation of new-asg" :date ..end..}] :id ..task-id.. :action :create-asg :status "completed"})
+       => ..store-task-result..
+       (aws/asg-created ..region.. ..environment.. "new-asg")
+       => ..aws-result..
+       (finish-deployment {:environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region..})
+       => ..finish-result..))
+
+(fact "that finishing a `:delete-asg` task hooks into AWS notifications if there was an old ASG"
+      (task-finished ..deploy-id.. {:id ..task-id.. :action :delete-asg :status "completed"})
+      => ..finish-result..
+      (provided
+       (time/now)
+       => ..end..
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :action :delete-asg
+                                        :end ..end..
+                                        :status "completed"})
+       => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => {:environment ..environment.. :id ..deploy-id.. :parameters {:oldAutoScalingGroupName "old-asg"} :region ..region..}
+       (store/store-task ..deploy-id.. {:log [{:message "Notifying deletion of old-asg" :date ..end..}] :id ..task-id.. :action :delete-asg :status "completed"})
+       => ..store-task-result..
+       (aws/asg-deleted ..region.. ..environment.. "old-asg")
+       => ..aws-result..
+       (finish-deployment {:environment ..environment.. :id ..deploy-id.. :parameters {:oldAutoScalingGroupName "old-asg"} :region ..region..})
+       => ..finish-result..))
+
+(fact "that finishing a `:delete-asg` task does not hook into AWS notifications if there was no old ASG"
+      (task-finished ..deploy-id.. {:id ..task-id.. :action :delete-asg :status "completed"})
+      => ..finish-result..
+      (provided
+       (time/now)
+       => ..end..
+       (store/store-task ..deploy-id.. {:id ..task-id..
+                                        :action :delete-asg
+                                        :end ..end..
+                                        :status "completed"})
+       => ..store-result..
+       (store/get-deployment ..deploy-id..)
+       => {:environment ..environment.. :parameters {} :region ..region..}
+       (finish-deployment {:environment ..environment.. :parameters {} :region ..region..})
        => ..finish-result..))
 
 (fact "that getting the task after one that is last gives `nil`"

@@ -2,6 +2,7 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
+  :dependencies [[amazonica "0.1.32"]
                  [bouncer "0.3.0-alpha1"]
                  [ch.qos.logback/logback-classic "1.0.13"]
                  [cheshire "5.2.0"]
@@ -68,7 +69,10 @@
         :mongo-hosts "localhost:27017"
         :mongo-connections-max "50"
         :service-dev-vpc-id "vpc-dev"
-        :service-prod-vpc-id "vpc-prod"}
+        :service-prod-vpc-id "vpc-prod"
+        :aws-poke-account-id "poke-account-id"
+        :aws-prod-account-id "prod-account-id"
+        :aws-prod-role-arn "prod-role-arn"}
 
   :clean-targets [:target-path "docs"]
 

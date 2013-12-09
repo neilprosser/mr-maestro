@@ -9,6 +9,7 @@
             [environ.core :refer [env]]
             [exploud
              [asgard :as asgard]
+             [aws :as aws]
              [healthchecks :as health]
              [notification :as notification]
              [store :as store]
@@ -238,6 +239,42 @@
   [deployment task]
   (start-task* deployment (assoc task :start (time/now))))
 
+(defmulti finish-task
+  "Perform any operations required for a task which has finished."
+  (fn [deployment {:keys [action] :as task}]
+    (keyword action)))
+
+(defmethod finish-task
+  :create-asg
+  [{:keys [environment id parameters region]} task]
+  (let [{asg-name :newAutoScalingGroupName} parameters]
+    (store/store-task id (util/append-to-task-log (str "Notifying creation of " asg-name) task))
+    (aws/asg-created region environment asg-name)))
+
+(defmethod finish-task
+  :wait-for-instance-health
+  [deployment task])
+
+(defmethod finish-task
+  :enable-asg
+  [deployment task])
+
+(defmethod finish-task
+  :wait-for-elb-health
+  [deployment task])
+
+(defmethod finish-task
+  :disable-asg
+  [deployment task])
+
+(defmethod finish-task
+  :delete-asg
+  [{:keys [environment id parameters region]} task]
+  (let [{asg-name :oldAutoScalingGroupName} parameters]
+    (when asg-name
+      (store/store-task id (util/append-to-task-log (str "Notifying deletion of " asg-name) task))
+      (aws/asg-deleted region environment asg-name))))
+
 (defn successful?
   "Whether the task has finished successfully."
   [{:keys [status]}]
@@ -251,9 +288,10 @@
   (store/store-task deployment-id (assoc task :end (time/now)))
   (let [deployment (store/get-deployment deployment-id)]
     (if (successful? task)
-      (if-let [next-task (task-after deployment task-id)]
-        (start-task deployment next-task)
-        (finish-deployment deployment))
+      (do (finish-task deployment task)
+          (if-let [next-task (task-after deployment task-id)]
+            (start-task deployment next-task)
+            (finish-deployment deployment)))
       (finish-deployment deployment))))
 
 ;; Pre-hook attached to `task-finished` to log parameters.
