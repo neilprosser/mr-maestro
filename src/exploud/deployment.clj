@@ -285,15 +285,16 @@
   "Function called when a task has completed. Deals with moving the deployment
    to the next phase."
   [deployment-id {task-id :id :as task}]
-  (store/store-task deployment-id (assoc task :end (time/now)))
-  (let [deployment (store/get-deployment deployment-id)]
-    (if (successful? task)
-      (do (finish-task deployment task)
-          (let [deployment (store/get-deployment deployment-id)]
-            (if-let [next-task (task-after deployment task-id)]
-              (start-task deployment next-task)
-              (finish-deployment deployment))))
-      (finish-deployment deployment))))
+  (let [task (assoc task :end (time/now))]
+    (store/store-task deployment-id task)
+    (let [deployment (store/get-deployment deployment-id)]
+      (if (successful? task)
+        (do (finish-task deployment task)
+            (let [deployment (store/get-deployment deployment-id)]
+              (if-let [next-task (task-after deployment task-id)]
+                (start-task deployment next-task)
+                (finish-deployment deployment))))
+        (finish-deployment deployment)))))
 
 ;; Pre-hook attached to `task-finished` to log parameters.
 (with-pre-hook! #'task-finished

@@ -388,7 +388,7 @@
        => ..store-result..
        (store/get-deployment ..deploy-id..)
        => {:environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region..}
-       (store/store-task ..deploy-id.. {:log [{:message "Notifying creation of new-asg" :date ..end..}] :id ..task-id.. :action :create-asg :status "completed"})
+       (store/store-task ..deploy-id.. {:log [{:message "Notifying creation of new-asg" :date ..end..}] :id ..task-id.. :action :create-asg :status "completed" :end ..end..})
        => ..store-task-result..
        (aws/asg-created ..region.. ..environment.. "new-asg")
        => ..aws-result..
@@ -408,7 +408,7 @@
        => ..store-result..
        (store/get-deployment ..deploy-id..)
        => {:environment ..environment.. :id ..deploy-id.. :parameters {:oldAutoScalingGroupName "old-asg"} :region ..region..}
-       (store/store-task ..deploy-id.. {:log [{:message "Notifying deletion of old-asg" :date ..end..}] :id ..task-id.. :action :delete-asg :status "completed"})
+       (store/store-task ..deploy-id.. {:log [{:message "Notifying deletion of old-asg" :date ..end..}] :id ..task-id.. :action :delete-asg :status "completed" :end ..end..})
        => ..store-task-result..
        (aws/asg-deleted ..region.. ..environment.. "old-asg")
        => ..aws-result..
