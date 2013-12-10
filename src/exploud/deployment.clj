@@ -12,6 +12,7 @@
              [aws :as aws]
              [healthchecks :as health]
              [notification :as notification]
+             [onix :as onix]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]))
@@ -246,10 +247,11 @@
 
 (defmethod finish-task
   :create-asg
-  [{:keys [environment id parameters region]} task]
-  (let [{asg-name :newAutoScalingGroupName} parameters]
+  [{:keys [application contact environment id parameters start region user version]} task]
+  (let [{asg-name :newAutoScalingGroupName} parameters
+        tags {:Application application :Contact contact :DeployedBy user :DeployedOn start :Name (str application "-" version) :Version version}]
     (store/store-task id (util/append-to-task-log (str "Notifying creation of " asg-name) task))
-    (aws/asg-created region environment asg-name)))
+    (aws/asg-created region environment asg-name tags)))
 
 (defmethod finish-task
   :wait-for-instance-health
@@ -339,7 +341,8 @@
 
    Will return the newly-created deployment."
   [region application environment user ami hash message]
-  (let [hash (or hash (tyr/last-commit-hash environment application))
+  (let [onix (onix/application application)
+        hash (or hash (tyr/last-commit-hash environment application))
         % (check-tyranitar-files application environment hash)
         image (asgard/image region ami)
         {:keys [version]} (util/ami-details (get-in image [:image :name]))
@@ -347,6 +350,7 @@
         tasks (create-standard-deployment-tasks)
         deployment {:ami ami
                     :application application
+                    :contact (get-in onix [:metadata :contact])
                     :created (time/now)
                     :environment environment
                     :hash hash

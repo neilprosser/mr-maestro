@@ -7,6 +7,7 @@
              [deployment :refer :all]
              [healthchecks :as health]
              [notification :as notification]
+             [onix :as onix]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]
@@ -98,6 +99,7 @@
       (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. nil ..message..)
       => {:ami ..ami..
           :application "app"
+          :contact "contact"
           :created ..created..
           :environment ..env..
           :hash ..hash..
@@ -111,6 +113,8 @@
       (provided
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-1-2013-10-12_19-23-12"}}
+       (onix/application "app")
+       => {:name "app" :metadata {:contact "contact"}}
        (tyr/last-commit-hash ..env.. "app")
        => ..hash..
        (tyr/application-properties ..env.. "app" ..hash..)
@@ -127,6 +131,7 @@
        => ..created..
        (store/store-deployment {:ami ..ami..
                                 :application "app"
+                                :contact "contact"
                                 :created ..created..
                                 :environment ..env..
                                 :hash ..hash..
@@ -143,6 +148,7 @@
       (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..hash.. ..message..)
       => {:ami ..ami..
           :application "app"
+          :contact nil
           :created ..created..
           :environment ..env..
           :hash ..hash..
@@ -156,6 +162,8 @@
       (provided
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-1-2012-03-01_01-12-54"}}
+       (onix/application "app")
+       => {:name "app"}
        (tyr/application-properties ..env.. "app" ..hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..hash..)
@@ -170,6 +178,7 @@
        => ..created..
        (store/store-deployment {:ami ..ami..
                                 :application "app"
+                                :contact nil
                                 :created ..created..
                                 :environment ..env..
                                 :hash ..hash..
@@ -195,6 +204,7 @@
       (prepare-rollback ..region.. "app" ..env.. ..user.. ..message..)
       => {:ami ..old-ami..
           :application "app"
+          :contact "contact"
           :created ..created..
           :environment ..env..
           :hash ..old-hash..
@@ -212,6 +222,7 @@
                                          :from 1})
        => [{:ami ..old-ami..
             :application "app"
+            :contact ..old-contact..
             :created ..old-created..
             :environment ..old-env..
             :hash ..old-hash..
@@ -224,6 +235,8 @@
             :version "0.23"}]
        (asgard/image ..region.. ..old-ami..)
        => {:image {:name "ent-app-0.23-1-2014-05-23_12-00-00"}}
+       (onix/application "app")
+       => {:name "app" :metadata {:contact "contact"}}
        (tyr/application-properties ..env.. "app" ..old-hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..old-hash..)
@@ -238,6 +251,7 @@
        => ..created..
        (store/store-deployment {:ami ..old-ami..
                                 :application "app"
+                                :contact "contact"
                                 :created ..created..
                                 :environment ..env..
                                 :hash ..old-hash..
@@ -387,12 +401,12 @@
                                         :status "completed"})
        => ..store-result..
        (store/get-deployment ..deploy-id..)
-       => {:environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region..}
+       => {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"}
        (store/store-task ..deploy-id.. {:log [{:message "Notifying creation of new-asg" :date ..end..}] :id ..task-id.. :action :create-asg :status "completed" :end ..end..})
        => ..store-task-result..
-       (aws/asg-created ..region.. ..environment.. "new-asg")
+       (aws/asg-created ..region.. ..environment.. "new-asg" {:Application "app" :Contact "contact" :DeployedBy "user" :DeployedOn ..start.. :Name "app-1.9" :Version "1.9"})
        => ..aws-result..
-       (finish-deployment {:environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region..})
+       (finish-deployment {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"})
        => ..finish-result..))
 
 (fact "that finishing a `:delete-asg` task hooks into AWS notifications if there was an old ASG"

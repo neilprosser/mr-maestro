@@ -2,12 +2,14 @@
   (:require [amazonica.core :refer [with-credential]]
             [amazonica.aws
              [autoscaling :as auto]
+             [ec2 :as ec2]
              [securitytoken :as sts]
              [sqs :as sqs]]
             [cheshire.core :as json]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
-            [environ.core :refer :all]))
+            [environ.core :refer :all]
+            [exploud.asgard :as asgard]))
 
 (def autoscale-queue-name
   "The queue name we'll use for sending announcements."
@@ -82,11 +84,25 @@
   {:Message (json/generate-string {:Event "autoscaling:ASG_TERMINATE"
                                    :AutoScalingGroupName asg-name})})
 
+(defn create-tags-on-asg-and-instances
+  "Creates tags on an ASG and sets them to propagate at launch. Also creates tags on all instances in that ASG."
+  [config environment region asg-name tags]
+  (when-let [tag-list (seq (filter :value (map (fn [[k v]] {:resource-id asg-name
+                                                           :resource-type "auto-scaling-group"
+                                                           :propagate-at-launch true
+                                                           :key (name k)
+                                                           :value v}) tags)))]
+    (auto/create-or-update-tags config :tags (vec tag-list))
+    (when-let [instance-ids (seq (map (fn [i] (get-in i [:instance :instanceId])) (asgard/instances-in-asg environment region asg-name)))]
+      (let [instance-tag-list (map (fn [t] (select-keys t [:key :value])) tag-list)]
+        (ec2/create-tags config :resources (vec instance-ids) :tags (vec instance-tag-list))))))
+
 (defn asg-created
-  "Send a message stating that an ASG has been created."
-  [region environment asg-name]
+  "Perform AWS-related events that should occur when an ASG has been created."
+  [region environment asg-name tags]
   (let [config (merge (alternative-credentials-if-necessary environment)
                       {:endpoint region})]
+    (create-tags-on-asg-and-instances config environment region asg-name tags)
     (sqs/send-message config
                       :queue-url (announcement-queue-url region environment)
                       :delay-seconds 0
@@ -99,11 +115,11 @@
 
 ;; Pre-hook attached to `asg-created` to log parameters.
 (with-pre-hook! #'asg-created
-  (fn [region environment asg-name]
-    (log/debug "Notifying that" asg-name "has been created in" region environment)))
+  (fn [region environment asg-name tags]
+    (log/debug "Notifying that" asg-name "has been created in" region environment "with tags" tags)))
 
 (defn asg-deleted
-  "Send a message stating that an ASG has been deleted."
+  "Perform AWS-related events that should occur when an ASG has been deleted."
   [region environment asg-name]
   (let [config (merge (alternative-credentials-if-necessary environment)
                       {:endpoint region})]
