@@ -105,6 +105,7 @@
           :hash ..hash..
           :id ..deploy-id..
           :message ..message..
+          :nagios true
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
@@ -114,7 +115,7 @@
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-1-2013-10-12_19-23-12"}}
        (onix/application "app")
-       => {:name "app" :metadata {:contact "contact"}}
+       => {:name "app" :metadata {:contact "contact" :nagios true}}
        (tyr/last-commit-hash ..env.. "app")
        => ..hash..
        (tyr/application-properties ..env.. "app" ..hash..)
@@ -137,6 +138,7 @@
                                 :hash ..hash..
                                 :id ..deploy-id..
                                 :message ..message..
+                                :nagios true
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
@@ -154,6 +156,7 @@
           :hash ..hash..
           :id ..deploy-id..
           :message ..message..
+          :nagios nil
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
@@ -184,6 +187,7 @@
                                 :hash ..hash..
                                 :id ..deploy-id..
                                 :message ..message..
+                                :nagios nil
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
@@ -210,6 +214,7 @@
           :hash ..old-hash..
           :id ..deploy-id..
           :message ..message..
+          :nagios false
           :parameters ..params..
           :region ..region..
           :tasks ..tasks..
@@ -228,6 +233,7 @@
             :hash ..old-hash..
             :id ..old-deploy-id..
             :message ..old-message..
+            :nagios ..old-nagios..
             :parameters ..old-params..
             :region ..old-region..
             :tasks ..old-tasks..
@@ -236,7 +242,7 @@
        (asgard/image ..region.. ..old-ami..)
        => {:image {:name "ent-app-0.23-1-2014-05-23_12-00-00"}}
        (onix/application "app")
-       => {:name "app" :metadata {:contact "contact"}}
+       => {:name "app" :metadata {:contact "contact" :nagios false}}
        (tyr/application-properties ..env.. "app" ..old-hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..old-hash..)
@@ -257,6 +263,7 @@
                                 :hash ..old-hash..
                                 :id ..deploy-id..
                                 :message ..message..
+                                :nagios false
                                 :parameters ..params..
                                 :region ..region..
                                 :tasks ..tasks..
@@ -401,12 +408,12 @@
                                         :status "completed"})
        => ..store-result..
        (store/get-deployment ..deploy-id..)
-       => {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"}
+       => {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :nagios nil :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"}
        (store/store-task ..deploy-id.. {:log [{:message "Notifying creation of new-asg" :date ..end..}] :id ..task-id.. :action :create-asg :status "completed" :end ..end..})
        => ..store-task-result..
-       (aws/asg-created ..region.. ..environment.. "new-asg" {:Application "app" :Contact "contact" :DeployedBy "user" :DeployedOn ..start.. :Name "app-1.9" :Version "1.9"})
+       (aws/asg-created ..region.. ..environment.. "new-asg" {:Application "app" :Contact "contact" :DeployedBy "user" :DeployedOn ..start.. :Nagios nil :Name "app-1.9" :Version "1.9"})
        => ..aws-result..
-       (finish-deployment {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"})
+       (finish-deployment {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :nagios nil :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"})
        => ..finish-result..))
 
 (fact "that finishing a `:delete-asg` task hooks into AWS notifications if there was an old ASG"
