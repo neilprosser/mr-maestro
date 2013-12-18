@@ -132,8 +132,10 @@
        (replace-security-group-names ..lb-replaced.. ..environment.. ..region..)
        => ..sg-replaced..
        (add-exploud-security-group ..sg-replaced.. ..environment.. ..region..)
-       => ..sg-added..
-       (add-region-to-zones ..sg-added.. ..region..)
+       => ..exploud-sg-added..
+       (add-nrpe-security-group ..exploud-sg-added.. ..environment.. ..region..)
+       => ..nrpe-sg-added..
+       (add-region-to-zones ..nrpe-sg-added.. ..region..)
        => ..zones-replaced..))
 
 (fact "Exploding params creates a list which replaces maps where the value is a collection with multiple parameters of the same name"

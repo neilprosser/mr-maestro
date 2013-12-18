@@ -604,6 +604,17 @@
       (assoc parameters :selectedSecurityGroups (conj groups exploud-group-id))
       (assoc parameters :selectedSecurityGroups (vector exploud-group-id)))))
 
+(defn add-nrpe-security-group
+  "Makes sure `:selectedSecurityGroups` contains the ID fo the
+   `nrpe` security group. This group will be used to allow Nagios to monitor
+   instances."
+  [parameters environment region]
+  (let [nrpe-group-id (replace-security-group-name environment region
+                                                   "nrpe")]
+    (if-let [groups (:selectedSecurityGroups parameters)]
+      (assoc parameters :selectedSecurityGroups (conj groups nrpe-group-id))
+      (assoc parameters :selectedSecurityGroups (vector nrpe-group-id)))))
+
 (defn add-region-to-zones
   "Replace any availability zones found in `:selectedZones` and replace them
    with the region and the zone. For example if using region `eu-west-1` and we
@@ -624,6 +635,7 @@
       (replace-load-balancer-key environment)
       (replace-security-group-names environment region)
       (add-exploud-security-group environment region)
+      (add-nrpe-security-group environment region)
       (add-region-to-zones region)))
 
 (defn explode-parameters
