@@ -407,7 +407,7 @@
 (defn prepare-undo
   "Takes a deployment and edits the list of tasks to reverse tasks that have been started.
 
-   Returns the edited deployment."
+   Stores the edited deployment and returns it."
   [{:keys [tasks] :as deployment}]
   (if (zero? (count tasks))
     deployment
@@ -419,7 +419,8 @@
   "Kicks off the first task of the deployment with `deployment-id`."
   [deployment-id]
   (let [deployment (store/get-deployment deployment-id)
-        first-task (first (:tasks deployment))
+        pending-tasks (filter (fn [t] (= (:action t) "pending")) (:tasks deployment))
+        first-task (first pending-tasks)
         deployment (assoc deployment :start (time/now))]
     (store/store-deployment deployment)
     (start-task deployment first-task)

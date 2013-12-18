@@ -74,6 +74,20 @@
 
 (fact "creating the undo tasks for a realistic deployment which has stopped at `:delete-asg` creates the right tasks"
       (create-undo-tasks [{:action :create-asg :status "completed"}
+                          {:action :wait-for-instance-health :status "failed"}
+                          {:action :enable-asg :status "pending"}
+                          {:action :wait-for-elb-health :status "pending"}
+                          {:action :disable-asg :status "pending"}
+                          {:action :delete-asg :status "pending"}])
+      => [{:action :create-asg :status "completed"}
+          {:action :wait-for-instance-health :status "failed"}
+          {:action :delete-asg :id ..id.. :status "pending" :undo true}]
+      (provided
+       (util/generate-id)
+       => ..id..))
+
+(fact "creating the undo tasks for another realistic deployment which has stopped at `:delete-asg` creates the right tasks"
+      (create-undo-tasks [{:action :create-asg :status "completed"}
                           {:action :wait-for-instance-health :status "completed"}
                           {:action :enable-asg :status "completed"}
                           {:action :wait-for-elb-health :status "skipped"}
@@ -286,12 +300,12 @@
       => nil
       (provided
        (store/get-deployment ..deploy-id..)
-       => {:tasks [{:action ..action..}]}
+       => {:tasks [{:action "pending"}]}
        (time/now)
        => ..start..
-       (store/store-deployment {:start ..start.. :tasks [{:action ..action..}]})
+       (store/store-deployment {:start ..start.. :tasks [{:action "pending"}]})
        => ..deploy-id..
-       (start-task {:start ..start.. :tasks [{:action ..action..}]} {:action ..action..})
+       (start-task {:start ..start.. :tasks [{:action "pending"}]} {:action "pending"})
        => nil))
 
 (fact "that starting a task with an action of `:create-asg` sets a `:start` value and calls Asgard correctly"
