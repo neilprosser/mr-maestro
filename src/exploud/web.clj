@@ -145,6 +145,10 @@
                                       :size (util/string->int size)
                                       :from (util/string->int from)})}))))
 
+   (GET "/incomplete-deployments"
+        []
+        (response {:deployments (store/deployments-with-incomplete-tasks)}))
+
    (GET "/deployments/:deployment-id"
         [deployment-id]
         (response (store/get-deployment deployment-id)))
