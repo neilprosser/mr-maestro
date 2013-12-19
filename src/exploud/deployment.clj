@@ -200,7 +200,7 @@
       (health/wait-until-asg-healthy
        environment
        region
-       (get-in deployment [:parameters (new-asg-name-key deployment)])
+       (get-in deployment [:parameters (new-asg-name-key task)])
        (or (get-in deployment [:parameters :min]) asgard/default-minimum)
        port healthcheck deployment-id task
        task-finished task-timed-out))
@@ -212,7 +212,7 @@
   :enable-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (asgard/enable-asg environment region
-                     (get-in deployment [:parameters (new-asg-name-key deployment)])
+                     (get-in deployment [:parameters (new-asg-name-key task)])
                      deployment-id task task-finished task-timed-out))
 
 (defmethod start-task*
@@ -223,7 +223,7 @@
                      (get-in deployment
                              [:parameters :selectedLoadBalancers]))
           asg-name (get-in deployment
-                           [:parameters (new-asg-name-key deployment)])]
+                           [:parameters (new-asg-name-key task)])]
       (health/wait-until-elb-healthy environment region elb-names asg-name
                                      deployment-id task task-finished
                                      task-timed-out))
@@ -235,7 +235,7 @@
   :disable-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (if-let [asg (get-in deployment [:parameters
-                                   (old-asg-name-key deployment)])]
+                                   (old-asg-name-key task)])]
     (asgard/disable-asg environment region asg deployment-id task
                         task-finished task-timed-out)
     (let [task (assoc (util/append-to-task-log "No old ASG to disable" task)
@@ -246,7 +246,7 @@
   :delete-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (if-let [asg (get-in deployment [:parameters
-                                   (old-asg-name-key deployment)])]
+                                   (old-asg-name-key task)])]
     (asgard/delete-asg
      environment region asg deployment-id task task-finished task-timed-out)
     (let [task (assoc (util/append-to-task-log "No old ASG to delete" task)
