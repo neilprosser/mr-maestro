@@ -129,7 +129,7 @@
   (bootstrap-mongo)
   (configure-logging)
   (start-graphite-reporting)
-  (pick-up-tasks))
+  (comment (pick-up-tasks)))
 
 (def server
   "Our trusty server."
