@@ -419,7 +419,7 @@
   "Kicks off the first task of the deployment with `deployment-id`."
   [deployment-id]
   (let [deployment (store/get-deployment deployment-id)
-        pending-tasks (filter (fn [t] (= (:action t) "pending")) (:tasks deployment))
+        pending-tasks (filter (fn [t] (= (:status t) "pending")) (:tasks deployment))
         first-task (first pending-tasks)
         deployment (assoc deployment :start (time/now))]
     (store/store-deployment deployment)

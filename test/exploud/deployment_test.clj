@@ -300,12 +300,12 @@
       => nil
       (provided
        (store/get-deployment ..deploy-id..)
-       => {:tasks [{:action "pending"}]}
+       => {:tasks [{:status "pending"}]}
        (time/now)
        => ..start..
-       (store/store-deployment {:start ..start.. :tasks [{:action "pending"}]})
+       (store/store-deployment {:start ..start.. :tasks [{:status "pending"}]})
        => ..deploy-id..
-       (start-task {:start ..start.. :tasks [{:action "pending"}]} {:action "pending"})
+       (start-task {:start ..start.. :tasks [{:status "pending"}]} {:status "pending"})
        => nil))
 
 (fact "that starting a task with an action of `:create-asg` sets a `:start` value and calls Asgard correctly"
