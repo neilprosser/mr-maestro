@@ -56,7 +56,8 @@
 (defmulti create-undo
   "Creates any tasks necessary to undo a given task. Figures out what to create
    by looking at the `:action` of `task`."
-  :action)
+  (fn [{:keys [action] :as task}]
+    (keyword action)))
 
 (defmethod create-undo
   :create-asg
@@ -151,6 +152,24 @@
     (log/debug "Working out whether we should check ELB health of"
                parameters)))
 
+(defn new-asg-name-key
+  "The key we should use to find the name of the ASG we need to be creating/enabling.
+
+   Required since if we're undoing a deployment we should be deleting the newer ASG, not the old one."
+  [{:keys [undo]}]
+  (if undo
+    :oldAutoScalingGroupName
+    :newAutoScalingGroupName))
+
+(defn old-asg-name-key
+  "The key we should use to find the name of the ASG we need to be deleting/disabling.
+
+   Required since if we're undoing a deployment we should be deleting the newer ASG, not the old one."
+  [{:keys [undo]}]
+  (if undo
+    :newAutoScalingGroupName
+    :oldAutoScalingGroupName))
+
 ;; We're going to need these before we can defn them.
 (declare task-finished)
 (declare task-timed-out)
@@ -181,7 +200,7 @@
       (health/wait-until-asg-healthy
        environment
        region
-       (get-in deployment [:parameters :newAutoScalingGroupName])
+       (get-in deployment [:parameters (new-asg-name-key deployment)])
        (or (get-in deployment [:parameters :min]) asgard/default-minimum)
        port healthcheck deployment-id task
        task-finished task-timed-out))
@@ -193,7 +212,7 @@
   :enable-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (asgard/enable-asg environment region
-                     (get-in deployment [:parameters :newAutoScalingGroupName])
+                     (get-in deployment [:parameters (new-asg-name-key deployment)])
                      deployment-id task task-finished task-timed-out))
 
 (defmethod start-task*
@@ -204,7 +223,7 @@
                      (get-in deployment
                              [:parameters :selectedLoadBalancers]))
           asg-name (get-in deployment
-                           [:parameters :newAutoScalingGroupName])]
+                           [:parameters (new-asg-name-key deployment)])]
       (health/wait-until-elb-healthy environment region elb-names asg-name
                                      deployment-id task task-finished
                                      task-timed-out))
@@ -216,7 +235,7 @@
   :disable-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (if-let [asg (get-in deployment [:parameters
-                                   :oldAutoScalingGroupName])]
+                                   (old-asg-name-key deployment)])]
     (asgard/disable-asg environment region asg deployment-id task
                         task-finished task-timed-out)
     (let [task (assoc (util/append-to-task-log "No old ASG to disable" task)
@@ -227,7 +246,7 @@
   :delete-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (if-let [asg (get-in deployment [:parameters
-                                   :oldAutoScalingGroupName])]
+                                   (old-asg-name-key deployment)])]
     (asgard/delete-asg
      environment region asg deployment-id task task-finished task-timed-out)
     (let [task (assoc (util/append-to-task-log "No old ASG to delete" task)
@@ -411,9 +430,10 @@
   [{:keys [tasks] :as deployment}]
   (if (zero? (count tasks))
     deployment
-    (let [updated-tasks (create-undo-tasks tasks)]
-      (store/store-deployment (assoc deployment :tasks updated-tasks))
-      nil)))
+    (let [updated-tasks (create-undo-tasks tasks)
+          amended-deployment (assoc deployment :tasks updated-tasks)]
+      (store/store-deployment amended-deployment)
+      amended-deployment)))
 
 (defn start-deployment
   "Kicks off the first task of the deployment with `deployment-id`."

@@ -741,7 +741,7 @@
 
 (fact "that preparing an undo for a deployment with tasks does the right thing"
       (prepare-undo {:tasks [..task..]})
-      => nil
+      => {:tasks ..edited-tasks..}
       (provided
        (create-undo-tasks [..task..])
        => ..edited-tasks..
