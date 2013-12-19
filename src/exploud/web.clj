@@ -149,6 +149,10 @@
         []
         (response {:deployments (store/deployments-with-incomplete-tasks)}))
 
+   (GET "/broken-deployments"
+        []
+        (response {:deployments (store/broken-deployments)}))
+
    (GET "/deployments/:deployment-id"
         [deployment-id]
         (response (store/get-deployment deployment-id)))

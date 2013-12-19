@@ -180,3 +180,10 @@
                                            {:status "pending"}
                                            {:status "skipped"}]}}}
                 ["tasks.$"]))
+
+(defn broken-deployments
+  "Gives a list of any deployments which are considered broken (that is, they don't
+   have an `:end` date)."
+  []
+  (mc/find-maps "deployments"
+                {:end {$exists false}}))
