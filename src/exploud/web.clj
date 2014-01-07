@@ -197,6 +197,20 @@
 
    (POST "/applications/:application/deploy"
          [application ami environment hash message user]
+         (log/warn application "being deployed to" environment "using deprecated API")
+         (let [{:keys [id]} (dep/prepare-deployment
+                             default-region
+                             application
+                             environment
+                             (or user default-user)
+                             ami
+                             hash
+                             message)]
+           (dep/start-deployment id)
+           (response {:id id})))
+
+   (POST "/applications/:application/:environment/deploy"
+         [application ami environment hash message user]
          (let [{:keys [id]} (dep/prepare-deployment
                              default-region
                              application
@@ -219,6 +233,18 @@
            (error-response "No previous deployment" 500)))
 
    (POST "/applications/:application/rollback"
+         [application environment message user]
+         (log/warn application "being rolled back in" environment "using deprecated API")
+         (let [{:keys [id]} (dep/prepare-rollback
+                             default-region
+                             application
+                             environment
+                             (or user default-user)
+                             message)]
+           (dep/start-deployment id)
+           (response {:id id})))
+
+   (POST "/applications/:application/:environment/rollback"
          [application environment message user]
          (let [{:keys [id]} (dep/prepare-rollback
                              default-region
