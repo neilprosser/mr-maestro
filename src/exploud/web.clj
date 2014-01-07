@@ -75,6 +75,16 @@
       {:status status}
       {:status 404})))
 
+(defn- date-string-to-date
+  "If the value is a string and a valid ISO8601 date then turn it into a date. Otherwise leave it alone."
+  [v]
+  (if (string? v)
+    (try (if-let [vd (fmt/parse (fmt/formatters :date-time) v)]
+           vd
+           v)
+         (catch Exception e v))
+    v))
+
 (defroutes routes
   "The RESTful routes we provide."
 
@@ -159,7 +169,7 @@
 
    (POST "/deployments/:deployment-id"
          [deployment-id deployment]
-         (store/store-deployment (postwalk (fn [v] (if (string? v) (try (if-let [vd (fmt/parse (fmt/formatters :date-time) v)] vd v) (catch Exception e v)) v)) (keywordize-keys deployment)))
+         (store/store-deployment (postwalk date-string-to-date (keywordize-keys deployment)))
          (response nil nil 201))
 
    (DELETE "/deployments/:deployment-id"
