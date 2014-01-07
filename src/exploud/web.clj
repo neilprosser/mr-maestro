@@ -203,7 +203,9 @@
          (if-let [deployment (first (store/get-deployments {:application application
                                                             :environment environment
                                                             :size 1}))]
-           (dep/start-deployment (:id (dep/prepare-undo deployment)))
+           (let [{:keys [id]} (dep/prepare-deployment deployment)]
+             (dep/start-deployment id)
+             (response {:id id}))
            (error-response "No previous deployment" 500)))
 
    (POST "/applications/:application/rollback"
