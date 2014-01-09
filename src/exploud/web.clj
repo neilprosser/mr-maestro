@@ -227,7 +227,7 @@
          (if-let [deployment (first (store/get-deployments {:application application
                                                             :environment environment
                                                             :size 1}))]
-           (let [{:keys [id]} (dep/prepare-deployment deployment)]
+           (let [{:keys [id]} (dep/prepare-undo deployment)]
              (dep/start-deployment id)
              (response {:id id}))
            (error-response "No previous deployment" 500)))
