@@ -26,11 +26,9 @@
   (get-in instance [:instance :privateIpAddress]))
 
 (defn- create-url
-  "Ahem... Nothing to see here. Move along please..."
+  "Create the healthcheck URL we'll call."
   [ip port healthcheck-path]
-  (if-not (re-find #"^10\.124\." ip)
-    (str "http://" ip ":" port "/" healthcheck-path)
-    (str "http://jeff.brislabs.com/healthcheck-joy/" ip ":" port "/" healthcheck-path)))
+  (str "http://" ip ":" port "/" healthcheck-path))
 
 (defn instance-healthy?
   "`true` if the healthcheck returns `200`, otherwise `false."
