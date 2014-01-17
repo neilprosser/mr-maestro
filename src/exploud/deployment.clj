@@ -268,7 +268,7 @@
   :create-asg
   [{:keys [application contact environment id nagios parameters start region user version]} task]
   (let [{asg-name :newAutoScalingGroupName} parameters
-        tags {:Application application :Contact contact :DeployedBy user :DeployedOn start :Nagios nagios :Name (str application "-" version) :Version version}]
+        tags {:Application application :Contact contact :DeployedBy user :DeployedOn (str start) :Nagios nagios :Name (str application "-" version) :Version version}]
     (store/store-task id (util/append-to-task-log (str "Notifying creation of " asg-name) task))
     (aws/asg-created region environment asg-name tags)))
 

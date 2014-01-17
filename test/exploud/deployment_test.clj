@@ -425,7 +425,7 @@
        => {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :nagios nil :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"}
        (store/store-task ..deploy-id.. {:log [{:message "Notifying creation of new-asg" :date ..end..}] :id ..task-id.. :action :create-asg :status "completed" :end ..end..})
        => ..store-task-result..
-       (aws/asg-created ..region.. ..environment.. "new-asg" {:Application "app" :Contact "contact" :DeployedBy "user" :DeployedOn ..start.. :Nagios nil :Name "app-1.9" :Version "1.9"})
+       (aws/asg-created ..region.. ..environment.. "new-asg" {:Application "app" :Contact "contact" :DeployedBy "user" :DeployedOn "..start.." :Nagios nil :Name "app-1.9" :Version "1.9"})
        => ..aws-result..
        (finish-deployment {:application "app" :contact "contact" :environment ..environment.. :id ..deploy-id.. :nagios nil :parameters {:newAutoScalingGroupName "new-asg"} :region ..region.. :start ..start.. :user "user" :version "1.9"})
        => ..finish-result..))
