@@ -17,6 +17,12 @@
             [environ.core :refer [env]]
             [exploud.http :as http]))
 
+(def get-timeout
+  30000)
+
+(def post-timeout
+  180000)
+
 (def tyranitar-url
   "The URL where Tyranitar is deployed."
   (env :service-tyranitar-url))
@@ -43,7 +49,7 @@
   "Gets the content of a file for an application and environment."
   [environment application-name commit-hash file-name]
   (let [url (file-url environment application-name commit-hash file-name)
-        {:keys [body status] :as response} (http/simple-get url)]
+        {:keys [body status] :as response} (http/simple-get url {:socket-timeout get-timeout})]
     (if (= status 200)
       (json/parse-string body true)
       (throw (ex-info "Unexpected response" {:type ::unexpected-response
@@ -74,7 +80,7 @@
   "Gets the list of commits for an application and environment."
   [environment application-name]
   (let [url (commits-url environment application-name)
-        {:keys [body status]} (http/simple-get url)]
+        {:keys [body status]} (http/simple-get url {:socket-timeout get-timeout})]
     (if (= status 200)
       (:commits (json/parse-string body true)))))
 
@@ -88,7 +94,7 @@
    exists."
   [application-name]
   (let [content (json/generate-string {:name application-name})
-        post-body {:content-type :json :body content :socket-timeout 180000}
+        post-body {:content-type :json :body content :socket-timeout post-timeout}
         raw-response (http/simple-post (applications-url) post-body)
         {:keys [body status] :as response} raw-response]
     (if (= status 201)
@@ -101,7 +107,7 @@
    of an application. Returns `nil` if we don't know about the application in
    any environment."
   [application-name]
-  (let [{:keys [body status]} (http/simple-get (applications-url))]
+  (let [{:keys [body status]} (http/simple-get (applications-url) {:socket-timeout get-timeout})]
     (if (= status 200)
       ((keyword application-name)
        (:applications (json/parse-string body true))))))

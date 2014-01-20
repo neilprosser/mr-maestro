@@ -11,7 +11,8 @@
       => ..properties..
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties")
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties"
+        {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -22,7 +23,8 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties")
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties"
+        {:socket-timeout 30000})
        => {:status 500}))
 
 (fact "that getting deployment params does the right thing"
@@ -30,7 +32,8 @@
       => ..properties..
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params")
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params"
+        {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -41,7 +44,8 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params")
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params"
+        {:socket-timeout 30000})
        => {:status 500}))
 
 (fact "that getting launch data does the right thing"
@@ -49,7 +53,8 @@
       => ..properties..
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data")
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data"
+        {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -60,7 +65,8 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data")
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data"
+        {:socket-timeout 30000})
        => {:status 500}))
 
 (fact "that getting commits does the right thing"
@@ -68,7 +74,8 @@
       => ..commits..
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application")
+        "http://tyranitar:8080/1.x/applications/environment/application"
+        {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -79,7 +86,8 @@
       => "last-commit"
       (provided
        (http/simple-get
-        "http://tyranitar:8080/1.x/applications/environment/application")
+        "http://tyranitar:8080/1.x/applications/environment/application"
+        {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -120,7 +128,8 @@
       (application "application")
       => ..application..
       (provided
-       (http/simple-get "http://tyranitar:8080/1.x/applications")
+       (http/simple-get "http://tyranitar:8080/1.x/applications"
+                        {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
