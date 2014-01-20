@@ -346,10 +346,12 @@
     (tyr/deployment-params environment application hash)
     (tyr/launch-data environment application hash)
     (catch Exception e
+      (log/error "Failure checking Tyranitar files" e)
       (throw (ex-info "One or more Tyranitar files are invalid" {:type ::invalid-file
                                                                  :application application
                                                                  :environment environment
-                                                                 :hash hash})))))
+                                                                 :hash hash
+                                                                 :message (.getMessage e)})))))
 
 (defn prepare-deployment
   "Prepares a deployment of the `application` in an `environment` within the
