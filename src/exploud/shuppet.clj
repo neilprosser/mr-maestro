@@ -4,6 +4,9 @@
             [environ.core :refer [env]]
             [exploud.http :as http]))
 
+(def timeout
+  180000)
+
 (def shuppet-url
   "We only need the URL for the 'poke' Shuppet."
   (env :service-shuppet-url))
@@ -26,10 +29,10 @@
 (defn apply-config
   "tells shuppet to apply a config to all environments."
   [app-name]
-  (let [{:keys [body status] :as response} (http/simple-get (envs-url))]
+  (let [{:keys [body status] :as response} (http/simple-get (envs-url) {:socket-timeout timeout})]
     (if (= 200 status)
       (let [envs (:environments (json/parse-string body true))
-            responses (pmap #(http/simple-get (apply-url % app-name))
+            responses (pmap #(http/simple-get (apply-url % app-name) {:socket-timeout timeout})
                             envs)]
         (map (fn [{:keys [status] :as r}]
                (when-not (= 200 status)
@@ -46,7 +49,8 @@
   "Insert an application into Shuppet if it doesn't exist, or update it if it does."
   [app-name]
   (let [{:keys [body status] :as response}
-        (http/simple-post (create-application-url app-name))]
+        (http/simple-post (create-application-url app-name)
+                          {:socket-timeout timeout})]
     (if (or (= status 200) (= status 201))
       (json/parse-string body true)
       (throw (ex-info (str "Unexpected status while creating application in Shuppet: " status)
