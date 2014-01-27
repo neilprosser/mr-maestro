@@ -18,9 +18,11 @@
             [exploud.http :as http]))
 
 (def get-timeout
+  "The number of milliseconds we'll wait for GET requests."
   30000)
 
 (def post-timeout
+  "The number of millisecond we'll wait for POST requests."
   180000)
 
 (def tyranitar-url

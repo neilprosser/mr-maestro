@@ -5,6 +5,7 @@
             [exploud.http :as http]))
 
 (def timeout
+  "The number of milliseconds we'll wait for requests."
   180000)
 
 (def shuppet-url
