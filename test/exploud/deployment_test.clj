@@ -538,6 +538,8 @@
                    :hash ..hash..} {:action :wait-for-instance-health})
       => ..completed-result..
       (provided
+       (tyr/application-properties ..env.. ..app.. ..hash..)
+       => {}
        (time/now)
        => ..start..
        (task-finished ..deploy-id.. {:log [{:message "Skipping instance healthcheck"
@@ -612,16 +614,28 @@
        => ..wait-result..))
 
 (fact "that when deciding whether we should check instance health we return true when we have no `:min`"
-      (wait-for-instance-health? {:parameters {}})
+      (wait-for-instance-health? {:parameters {}} {})
       => true)
 
 (fact "that when deciding whether we should check instance health we return true when we have a nil value of `:min`"
-      (wait-for-instance-health? {:parameters {:min nil}})
+      (wait-for-instance-health? {:parameters {:min nil}} {})
       => true)
 
 (fact "that when deciding whether we should check instance health we return true when we have a positive value for `:min`"
-      (wait-for-instance-health? {:parameters {:min 1}})
+      (wait-for-instance-health? {:parameters {:min 1}} {})
       => true)
+
+(fact "that when deciding whether we should check instance health we return false when we've been told not to bother (even if someone has multiple instances to start)"
+      (wait-for-instance-health? {:parameters {:min 2}} {:service.healthcheck.skip "true"})
+      => false)
+
+(fact "that when deciding whether we should check instance health we return true when we've been told to and there are multiple instances starting"
+      (wait-for-instance-health? {:parameters {:min 2}} {:service.healthcheck.skip "false"})
+      => true)
+
+(fact "that when deciding whether we should check instance health we return false when we've been told to but there are no instances starting"
+      (wait-for-instance-health? {:parameters {:min 0}} {:service.healthcheck.skip "false"})
+      => false)
 
 (fact "that when deciding whether to check ELB health we return true when we have selectedLoadBalancers and a healthCheckType of ELB"
       (check-elb-health? {:parameters {:healthCheckType "ELB"

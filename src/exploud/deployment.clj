@@ -126,17 +126,20 @@
 
 (defn wait-for-instance-health?
   "Determines whether we should check for instance health. Will return `false` if
-   the deployment hasn't started any instances."
-  [{:keys [parameters]}]
-  (if-let [min (or (:min parameters) asgard/default-minimum)]
-    (pos? min)
-    false))
+   the deployment hasn't told us to skip the healthcheck or hasn't started any instances."
+  [{:keys [parameters]} app-properties]
+  (let [perform-healthcheck? (not (or (Boolean/valueOf (:service.healthcheck.skip app-properties "false"))))
+        min (or (:min parameters) asgard/default-minimum)]
+    (print perform-healthcheck?)
+    (print min)
+    (and perform-healthcheck?
+         (pos? min))))
 
 ;; Pre-hook attached to `wait-for-instance-health?` to log parameters.
 (with-pre-hook! #'wait-for-instance-health?
-  (fn [{:keys [parameters]}]
+  (fn [{:keys [parameters]} app-properties]
     (log/debug "Working out whether we should wait for instance health of"
-               parameters)))
+               parameters "and" app-properties)))
 
 (defn check-elb-health?
   "If the `:parameters` of `deployment` have both a `selectedLoadBalancers`
@@ -191,22 +194,21 @@
 (defmethod start-task*
   :wait-for-instance-health
   [{:keys [application environment hash region] deployment-id :id :as deployment} task]
-  (if (wait-for-instance-health? deployment)
-    (let [service-properties (tyr/application-properties
-                              environment application hash)
-          port (:service.port service-properties 8080)
-          healthcheck (:service.healthcheck.path service-properties
-                                                 "/healthcheck")]
-      (health/wait-until-asg-healthy
-       environment
-       region
-       (get-in deployment [:parameters (new-asg-name-key task)])
-       (or (get-in deployment [:parameters :min]) asgard/default-minimum)
-       port healthcheck deployment-id task
-       task-finished task-timed-out))
-    (let [task (assoc (util/append-to-task-log "Skipping instance healthcheck" task)
-                 :status "skipped")]
-      (task-finished deployment-id task))))
+  (let [app-properties (tyr/application-properties
+                            environment application hash)]
+    (if (wait-for-instance-health? deployment app-properties)
+      (let [port (:service.port app-properties 8080)
+            healthcheck (:service.healthcheck.path app-properties "/healthcheck")]
+        (health/wait-until-asg-healthy
+         environment
+         region
+         (get-in deployment [:parameters (new-asg-name-key task)])
+         (or (get-in deployment [:parameters :min]) asgard/default-minimum)
+         port healthcheck deployment-id task
+         task-finished task-timed-out))
+      (let [task (assoc (util/append-to-task-log "Skipping instance healthcheck" task)
+                   :status "skipped")]
+        (task-finished deployment-id task)))))
 
 (defmethod start-task*
   :enable-asg
