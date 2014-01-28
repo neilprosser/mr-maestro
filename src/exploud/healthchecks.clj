@@ -88,7 +88,7 @@
                                   completed-fn timed-out-fn (dec polls)))))
     (catch Exception e
       (do
-        (log/error "Caught exception" e (map str (.getStackTrace e)))
+        (log/error e "Caught exception while checking ASG health")
         (throw e)))))
 
 (defn wait-until-asg-healthy
@@ -163,7 +163,7 @@
         (completed-fn deployment-id (assoc task :status "completed"))))
     (catch Exception e
       (do
-        (log/error "Caught exception" e (map str (.getStackTrace e)))
+        (log/error e "Caught exception while checking ELB health")
         (throw e)))))
 
 (defn wait-until-elb-healthy

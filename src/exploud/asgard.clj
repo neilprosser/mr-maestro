@@ -693,7 +693,7 @@
       (throw (ex-info (str "No task found for URL: " url) {:type ::task-missing :url url})))
     (catch Exception e
       (do
-        (log/error "Caught exception" e (map str (.getStackTrace e)))
+        (log/error e "Caught exception while tracking task")
         (throw e)))))
 
 ;; Pre-hook attached to `track-task` to log the parameters.

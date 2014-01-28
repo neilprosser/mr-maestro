@@ -348,7 +348,7 @@
     (tyr/deployment-params environment application hash)
     (tyr/launch-data environment application hash)
     (catch Exception e
-      (log/error "Failure checking Tyranitar files" e)
+      (log/error e "Failure checking Tyranitar files")
       (throw (ex-info "One or more Tyranitar files are invalid" {:type ::invalid-file
                                                                  :application application
                                                                  :environment environment
