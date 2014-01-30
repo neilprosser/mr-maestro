@@ -106,6 +106,41 @@
      (response "Exploud is currently closed for business." "text/plain" 409)
      (do ~@body)))
 
+(def ongoing-deployments
+  "An atom containing the set of all in-progress deployments."
+  (atom #{}))
+
+(defn- deployment-string
+  "Generate a string which combined the environment and application name."
+  [application environment]
+  (str environment "-" application))
+
+(defn- can-deploy?
+  "Determine whether the set of ongoing deployment already contains an entry for the environment and application."
+  [application environment]
+  (contains? @ongoing-deployments (deployment-string application environment)))
+
+(defn- register-deployment
+  "Register a deployment in the set of ongoing deployments."
+  [application environment]
+  (swap! ongoing-deployments conj (deployment-string application environment)))
+
+(defn- unregister-deployment
+  "Removes a deployment from the set of ongoing deployments."
+  [application environment]
+  (swap! ongoing-deployments disj (deployment-string application environment)))
+
+(defmacro one-at-a-time-please
+  "We only allow one action against an application in an environment at a time."
+  [application environment & body]
+  (if (can-deploy? application environment)
+    (try
+      (register-deployment application environment)
+      (do ~@body)
+      (finally
+        (unregister-deployment application environment)))
+    (response (str "An action for " application " in " environment " is already underway") "text/plain" 409)))
+
 (defroutes routes
   "The RESTful routes we provide."
 
@@ -235,70 +270,48 @@
              (response body nil 201))
            (error-response "Illegal application name" 400))))
 
-   (POST "/applications/:application/deploy"
-         [application ami environment hash message user]
-         (guarded
-          (log/warn application "being deployed to" environment "using deprecated API")
-          (let [{:keys [id]} (dep/prepare-deployment
-                              default-region
-                              application
-                              environment
-                              (or user default-user)
-                              ami
-                              hash
-                              message)]
-            (dep/start-deployment id)
-            (response {:id id}))))
-
    (POST "/applications/:application/:environment/deploy"
          [application ami environment hash message user]
          (guarded
-          (let [{:keys [id]} (dep/prepare-deployment
-                              default-region
-                              application
-                              environment
-                              (or user default-user)
-                              ami
-                              hash
-                              message)]
-            (dep/start-deployment id)
-            (response {:id id}))))
+          (one-at-a-time-please application environment
+                                (register-deployment application environment)
+                                (let [{:keys [id]} (dep/prepare-deployment
+                                                    default-region
+                                                    application
+                                                    environment
+                                                    (or user default-user)
+                                                    ami
+                                                    hash
+                                                    message)]
+                                  (dep/start-deployment id)
+                                  (response {:id id})))))
 
    (POST "/applications/:application/:environment/undo"
          [application environment]
          (guarded
-          (if-let [deployment (first (store/get-deployments {:application application
-                                                             :environment environment
-                                                             :size 1}))]
-            (let [{:keys [id]} (dep/prepare-undo deployment)]
-              (dep/start-deployment id)
-              (response {:id id}))
-            (error-response "No previous deployment" 500))))
-
-   (POST "/applications/:application/rollback"
-         [application environment message user]
-         (guarded
-          (log/warn application "being rolled back in" environment "using deprecated API")
-          (let [{:keys [id]} (dep/prepare-rollback
-                              default-region
-                              application
-                              environment
-                              (or user default-user)
-                              message)]
-            (dep/start-deployment id)
-            (response {:id id}))))
+          (one-at-a-time-please application environment
+                                (register-deployment application environment)
+                                (if-let [deployment (first (store/get-deployments {:application application
+                                                                                   :environment environment
+                                                                                   :size 1}))]
+                                  (let [{:keys [id]} (dep/prepare-undo deployment)]
+                                    (dep/start-deployment id)
+                                    (response {:id id}))
+                                  (error-response "No previous deployment" 500)))))
 
    (POST "/applications/:application/:environment/rollback"
          [application environment message user]
          (guarded
-          (let [{:keys [id]} (dep/prepare-rollback
-                              default-region
-                              application
-                              environment
-                              (or user default-user)
-                              message)]
-            (dep/start-deployment id)
-            (response {:id id}))))
+          (one-at-a-time-please application environment
+                                (register-deployment application environment)
+                                (let [{:keys [id]} (dep/prepare-rollback
+                                                    default-region
+                                                    application
+                                                    environment
+                                                    (or user default-user)
+                                                    message)]
+                                  (dep/start-deployment id)
+                                  (response {:id id})))))
 
    (GET "/environments"
         []
@@ -306,7 +319,15 @@
 
    (GET "/tasks"
         []
-        (response (with-out-str (at-at/show-schedule tasks/pool)))))
+        (response (with-out-str (at-at/show-schedule tasks/pool))))
+
+   (GET "/in-progress"
+        []
+        (response {:deployments (sort @ongoing-deployments)}))
+
+   (DELETE "/in-progress/:application/:environment"
+           [application environment]
+           (unregister-deployment application environment)))
 
   (route/not-found (error-response "Resource not found" 404)))
 
