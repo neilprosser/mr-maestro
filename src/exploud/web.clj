@@ -86,17 +86,22 @@
     v))
 
 (def locked?
+  "Atom holding a boolean indicating whether Exploud is locked for actions with side-effects."
   (atom false))
 
 (defn- lock!
+  "Lock Exploud, preventing deployments etc."
   []
   (reset! locked? true))
 
 (defn- unlock!
+  "Unlock Exploud, allowing deployment etc."
   []
   (reset! locked? false))
 
-(defmacro guarded [& body]
+(defmacro guarded
+  "Replace the given body with a Conflict response if Exploud has been locked."
+  [& body]
   `(if @locked?
      (response "Exploud is currently closed for business." "text/plain" 409)
      (do ~@body)))
