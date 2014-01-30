@@ -4,7 +4,7 @@
 
   :dependencies [[amazonica "0.2.3"]
                  [bouncer "0.3.0"]
-                 [ch.qos.logback/logback-classic "1.0.13"]
+                 [ch.qos.logback/logback-classic "1.1.0"]
                  [cheshire "5.3.1"]
                  [clj-http "0.7.8"]
                  [clj-time "0.6.0"]
