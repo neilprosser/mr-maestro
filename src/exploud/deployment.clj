@@ -130,8 +130,6 @@
   [{:keys [parameters]} app-properties]
   (let [perform-healthcheck? (not (or (Boolean/valueOf (:service.healthcheck.skip app-properties "false"))))
         min (or (:min parameters) asgard/default-minimum)]
-    (print perform-healthcheck?)
-    (print min)
     (and perform-healthcheck?
          (pos? min))))
 
