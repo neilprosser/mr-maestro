@@ -118,7 +118,7 @@
 (defn- can-deploy?
   "Determine whether the set of ongoing deployment already contains an entry for the environment and application."
   [application environment]
-  (contains? @ongoing-deployments (deployment-string application environment)))
+  (not (contains? @ongoing-deployments (deployment-string application environment))))
 
 (defn- register-deployment
   "Register a deployment in the set of ongoing deployments."
@@ -133,13 +133,13 @@
 (defmacro one-at-a-time-please
   "We only allow one action against an application in an environment at a time."
   [application environment & body]
-  (if (can-deploy? application environment)
+  `(if (can-deploy? ~application ~environment)
     (try
-      (register-deployment application environment)
+      (register-deployment ~application ~environment)
       (do ~@body)
       (finally
-        (unregister-deployment application environment)))
-    (response (str "An action for " application " in " environment " is already underway") "text/plain" 409)))
+        (unregister-deployment ~application ~environment)))
+    (response (str "An action for " ~application " in " ~environment " is already underway") "text/plain" 409)))
 
 (defroutes routes
   "The RESTful routes we provide."
