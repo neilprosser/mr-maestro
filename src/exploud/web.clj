@@ -144,7 +144,7 @@
         []
         (if @locked?
           (response "Exploud is currently locked." "text/plain")
-          (response "Exploud is currently unlocked." "text/plain")))
+          (response "Exploud is currently unlocked." "text/plain" 404)))
 
    (POST "/lock"
          []
