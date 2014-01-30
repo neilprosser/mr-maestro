@@ -45,7 +45,7 @@
   :plugins [[lein-cloverage "1.0.2"]
             [lein-embongo "0.2.1"]
             [lein-marginalia "0.7.1"]
-            [lein-ring "0.8.8"]
+            [lein-ring "0.8.10"]
             [lein-environ "0.4.0"]
             [lein-release "1.0.73"]]
 
