@@ -55,9 +55,7 @@
     (when (seq (env :service-smtp-host))
       (let [host (env :service-smtp-host)
             from (env :service-mail-from)]
-        (mail/send-message {:host host}
-                           {:from from
-                            :to (env :service-mail-to)
-                            :subject (build-message-title deployment)
-                            :body [{:type "text/html; charset=\"UTF-8\""
-                                    :content (build-message-body deployment)}]})))))
+        (mail/send-message {:host host} {:from from
+                                         :to (env :service-mail-to)
+                                         :subject (build-message-title deployment)
+                                         :body [{:type "text/html; charset=\"UTF-8\"" :content (build-message-body deployment)}]})))))

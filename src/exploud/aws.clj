@@ -54,8 +54,7 @@
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."
   [environment]
   (if-not (use-current-role? environment)
-    (:credentials (sts/assume-role {:role-arn role-arn
-                                    :role-session-name "exploud"}))))
+    (:credentials (sts/assume-role {:role-arn role-arn :role-session-name "exploud"}))))
 
 (defn account-id
   "Get the account ID we should use for an environment. We'll default to whatever `:poke` uses in the event of not knowing."
@@ -75,14 +74,12 @@
 (defn asg-created-message
   "Create the message describing the creation of an ASG."
   [asg-name]
-  {:Message (json/generate-string {:Event "autoscaling:ASG_LAUNCH"
-                                   :AutoScalingGroupName asg-name})})
+  {:Message (json/generate-string {:Event "autoscaling:ASG_LAUNCH" :AutoScalingGroupName asg-name})})
 
 (defn asg-deleted-message
   "Create the message describing the deletion of an ASG."
   [asg-name]
-  {:Message (json/generate-string {:Event "autoscaling:ASG_TERMINATE"
-                                   :AutoScalingGroupName asg-name})})
+  {:Message (json/generate-string {:Event "autoscaling:ASG_TERMINATE" :AutoScalingGroupName asg-name})})
 
 (defn create-tags-on-asg-and-instances
   "Creates tags on an ASG and sets them to propagate at launch. Also creates tags on all instances in that ASG."
@@ -121,8 +118,7 @@
 (defn asg-deleted
   "Perform AWS-related events that should occur when an ASG has been deleted."
   [region environment asg-name]
-  (let [config (merge (alternative-credentials-if-necessary environment)
-                      {:endpoint region})]
+  (let [config (merge (alternative-credentials-if-necessary environment) {:endpoint region})]
     (sqs/send-message config
                       :queue-url (announcement-queue-url region environment)
                       :delay-seconds 0

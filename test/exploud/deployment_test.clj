@@ -215,6 +215,8 @@
       (provided
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-4-2011-12-09_08-12-00"}}
+       (onix/application "app")
+       => {}
        (tyr/application-properties ..env.. "app" ..hash..)
        =throws=> (Exception.)))
 

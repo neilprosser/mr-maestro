@@ -25,10 +25,7 @@
 
    Accepts a map `extras` which will be merged with the generated map."
   [action & [extras]]
-  (merge extras
-         {:id (util/generate-id)
-          :action action
-          :status "pending"}))
+  (merge extras {:id (util/generate-id) :action action :status "pending"}))
 
 (defn create-standard-deployment-tasks
   "Creates a standard deployment using the following actions:
@@ -136,8 +133,7 @@
 ;; Pre-hook attached to `wait-for-instance-health?` to log parameters.
 (with-pre-hook! #'wait-for-instance-health?
   (fn [{:keys [parameters]} app-properties]
-    (log/debug "Working out whether we should wait for instance health of"
-               parameters "and" app-properties)))
+    (log/debug "Working out whether we should wait for instance health of" parameters "and" app-properties)))
 
 (defn check-elb-health?
   "If the `:parameters` of `deployment` have both a `selectedLoadBalancers`
@@ -150,8 +146,7 @@
 ;; Pre-hook attached to `check-elb-health?` to log parameters.
 (with-pre-hook! #'check-elb-health?
   (fn [{:keys [parameters]}]
-    (log/debug "Working out whether we should check ELB health of"
-               parameters)))
+    (log/debug "Working out whether we should check ELB health of" parameters)))
 
 (defn new-asg-name-key
   "The key we should use to find the name of the ASG we need to be creating/enabling.
@@ -184,73 +179,49 @@
 (defmethod start-task*
   :create-asg
   [deployment task]
-  (asgard/create-auto-scaling-group (assoc deployment
-                                      :task task
-                                      :completed-fn task-finished
-                                      :timed-out-fn task-timed-out)))
+  (asgard/create-auto-scaling-group (assoc deployment :task task :completed-fn task-finished :timed-out-fn task-timed-out)))
 
 (defmethod start-task*
   :wait-for-instance-health
   [{:keys [application environment hash region] deployment-id :id :as deployment} task]
-  (let [app-properties (tyr/application-properties
-                            environment application hash)]
+  (let [app-properties (tyr/application-properties environment application hash)]
     (if (wait-for-instance-health? deployment app-properties)
       (let [port (:service.port app-properties 8080)
             healthcheck (:service.healthcheck.path app-properties "/healthcheck")]
-        (health/wait-until-asg-healthy
-         environment
-         region
-         (get-in deployment [:parameters (new-asg-name-key task)])
-         (or (get-in deployment [:parameters :min]) asgard/default-minimum)
-         port healthcheck deployment-id task
-         task-finished task-timed-out))
-      (let [task (assoc (util/append-to-task-log "Skipping instance healthcheck" task)
-                   :status "skipped")]
+        (health/wait-until-asg-healthy environment region (get-in deployment [:parameters (new-asg-name-key task)]) (or (get-in deployment [:parameters :min]) asgard/default-minimum) port healthcheck deployment-id task task-finished task-timed-out))
+      (let [task (assoc (util/append-to-task-log "Skipping instance healthcheck" task) :status "skipped")]
         (task-finished deployment-id task)))))
 
 (defmethod start-task*
   :enable-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
-  (asgard/enable-asg environment region
-                     (get-in deployment [:parameters (new-asg-name-key task)])
-                     deployment-id task task-finished task-timed-out))
+  (asgard/enable-asg environment region (get-in deployment [:parameters (new-asg-name-key task)]) deployment-id task task-finished task-timed-out))
 
 (defmethod start-task*
   :wait-for-elb-health
   [{:keys [environment region] deployment-id :id :as deployment} task]
   (if (check-elb-health? deployment)
-    (let [elb-names (util/list-from
-                     (get-in deployment
-                             [:parameters :selectedLoadBalancers]))
-          asg-name (get-in deployment
-                           [:parameters (new-asg-name-key task)])]
-      (health/wait-until-elb-healthy environment region elb-names asg-name
-                                     deployment-id task task-finished
-                                     task-timed-out))
-    (let [task (assoc (util/append-to-task-log "Skipping ELB healthcheck" task)
-                 :status "skipped")]
+    (let [elb-names (util/list-from (get-in deployment [:parameters :selectedLoadBalancers]))
+          asg-name (get-in deployment [:parameters (new-asg-name-key task)])]
+      (health/wait-until-elb-healthy environment region elb-names asg-name deployment-id task task-finished task-timed-out))
+    (let [task (assoc (util/append-to-task-log "Skipping ELB healthcheck" task) :status "skipped")]
       (task-finished deployment-id task))))
 
 (defmethod start-task*
   :disable-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
-  (if-let [asg (get-in deployment [:parameters
-                                   (old-asg-name-key task)])]
-    (asgard/disable-asg environment region asg deployment-id task
-                        task-finished task-timed-out)
-    (let [task (assoc (util/append-to-task-log "No old ASG to disable" task)
-                 :status "skipped")]
+  (if-let [asg (get-in deployment [:parameters (old-asg-name-key task)])]
+    (asgard/disable-asg environment region asg deployment-id task task-finished task-timed-out)
+    (let [task (assoc (util/append-to-task-log "No old ASG to disable" task) :status "skipped")]
       (task-finished deployment-id task))))
 
 (defmethod start-task*
   :delete-asg
   [{:keys [environment region] deployment-id :id :as deployment} task]
-  (if-let [asg (get-in deployment [:parameters
-                                   (old-asg-name-key task)])]
+  (if-let [asg (get-in deployment [:parameters (old-asg-name-key task)])]
     (asgard/delete-asg
      environment region asg deployment-id task task-finished task-timed-out)
-    (let [task (assoc (util/append-to-task-log "No old ASG to delete" task)
-                 :status "skipped")]
+    (let [task (assoc (util/append-to-task-log "No old ASG to delete" task) :status "skipped")]
       (task-finished deployment-id task))))
 
 (defn start-task
@@ -326,9 +297,7 @@
   "Function called when a task has timed-out. Deals with the repercussions of
    that."
   [deployment-id task]
-  (store/store-task deployment-id (assoc task
-                                    :end (time/now)
-                                    :status "failed"))
+  (store/store-task deployment-id (assoc task :end (time/now) :status "failed"))
   nil)
 
 ;; Pre-hook attached to `task-timed-out` to log parameters.
@@ -347,11 +316,7 @@
     (tyr/launch-data environment application hash)
     (catch Exception e
       (log/error e "Failure checking Tyranitar files")
-      (throw (ex-info "One or more Tyranitar files are invalid" {:type ::invalid-file
-                                                                 :application application
-                                                                 :environment environment
-                                                                 :hash hash
-                                                                 :message (.getMessage e)})))))
+      (throw (ex-info "One or more Tyranitar files are invalid" {:type ::invalid-file :application application :environment environment :hash hash :message (.getMessage e)})))))
 
 (defn prepare-deployment
   "Prepares a deployment of the `application` in an `environment` within the
@@ -369,20 +334,9 @@
         {:keys [version]} (util/ami-details (get-in image [:image :name]))
         parameters (tyr/deployment-params environment application hash)
         tasks (create-standard-deployment-tasks)
-        deployment {:ami ami
-                    :application application
-                    :contact (get-in onix [:metadata :contact])
-                    :created (time/now)
-                    :environment environment
-                    :hash hash
-                    :id (util/generate-id)
-                    :message message
-                    :nagios (get-in onix [:metadata :nagios])
-                    :parameters parameters
-                    :region region
-                    :tasks tasks
-                    :user user
-                    :version version}]
+        deployment {:ami ami :application application :contact (get-in onix [:metadata :contact]) :created (time/now)
+                    :environment environment :hash hash :id (util/generate-id) :message message :nagios (get-in onix [:metadata :nagios])
+                    :parameters parameters :region region :tasks tasks :user user :version version}]
     (store/store-deployment deployment)
     deployment))
 
@@ -400,10 +354,7 @@
 (with-handler! #'prepare-deployment
   {:precondition :ami-name-matches}
   (fn [e region application _ _ ami _ _]
-    (throw (ex-info "Image does not match application" {:type ::mismatched-image
-                                                        :region region
-                                                        :application application
-                                                        :ami ami}))))
+    (throw (ex-info "Image does not match application" {:type ::mismatched-image :region region :application application :ami ami}))))
 
 (defn prepare-rollback
   "Prepares a rollback of the `application` in an `environment` within the
@@ -413,17 +364,10 @@
 
    Will return the newly-created deployment."
   [region application environment user message]
-  (if-let [penultimate (first (store/get-completed-deployments {:application application
-                                                                :environment environment
-                                                                :size 1
-                                                                :from 1}))]
+  (if-let [penultimate (first (store/get-completed-deployments {:application application :environment environment :size 1 :from 1}))]
     (let [{:keys [ami hash]} penultimate]
       (prepare-deployment region application environment user ami hash message))
-    (throw (ex-info "No penultimate completed deployment to rollback to"
-                    {:type ::no-rollback
-                     :region region
-                     :application application
-                     :environment environment}))))
+    (throw (ex-info "No penultimate completed deployment to rollback to" {:type ::no-rollback :region region :application application :environment environment}))))
 
 (defn prepare-undo
   "Takes a deployment and edits the list of tasks to reverse tasks that have been started.

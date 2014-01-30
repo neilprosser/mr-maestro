@@ -15,9 +15,7 @@
   "The information about a particular application."
   [environment region application-name]
   (if-let [full-application (asgard/application environment region application-name)]
-    (merge {:name application-name}
-           (select-keys (:app full-application)
-                        [:description :email :owner]))))
+    (merge {:name application-name} (select-keys (:app full-application) [:description :email :owner]))))
 
 (defn upsert-application
   "Upserts an application into Onix, Tyranitar, Shuppet and Asgard. This function

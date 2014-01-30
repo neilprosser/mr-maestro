@@ -46,28 +46,24 @@
   "Takes a comma-separated list of `host:port` pairs and breaks them up into
    Mongo server addresses."
   [comma-sep-hosts]
-  (map (fn [[h p]] (mc/server-address h (Integer/parseInt p)))
-       (map #(cs/split % #":") (cs/split comma-sep-hosts #","))))
+  (map (fn [[h p]] (mc/server-address h (Integer/parseInt p))) (map #(cs/split % #":") (cs/split comma-sep-hosts #","))))
 
 (defn configure-joda
   "Configures Joda Time to use UTC as the default timezone (in case someone
    hasn't included it in the JVM args."
   []
-  (json/add-encoder org.joda.time.DateTime
-                    (fn [dt jg] (.writeString jg (str dt))))
+  (json/add-encoder org.joda.time.DateTime (fn [dt jg] (.writeString jg (str dt))))
   (DateTimeZone/setDefault DateTimeZone/UTC))
 
 (defn configure-mongo-conn-pool
   "Configures the Mongo connection pool."
   []
-  (let [^MongoOptions opts
-        (mc/mongo-options
-         :threads-allowed-to-block-for-connection-multiplier 10
-         :connections-per-host (Integer/parseInt (env :mongo-connections-max))
-         :max-wait-time 120000
-         :connect-timeout 30000
-         :socket-timeout 10000
-         :socket-keep-alive false)
+  (let [^MongoOptions opts (mc/mongo-options :threads-allowed-to-block-for-connection-multiplier 10
+                                             :connections-per-host (Integer/parseInt (env :mongo-connections-max))
+                                             :max-wait-time 120000
+                                             :connect-timeout 30000
+                                             :socket-timeout 10000
+                                             :socket-keep-alive false)
         sa (build-server-addresses (env :mongo-hosts))]
     (mc/connect! sa opts)))
 
@@ -85,11 +81,9 @@
 (defn start-graphite-reporting
   "Starts Graphite reporting."
   []
-  (let [graphite-prefix (new GraphiteName
-                             (into-array Object
-                                         [(env :environment-name)
-                                          (env :service-name)
-                                          (HostnameFactory/getHostname)]))]
+  (let [graphite-prefix (new GraphiteName (into-array Object [(env :environment-name)
+                                                              (env :service-name)
+                                                              (HostnameFactory/getHostname)]))]
     (GraphiteReporterFactory/create
      (env :environment-entertainment-graphite-host)
      (Integer/parseInt (env :environment-entertainment-graphite-port))
@@ -107,15 +101,12 @@
   (doseq [deployment (store/deployments-with-incomplete-tasks)]
     (let [{:keys [id tasks]} deployment]
       (doseq [task tasks]
-        (asgard/track-until-completed id task (* 1 60 60)
-                                      deployment/task-finished
-                                      deployment/task-timed-out)))))
+        (asgard/track-until-completed id task (* 1 60 60) deployment/task-finished deployment/task-timed-out)))))
 
 (def version
   "Gets the version of the application from the project properties."
   (delay
-   (if-let [path (.getResource (ClassLoader/getSystemClassLoader)
-                               "META-INF/maven/exploud/exploud/pom.properties")]
+   (if-let [path (.getResource (ClassLoader/getSystemClassLoader) "META-INF/maven/exploud/exploud/pom.properties")]
      ((read-file-to-properties path) "version")
      "localhost")))
 
@@ -140,10 +131,8 @@
   []
   (run-jetty #'web/app {:port (Integer. (env :service-port))
                         :join? false
-                        :stacktraces? (not (Boolean/valueOf
-                                            (env :service-production)))
-                        :auto-reload? (not (Boolean/valueOf
-                                            (env :service-production)))}))
+                        :stacktraces? (not (Boolean/valueOf (env :service-production)))
+                        :auto-reload? (not (Boolean/valueOf (env :service-production)))}))
 
 (defn start
   "Sets up our application and starts the server."

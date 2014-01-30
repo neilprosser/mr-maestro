@@ -33,8 +33,7 @@
   "Creates the URL where we can find the content of a particular file for an
    application and environment combination."
   [environment application-name commit-hash file-name]
-  (str tyranitar-url "/1.x/applications/" environment "/"
-       application-name "/" commit-hash "/" file-name))
+  (str tyranitar-url "/1.x/applications/" environment "/" application-name "/" commit-hash "/" file-name))
 
 (defn- commits-url
   "Creates the URL where we can find the commits for an application in an
@@ -54,29 +53,25 @@
         {:keys [body status] :as response} (http/simple-get url {:socket-timeout get-timeout})]
     (if (= status 200)
       (json/parse-string body true)
-      (throw (ex-info "Unexpected response" {:type ::unexpected-response
-                                             :response response})))))
+      (throw (ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
 
 (defn application-properties
   "Gets the application properties for an application and environment with a
    particular commit hash."
   [environment application-name commit-hash]
-  (:data (get-file-content environment application-name commit-hash
-                           "application-properties")))
+  (:data (get-file-content environment application-name commit-hash "application-properties")))
 
 (defn deployment-params
   "Gets the deployment parameters for an application and environment with a
    particular commit hash."
   [environment application-name commit-hash]
-  (:data (get-file-content environment application-name commit-hash
-                           "deployment-params")))
+  (:data (get-file-content environment application-name commit-hash "deployment-params")))
 
 (defn launch-data
   "Gets the launch data for an application and environment with a particular
    commit hash."
   [environment application-name commit-hash]
-  (:data (get-file-content environment application-name commit-hash
-                           "launch-data")))
+  (:data (get-file-content environment application-name commit-hash "launch-data")))
 
 (defn commits
   "Gets the list of commits for an application and environment."
@@ -101,8 +96,7 @@
         {:keys [body status] :as response} raw-response]
     (if (= status 201)
       (json/parse-string body true)
-      (throw ( ex-info "Unexpected response" {:type ::unexpected-response
-                                              :response response})))))
+      (throw ( ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
 
 (defn application
   "Gets the information about the environments for which we have the properties
@@ -111,8 +105,7 @@
   [application-name]
   (let [{:keys [body status]} (http/simple-get (applications-url) {:socket-timeout get-timeout})]
     (if (= status 200)
-      ((keyword application-name)
-       (:applications (json/parse-string body true))))))
+      ((keyword application-name) (:applications (json/parse-string body true))))))
 
 (defn upsert-application
   "Checks whether an application exists and creates it if it doesn't exist.

@@ -60,11 +60,8 @@
    health."
   [environment region asg-name min-instances port healthcheck-path deployment-id task
    completed-fn timed-out-fn polls & [delay]]
-  (let [f #(check-asg-health environment region asg-name min-instances port healthcheck-path
-                             deployment-id task completed-fn timed-out-fn
-                             polls)]
-    (at-at/after (or delay 5000) f tasks/pool
-                 :desc (str "asg-healthcheck-" deployment-id))))
+  (let [f #(check-asg-health environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn polls)]
+    (at-at/after (or delay 5000) f tasks/pool :desc (str "asg-healthcheck-" deployment-id))))
 
 (defn check-asg-health
   "If `asg-name` is healthy call `completed-fn` otherwise reschedule until
@@ -72,20 +69,15 @@
   [environment region asg-name min-instances port healthcheck-path deployment-id task
    completed-fn timed-out-fn polls]
   (try
-    (let [healthy? (asg-healthy? environment region asg-name min-instances port
-                                 healthcheck-path)
-          message (str "Checking healthcheck on port " port " and path /"
-                       (util/strip-first-forward-slash healthcheck-path) ".")
-          updated-task (assoc (util/append-to-task-log message task)
-                         :status "running")]
+    (let [healthy? (asg-healthy? environment region asg-name min-instances port healthcheck-path)
+          message (str "Checking healthcheck on port " port " and path /" (util/strip-first-forward-slash healthcheck-path) ".")
+          updated-task (assoc (util/append-to-task-log message task) :status "running")]
       (store/store-task deployment-id updated-task)
       (if healthy?
         (completed-fn deployment-id (assoc updated-task :status "completed"))
         (if (zero? polls)
           (timed-out-fn deployment-id updated-task)
-          (schedule-asg-check environment region asg-name min-instances port
-                                  healthcheck-path deployment-id updated-task
-                                  completed-fn timed-out-fn (dec polls)))))
+          (schedule-asg-check environment region asg-name min-instances port healthcheck-path deployment-id updated-task completed-fn timed-out-fn (dec polls)))))
     (catch Exception e
       (do
         (log/error e "Caught exception while checking ASG health")
@@ -96,25 +88,14 @@
    done `poll-count` checks."
   [environment region asg-name min-instances port healthcheck-path deployment-id task
    completed-fn timed-out-fn]
-  (schedule-asg-check environment region asg-name min-instances port healthcheck-path
-                      deployment-id task completed-fn timed-out-fn poll-count
-                      100))
+  (schedule-asg-check environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn poll-count 100))
 
 ;; Pre-hook attached to `wait-until-asg-healthy` to log parameters.
 (with-pre-hook! #'wait-until-asg-healthy
-  (fn [environment region asg-name min-instances port healthcheck-path deployment-id task
-      completed-fn timed-out-fn]
-    (log/debug "Waiting until ASG healthy with parameters"
-               {:environment environment
-                :region region
-                :asg-name asg-name
-                :min-instances min-instances
-                :port port
-                :healthcheck-path healthcheck-path
-                :deployment-id deployment-id
-                :task task
-                :completed-fn completed-fn
-                :timed-out-fn timed-out-fn})))
+  (fn [environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn]
+    (log/debug "Waiting until ASG healthy with parameters" {:environment environment :region region :asg-name asg-name :min-instances min-instances
+                                                            :port port :healthcheck-path healthcheck-path :deployment-id deployment-id :task task
+                                                            :completed-fn completed-fn :timed-out-fn timed-out-fn})))
 
 ;; # Concerning the checking of ELBs
 
@@ -134,10 +115,8 @@
    health of all `elb-names`."
   [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls
    & [delay]]
-  (let [f #(check-elb-health environment region elb-names asg-name deployment-id task
-                             completed-fn timed-out-fn polls)]
-    (at-at/after (or delay 5000) f tasks/pool
-                 :desc (str "elb-healthcheck-" deployment-id))))
+  (let [f #(check-elb-health environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls)]
+    (at-at/after (or delay 5000) f tasks/pool :desc (str "elb-healthcheck-" deployment-id))))
 
 (defn check-elb-health
   "This check will look at the members of each ELB which belong to the ASG. If
@@ -148,18 +127,13 @@
       (if-let [elb-name (first elb-names)]
         (let [healthy? (elb-healthy? environment region elb-name asg-name)
               message (str "Checking ELB (" elb-name ") health.")
-              updated-task (assoc (util/append-to-task-log message task)
-                             :status "running")]
+              updated-task (assoc (util/append-to-task-log message task) :status "running")]
           (store/store-task deployment-id updated-task)
           (if healthy?
-            (schedule-elb-check environment region (rest elb-names) asg-name deployment-id
-                                updated-task completed-fn timed-out-fn
-                                (dec polls))
+            (schedule-elb-check environment region (rest elb-names) asg-name deployment-id updated-task completed-fn timed-out-fn (dec polls))
             (if (zero? polls)
              (timed-out-fn deployment-id updated-task)
-             (schedule-elb-check environment region elb-names asg-name deployment-id
-                                 updated-task completed-fn timed-out-fn
-                                 (dec polls)))))
+             (schedule-elb-check environment region elb-names asg-name deployment-id updated-task completed-fn timed-out-fn (dec polls)))))
         (completed-fn deployment-id (assoc task :status "completed"))))
     (catch Exception e
       (do
@@ -170,18 +144,10 @@
   "Polls every 5 seconds until `elb-healthy?` comes back `true` for all ELBs or
    until we've done `poll-count` checks."
   [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn]
-  (schedule-elb-check environment region elb-names asg-name deployment-id task completed-fn
-                      timed-out-fn poll-count))
+  (schedule-elb-check environment region elb-names asg-name deployment-id task completed-fn timed-out-fn poll-count))
 
 ;; Pre-hook attached to `wait-until-elb-healthy` to log parameters.
 (with-pre-hook! #'wait-until-elb-healthy
   (fn [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn]
-    (log/debug "Waiting until ELB healthy with parameters"
-               {:environment environment
-                :region region
-                :elb-names elb-names
-                :asg-name asg-name
-                :deployment-id deployment-id
-                :task task
-                :completed-fn completed-fn
-                :timed-out-fn timed-out-fn})))
+    (log/debug "Waiting until ELB healthy with parameters" {:environment environment :region region :elb-names elb-names :asg-name asg-name
+                                                            :deployment-id deployment-id :task task :completed-fn completed-fn :timed-out-fn timed-out-fn})))

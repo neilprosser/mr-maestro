@@ -378,10 +378,7 @@
 (defn application
   "Retrieves information about an application from Asgard."
   [environment region application-name]
-  (let [{:keys [status body]} (http/simple-get (application-url
-                                                environment
-                                                region
-                                                application-name))]
+  (let [{:keys [status body]} (http/simple-get (application-url environment region application-name))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -395,20 +392,14 @@
 (defn auto-scaling-group
   "Retrieves information about an Auto Scaling Group from Asgard."
   [environment region asg-name]
-  (let [{:keys [status body]} (http/simple-get (auto-scaling-group-url
-                                                environment
-                                                region
-                                                asg-name))]
+  (let [{:keys [status body]} (http/simple-get (auto-scaling-group-url environment region asg-name))]
     (when (= status 200)
       (json/parse-string body true))))
 
 (defn cluster
   "Retrieves information about a Cluster from Asgard."
   [environment region cluster-name]
-  (let [{:keys [status body]} (http/simple-get (cluster-url
-                                                environment
-                                                region
-                                                cluster-name))]
+  (let [{:keys [status body]} (http/simple-get (cluster-url environment region cluster-name))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -423,8 +414,7 @@
 (defn instance
   "Retrieves information about an instance, or `nil` if it doesn't exist."
   [environment region instance-id]
-  (let [{:keys [body status]} (http/simple-get (instance-url
-                                                environment region instance-id))]
+  (let [{:keys [body status]} (http/simple-get (instance-url environment region instance-id))]
     (when (= status 200)
       (json/parse-string body true))))
 
@@ -471,16 +461,14 @@
 (defn load-balancer
   "Retrieves information about a load-balancer."
   [environment region elb-name]
-  (let [{:keys [body status]} (http/simple-get (load-balancer-url
-                                                environment region elb-name))]
+  (let [{:keys [body status]} (http/simple-get (load-balancer-url environment region elb-name))]
     (when (= status 200)
       (json/parse-string body true))))
 
 (defn security-groups
   "Retrieves all security groups within a particular region."
   [environment region]
-  (let [{:keys [body status]} (http/simple-get (security-groups-list-url
-                                                environment region))]
+  (let [{:keys [body status]} (http/simple-get (security-groups-list-url environment region))]
     (when (= status 200)
       (:securityGroups (json/parse-string body true)))))
 
@@ -488,8 +476,8 @@
   "Retrieves a list of stacks from a specific Asgard."
   [environment region]
   (let [{:keys [body status]} (http/simple-get (stacks-url environment region))]
-                          (when (= status 200)
-                            (:allStackNames (json/parse-string body true)))))
+    (when (= status 200)
+      (:allStackNames (json/parse-string body true)))))
 
 (defn stacks
   "Retrieves a list of stacks from all Asgards."
@@ -521,16 +509,15 @@
    replace an already existing application or create a new one."
   [application-name {:keys [description email owner]}]
   (doseq [environment [:poke :prod]]
-    (http/simple-post (upsert-application-url environment)
-                      {:form-params {:description description
-                                     :email email
-                                     :monitorBucketType "application"
-                                     :name application-name
-                                     :owner owner
-                                     :ticket ""
-                                     :type "Web Service"
-                                     :_action_update ""}
-                       :follow-redirects false})))
+    (http/simple-post (upsert-application-url environment) {:form-params {:description description
+                                                                          :email email
+                                                                          :monitorBucketType "application"
+                                                                          :name application-name
+                                                                          :owner owner
+                                                                          :ticket ""
+                                                                          :type "Web Service"
+                                                                          :_action_update ""}
+                                                            :follow-redirects false})))
 
 ;; # Concerning parameter transformation
 
@@ -547,9 +534,7 @@
   (if (and (:subnetPurpose parameters)
            (:selectedLoadBalancers parameters))
     (let [vpc-id (vpc-id-for-environment environment)]
-      (set/rename-keys parameters
-                       {:selectedLoadBalancers
-                        (keyword (str "selectedLoadBalancersForVpcId" vpc-id))}))
+      (set/rename-keys parameters {:selectedLoadBalancers (keyword (str "selectedLoadBalancersForVpcId" vpc-id))}))
     parameters))
 
 (defn is-security-group-id?
@@ -561,14 +546,9 @@
   "Gets the ID of a security group with the given name in a particular region."
   [security-group environment region]
   (let [security-groups (security-groups environment region)]
-    (if-let [found-group (first (filter (fn [sg] (= security-group
-                                                   (:groupName sg)))
-                                        security-groups))]
+    (if-let [found-group (first (filter (fn [sg] (= security-group (:groupName sg))) security-groups))]
       (:groupId found-group)
-      (throw (ex-info (str "Unknown security group name: " security-group)
-                      {:type ::unknown-security-group
-                       :name security-group
-                       :region region})))))
+      (throw (ex-info (str "Unknown security group name: " security-group) {:type ::unknown-security-group :name security-group :region region})))))
 
 (defn replace-security-group-name
   "If `security-group` looks like it's a security name, it'll be switched with
@@ -584,11 +564,8 @@
    with their IDs (since we can't use security group names in a VPC)."
   [parameters environment region]
   (if (:subnetPurpose parameters)
-    (if-let [security-group-names (util/list-from
-                                   (:selectedSecurityGroups parameters))]
-      (let [security-group-ids (map (fn [sg]
-                                      (replace-security-group-name environment region sg))
-                                    security-group-names)]
+    (if-let [security-group-names (util/list-from (:selectedSecurityGroups parameters))]
+      (let [security-group-ids (map (fn [sg] (replace-security-group-name environment region sg)) security-group-names)]
         (assoc parameters :selectedSecurityGroups security-group-ids))
       parameters)
     parameters))
@@ -598,8 +575,7 @@
    `exploud-healthcheck` security group. This group will be used to allow
    exploud to talk to the box and check its healthcheck."
   [parameters environment region]
-  (let [exploud-group-id (replace-security-group-name environment region
-                                                      "exploud-healthcheck")]
+  (let [exploud-group-id (replace-security-group-name environment region "exploud-healthcheck")]
     (if-let [groups (:selectedSecurityGroups parameters)]
       (assoc parameters :selectedSecurityGroups (conj groups exploud-group-id))
       (assoc parameters :selectedSecurityGroups (vector exploud-group-id)))))
@@ -609,8 +585,7 @@
    `nrpe` security group. This group will be used to allow Nagios to monitor
    instances."
   [parameters environment region]
-  (let [nrpe-group-id (replace-security-group-name environment region
-                                                   "nrpe")]
+  (let [nrpe-group-id (replace-security-group-name environment region "nrpe")]
     (if-let [groups (:selectedSecurityGroups parameters)]
       (assoc parameters :selectedSecurityGroups (conj groups nrpe-group-id))
       (assoc parameters :selectedSecurityGroups (vector nrpe-group-id)))))
@@ -623,8 +598,7 @@
   [parameters region]
   (if-let [zones (:selectedZones parameters)]
     (let [full-zones (map (fn [z] (str region z)) (util/list-from zones))]
-      (assoc parameters :selectedZones full-zones))
-    parameters))
+      (assoc parameters :selectedZones full-zones)) parameters))
 
 (defn prepare-parameters
   "Prepares Asgard parameters by running them through a series of
@@ -666,17 +640,12 @@
   "After a 1s delay, tracks the task by saving its content to the task store
    until it is completed (as indicated by `finished?`) or `count` reaches 0."
   [ticket-id {:keys [url] :as task} count completed-fn timed-out-fn]
-  (at-at/after 1000 #(track-task ticket-id task count completed-fn timed-out-fn)
-               tasks/pool :desc (str "task-" url)))
+  (at-at/after 1000 #(track-task ticket-id task count completed-fn timed-out-fn) tasks/pool :desc (str "task-" url)))
 
 ;; Pre-hook attached to `track-until-completed` to log the parameters.
 (with-pre-hook! #'track-until-completed
   (fn [ticket-id task count completed-fn timed-out-fn]
-    (log/debug "Scheduling tracking for" {:ticket-id ticket-id
-                                          :task task
-                                          :count count
-                                          :completed-fn completed-fn
-                                          :timed-out-fn timed-out-fn})))
+    (log/debug "Scheduling tracking for" {:ticket-id ticket-id :task task :count count :completed-fn completed-fn :timed-out-fn timed-out-fn})))
 
 (defn track-task
   "Grabs the task by its URL and updates its details in the store. If it's not
@@ -688,8 +657,7 @@
         (store/store-task ticket-id task)
         (cond (finished? asgard-task) (completed-fn ticket-id task)
               (zero? count) (timed-out-fn ticket-id task)
-              :else (track-until-completed ticket-id task (dec count)
-                                           completed-fn timed-out-fn)))
+              :else (track-until-completed ticket-id task (dec count) completed-fn timed-out-fn)))
       (throw (ex-info (str "No task found for URL: " url) {:type ::task-missing :url url})))
     (catch Exception e
       (do
@@ -699,11 +667,7 @@
 ;; Pre-hook attached to `track-task` to log the parameters.
 (with-pre-hook! #'track-task
   (fn [ticket-id task count completed-fn timed-out-fn]
-    (log/debug "Tracking" {:ticket-id ticket-id
-                           :task task
-                           :count count
-                           :completed-fn completed-fn
-                           :timed-out-fn timed-out-fn})))
+    (log/debug "Tracking" {:ticket-id ticket-id :task task :count count :completed-fn completed-fn :timed-out-fn timed-out-fn})))
 
 ;; Handler for recovering from failure while tracking a task. In the event of an
 ;; exception marked with a `:class` of `:http` or `:store` we'll reschedule.
@@ -713,8 +677,7 @@
     (let [data (.getData e)]
       (if (or (= (:class data) :http)
               (= (:class data) :store))
-        (track-until-completed ticket-id task (dec count)
-                               completed-fn timed-out-fn)
+        (track-until-completed ticket-id task (dec count) completed-fn timed-out-fn)
         (throw e)))))
 
 ;; # Concerning deleting ASGs
@@ -725,22 +688,11 @@
    assume that a non-explosive call has been successful and the task is being
    tracked."
   [environment region asg-name ticket-id task completed-fn timed-out-fn]
-  (let [parameters {:_action_delete ""
-                    :name asg-name
-                    :ticket ticket-id}
-        {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url environment region)
-                                               {:form-params (explode-parameters
-                                                              parameters)})]
+  (let [parameters {:_action_delete "" :name asg-name :ticket ticket-id}
+        {:keys [status headers] :as response} (http/simple-post (cluster-index-url environment region) {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id
-                             (merge task {:url
-                                          (str (get headers "location") ".json")
-                                          :asgardParameters parameters})
-                             task-track-count completed-fn timed-out-fn)
-      (throw (ex-info (str "Unexpected status while deleting ASG: " status)
-                      {:type ::unexpected-response
-                       :response response})))))
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json") :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
+      (throw (ex-info (str "Unexpected status while deleting ASG: " status) {:type ::unexpected-response :response response})))))
 
 ;; Precondition attached to `delete-asg` asserting that the ASG we're
 ;; attempting to delete exists.
@@ -752,9 +704,7 @@
 ;; Handler for a missing ASG attached to `delete-asg`.
 (with-handler! #'delete-asg
   {:precondition :asg-exists}
-  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                 {:type ::missing-asg
-                                  :args args}))))
+  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist." {:type ::missing-asg :args args}))))
 
 ;; # Concerning resizing ASGs
 
@@ -764,23 +714,11 @@
    assume that a non-explosive call has been successful and the task is being
    tracked."
   [environment region asg-name ticket-id task new-size completed-fn timed-out-fn]
-  (let [parameters {:_action_resize ""
-                    :minAndMaxSize new-size
-                    :name asg-name
-                    :ticket ticket-id}
-        {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url environment region)
-                                               {:form-params (explode-parameters
-                                                              parameters)})]
+  (let [parameters {:_action_resize "" :minAndMaxSize new-size :name asg-name :ticket ticket-id}
+        {:keys [status headers] :as response} (http/simple-post (cluster-index-url environment region) {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id
-                             (merge task {:url
-                                          (str (get headers "location") ".json")
-                                          :asgardParameters parameters})
-                             task-track-count completed-fn timed-out-fn)
-      (throw (ex-info (str "Unexpected status while resizing ASG: " status)
-                      {:type ::unexpected-response
-                       :response response})))))
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json") :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
+      (throw (ex-info (str "Unexpected status while resizing ASG: " status) {:type ::unexpected-response :response response})))))
 
 ;; Precondition attached to `resize-asg` asserting that the ASG we're attempting
 ;; to resize exists.
@@ -792,9 +730,7 @@
 ;; Handler for a missing ASG attached to `resize-asg`.
 (with-handler! #'resize-asg
   {:precondition :asg-exists}
-  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                 {:type ::missing-asg
-                                  :args args}))))
+  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist." {:type ::missing-asg :args args}))))
 
 ;; # Concerning enabling traffic for ASGs
 
@@ -804,22 +740,11 @@
    can assume that a non-explosive call has been successful and the task is
    being tracked."
   [environment region asg-name ticket-id task completed-fn timed-out-fn]
-  (let [parameters {:_action_activate ""
-                    :name asg-name
-                    :ticket ticket-id}
-        {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url environment region)
-                                               {:form-params (explode-parameters
-                                                              parameters)})]
+  (let [parameters {:_action_activate "" :name asg-name :ticket ticket-id}
+        {:keys [status headers] :as response} (http/simple-post (cluster-index-url environment region) {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id
-                             (merge task {:url
-                                          (str (get headers "location") ".json")
-                                          :asgardParameters parameters})
-                             task-track-count completed-fn timed-out-fn)
-      (throw (ex-info (str "Unexpected status while enabling ASG: " status)
-                      {:type ::unexpected-response
-                       :response response})))))
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json") :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
+      (throw (ex-info (str "Unexpected status while enabling ASG: " status) {:type ::unexpected-response :response response})))))
 
 ;; Precondition attached to `enable-asg` asserting that the ASG we're attempting
 ;; to enable exists.
@@ -831,9 +756,7 @@
 ;; Handler for a missing ASG attached to `enable-asg`.
 (with-handler! #'enable-asg
   {:precondition :asg-exists}
-  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                 {:type ::missing-asg
-                                  :args args}))))
+  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist." {:type ::missing-asg :args args}))))
 
 ;; # Concerning disabling traffic for ASGs
 
@@ -843,22 +766,11 @@
    You can assume that a non-explosive call has been successful and the task is
    being tracked."
   [environment region asg-name ticket-id task completed-fn timed-out-fn]
-  (let [parameters {:_action_deactivate ""
-                    :name asg-name
-                    :ticket ticket-id}
-        {:keys [status headers] :as response} (http/simple-post
-                                               (cluster-index-url environment region)
-                                               {:form-params (explode-parameters
-                                                              parameters)})]
+  (let [parameters {:_action_deactivate "" :name asg-name :ticket ticket-id}
+        {:keys [status headers] :as response} (http/simple-post (cluster-index-url environment region) {:form-params (explode-parameters parameters)})]
     (if (= status 302)
-      (track-until-completed ticket-id
-                             (merge task {:url
-                                          (str (get headers "location") ".json")
-                                          :asgardParameters parameters})
-                             task-track-count completed-fn timed-out-fn)
-      (throw (ex-info (str "Unexpected status while disabling ASG: " status)
-                      {:type ::unexpected-response
-                       :response response})))))
+      (track-until-completed ticket-id (merge task {:url (str (get headers "location") ".json") :asgardParameters parameters}) task-track-count completed-fn timed-out-fn)
+      (throw (ex-info (str "Unexpected status while disabling ASG: " status) {:type ::unexpected-response :response response})))))
 
 ;; Precondition attached to `disable-asg` asserting that the ASG we're
 ;; attempting to disable exists.
@@ -870,9 +782,7 @@
 ;; Handler for a missing ASG attached to `disable-asg`.
 (with-handler! #'disable-asg
   {:precondition :asg-exists}
-  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist."
-                                 {:type ::missing-asg
-                                  :args args}))))
+  (fn [e & args] (throw (ex-info "Auto Scaling Group does not exist." {:type ::missing-asg :args args}))))
 
 ;; # Concerning the creation of the first ASG for an application
 
@@ -888,10 +798,8 @@
   "Creates the Asgard parameters for creating a new ASG as a combination of the
    various defaults and user-provided parameters."
   [region application-name environment image-id user-parameters ticket-id]
-  (let [protected-parameters (protected-create-new-asg-parameters
-                              application-name environment image-id ticket-id)]
-    (prepare-parameters (merge default-create-new-asg-parameters
-                               user-parameters protected-parameters) environment region)))
+  (let [protected-parameters (protected-create-new-asg-parameters application-name environment image-id ticket-id)]
+    (prepare-parameters (merge default-create-new-asg-parameters user-parameters protected-parameters) environment region)))
 
 (defn create-new-asg
   "Begins a create new Auto Scaling Group operation for the specified
@@ -900,42 +808,20 @@
    completed. You can assume that a non-explosive call has been successful and
    the task is being tracked."
   [{:keys [ami application environment id parameters region task completed-fn timed-out-fn]}]
-  (let [asgard-parameters (create-new-asg-asgard-parameters region
-                                                            application
-                                                            environment
-                                                            ami
-                                                            parameters
-                                                            id)
-        {:keys [status headers] :as response}
-        (http/simple-post
-         (auto-scaling-save-url environment region)
-         {:form-params (explode-parameters asgard-parameters)})]
+  (let [asgard-parameters (create-new-asg-asgard-parameters region application environment ami parameters id)
+        {:keys [status headers] :as response} (http/simple-post (auto-scaling-save-url environment region) {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [new-asg-name (extract-new-asg-name (get headers "location"))
             tasks (tasks environment)
             log-message (str "Create Auto Scaling Group '" new-asg-name "'")]
-        (if-let [found-task
-                 (first (filter (fn [t] (= (:name t) log-message)) tasks))]
+        (if-let [found-task (first (filter (fn [t] (= (:name t) log-message)) tasks))]
           (let [task-id (:id found-task)
                 url (task-by-id-url environment region task-id)]
-            (store/add-to-deployment-parameters
-             id
-             {:newAutoScalingGroupName (str application "-" environment)})
-            (track-until-completed
-             id
-             (merge task {:url url
-                          :asgardParameters asgard-parameters})
-             task-track-count
-             completed-fn
-             timed-out-fn))
-          (throw (ex-info (str "No 'Create Autoscaling Group' task found for " new-asg-name)
-                          {:type ::task-missing
-                           :tasks tasks
-                           :log-message log-message})))
+            (store/add-to-deployment-parameters id {:newAutoScalingGroupName (str application "-" environment)})
+            (track-until-completed id (merge task {:url url :asgardParameters asgard-parameters}) task-track-count completed-fn timed-out-fn))
+          (throw (ex-info (str "No 'Create Autoscaling Group' task found for " new-asg-name) {:type ::task-missing :tasks tasks :log-message log-message})))
         new-asg-name)
-      (throw (ex-info (str "Unexpected status while creating new ASG: " status)
-                      {:type ::unexpected-response
-                       :response response})))))
+      (throw (ex-info (str "Unexpected status while creating new ASG: " status) {:type ::unexpected-response :response response})))))
 
 ;; # Concerning the creation of the next ASG for an application-name
 
@@ -943,10 +829,8 @@
   "Creates the Asgard parameters for creating the next ASG as a combination of
    the various defaults and user-provided parameters."
   [region application-name environment image-id user-parameters ticket-id]
-  (let [protected-parameters (protected-create-next-asg-parameters
-                              application-name environment image-id ticket-id)]
-    (prepare-parameters (merge default-create-next-asg-parameters
-                               user-parameters protected-parameters) environment region)))
+  (let [protected-parameters (protected-create-next-asg-parameters application-name environment image-id ticket-id)]
+    (prepare-parameters (merge default-create-next-asg-parameters user-parameters protected-parameters) environment region)))
 
 (defn new-asg-name-from-task
   "Examines the `:message` of the first item in the task's `:log` for a string
@@ -965,27 +849,14 @@
    until completed. You can assume that a non-explosive call has been successful
    and the task is being tracked."
   [{:keys [ami application environment id parameters region task completed-fn timed-out-fn]}]
-  (let [asgard-parameters (create-next-asg-asgard-parameters
-                           region
-                           application
-                           environment
-                           ami
-                           parameters
-                           id)
-        {:keys [status headers]
-         :as response} (http/simple-post
-                        (cluster-create-next-group-url environment region)
-                        {:form-params (explode-parameters asgard-parameters)})]
+  (let [asgard-parameters (create-next-asg-asgard-parameters region application environment ami parameters id)
+        {:keys [status headers] :as response} (http/simple-post (cluster-create-next-group-url environment region) {:form-params (explode-parameters asgard-parameters)})]
     (if (= status 302)
       (let [task-json-url (str (get headers "location") ".json")
             new-asg-name (new-asg-name-from-task task-json-url)]
         (store/add-to-deployment-parameters id {:newAutoScalingGroupName new-asg-name})
-        (track-until-completed id (merge task {:url task-json-url
-                                               :asgardParameters asgard-parameters})
-                               task-track-count completed-fn timed-out-fn))
-      (throw (ex-info (str "Unexpected status while creating next ASG: " status)
-                      {:type ::unexpected-response
-                       :response response})))))
+        (track-until-completed id (merge task {:url task-json-url :asgardParameters asgard-parameters}) task-track-count completed-fn timed-out-fn))
+      (throw (ex-info (str "Unexpected status while creating next ASG: " status) {:type ::unexpected-response :response response})))))
 
 ;; # Concerning creating ASGs for an application
 
@@ -1003,8 +874,7 @@
     (if-let [old-asg (last-auto-scaling-group environment region cluster-name)]
       (let [old-asg-name (:autoScalingGroupName old-asg)
             old-launch-config (launch-config region (:launchConfigurationName old-asg))]
-        (store/add-to-deployment-parameters
-         ticket-id
+        (store/add-to-deployment-parameters ticket-id
          {:oldAutoScalingGroupName old-asg-name
           :oldHash (extract-hash (get-in old-launch-config [:lc :userData]))
           :oldAmi (get-in old-launch-config [:image :imageId])})

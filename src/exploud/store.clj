@@ -11,6 +11,7 @@
             [clojure.tools.logging :as log]
             [dire.core :refer [with-post-hook!
                                with-pre-hook!]]
+            [flatland.ordered.set :refer [ordered-set]]
             [monger
              [collection :as mc]
              [joda-time]
@@ -52,14 +53,10 @@
   "Creates a date-range query for `field` from `start` and `end` and merge into
    `query` if necessary. Returns the query."
   [query field start end]
-  (cond (and start end)
-        (merge query {field {$gte start $lt end}})
-        start
-        (merge query {field {$gte start}})
-        end
-        (merge query {field {$lt end}})
-        :else
-        query))
+  (cond (and start end) (merge query {field {$gte start $lt end}})
+        start (merge query {field {$gte start}})
+        end (merge query {field {$lt end}})
+        :else query))
 
 (defn get-deployments
   "Retrieves deployments."
@@ -68,9 +65,7 @@
                        (find (-> {}
                                  (add-application-to-query application)
                                  (add-environment-to-query environment)
-                                 (add-dates-to-query :start
-                                                     start-from
-                                                     start-to)))
+                                 (add-dates-to-query :start start-from start-to)))
                        (limit (or size 10))
                        (skip (or from 0))
                        (sort (array-map :start -1)))))
@@ -169,21 +164,18 @@
   (fn [id t]
     (log/debug "Storing task" t "against deployment with ID" id)))
 
+(def ^:private complete-task-statuses
+  "The set of task statuses which can be considered 'complete' (or not incomplete)."
+  (ordered-set "completed" "failed" "terminated" "pending" "skipped"))
+
 (defn deployments-with-incomplete-tasks
   "Gives a list of any deployments with tasks which are not finished. We use
    this so they can be restarted if Exploud is stopped for any reason."
   []
-  (mc/find-maps "deployments"
-                {:tasks {$elemMatch {$nor [{:status "completed"}
-                                           {:status "failed"}
-                                           {:status "terminated"}
-                                           {:status "pending"}
-                                           {:status "skipped"}]}}}
-                ["tasks.$"]))
+  (map swap-mongo-id (mc/find-maps "deployments" {:tasks {$elemMatch {$nor (map (fn [s] {:status s}) complete-task-statuses)}}} ["tasks.$"])))
 
 (defn broken-deployments
   "Gives a list of any deployments which are considered broken (that is, they don't
    have an `:end` date)."
   []
-  (mc/find-maps "deployments"
-                {:end {$exists false}}))
+  (map swap-mongo-id (mc/find-maps "deployments" {:end {$exists false}})))

@@ -16,6 +16,7 @@
                  [compojure "1.1.6" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
                  [environ "0.4.0"]
+                 [org.flatland/ordered "1.5.2"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
                  [nokia/ring-utils "1.2.1"]
