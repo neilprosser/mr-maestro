@@ -85,6 +85,22 @@
          (catch Exception e v))
     v))
 
+(def locked?
+  (atom false))
+
+(defn- lock!
+  []
+  (reset! locked? true))
+
+(defn- unlock!
+  []
+  (reset! locked? false))
+
+(defmacro guarded [& body]
+  `(if @locked?
+     (response "Exploud is currently closed for business." "text/plain" 409)
+     (do ~@body)))
+
 (defroutes routes
   "The RESTful routes we provide."
 
@@ -118,6 +134,22 @@
    (GET "/images/:app-name"
         [app-name]
         (response {:images (info/active-amis-for-app default-region app-name)}))
+
+   (GET "/lock"
+        []
+        (if @locked?
+          (response "Exploud is currently locked." "text/plain")
+          (response "Exploud is currently unlocked." "text/plain")))
+
+   (POST "/lock"
+         []
+         (lock!)
+         (response "" "text/plain" 204))
+
+   (DELETE "/lock"
+           []
+           (unlock!)
+           (response "" "text/plain" 204))
 
    (GET "/deployments"
         [application environment start-from start-to size from]
@@ -169,13 +201,15 @@
 
    (POST "/deployments/:deployment-id"
          [deployment-id deployment]
-         (store/store-deployment (postwalk date-string-to-date (keywordize-keys deployment)))
-         (response nil nil 201))
+         (guarded
+          (store/store-deployment (postwalk date-string-to-date (keywordize-keys deployment)))
+          (response nil nil 201)))
 
    (DELETE "/deployments/:deployment-id"
            [deployment-id]
-           (store/delete-deployment deployment-id)
-           (response nil nil 204))
+           (guarded
+            (store/delete-deployment deployment-id)
+            (response nil nil 204)))
 
    (GET "/applications"
         []
@@ -187,73 +221,79 @@
 
    (PUT "/applications/:application"
         [application description email owner]
-        (if (re-matches application-regex application)
-          (let [body (info/upsert-application default-region application
-                                              {:description description
-                                               :email email
-                                               :owner owner})]
-            (response body nil 201))
-          (error-response "Illegal application name" 400)))
+        (guarded
+         (if (re-matches application-regex application)
+           (let [body (info/upsert-application default-region application
+                                               {:description description
+                                                :email email
+                                                :owner owner})]
+             (response body nil 201))
+           (error-response "Illegal application name" 400))))
 
    (POST "/applications/:application/deploy"
          [application ami environment hash message user]
-         (log/warn application "being deployed to" environment "using deprecated API")
-         (let [{:keys [id]} (dep/prepare-deployment
-                             default-region
-                             application
-                             environment
-                             (or user default-user)
-                             ami
-                             hash
-                             message)]
-           (dep/start-deployment id)
-           (response {:id id})))
+         (guarded
+          (log/warn application "being deployed to" environment "using deprecated API")
+          (let [{:keys [id]} (dep/prepare-deployment
+                              default-region
+                              application
+                              environment
+                              (or user default-user)
+                              ami
+                              hash
+                              message)]
+            (dep/start-deployment id)
+            (response {:id id}))))
 
    (POST "/applications/:application/:environment/deploy"
          [application ami environment hash message user]
-         (let [{:keys [id]} (dep/prepare-deployment
-                             default-region
-                             application
-                             environment
-                             (or user default-user)
-                             ami
-                             hash
-                             message)]
-           (dep/start-deployment id)
-           (response {:id id})))
+         (guarded
+          (let [{:keys [id]} (dep/prepare-deployment
+                              default-region
+                              application
+                              environment
+                              (or user default-user)
+                              ami
+                              hash
+                              message)]
+            (dep/start-deployment id)
+            (response {:id id}))))
 
    (POST "/applications/:application/:environment/undo"
          [application environment]
-         (if-let [deployment (first (store/get-deployments {:application application
-                                                            :environment environment
-                                                            :size 1}))]
-           (let [{:keys [id]} (dep/prepare-undo deployment)]
-             (dep/start-deployment id)
-             (response {:id id}))
-           (error-response "No previous deployment" 500)))
+         (guarded
+          (if-let [deployment (first (store/get-deployments {:application application
+                                                             :environment environment
+                                                             :size 1}))]
+            (let [{:keys [id]} (dep/prepare-undo deployment)]
+              (dep/start-deployment id)
+              (response {:id id}))
+            (error-response "No previous deployment" 500))))
 
    (POST "/applications/:application/rollback"
          [application environment message user]
-         (log/warn application "being rolled back in" environment "using deprecated API")
-         (let [{:keys [id]} (dep/prepare-rollback
-                             default-region
-                             application
-                             environment
-                             (or user default-user)
-                             message)]
-           (dep/start-deployment id)
-           (response {:id id})))
+         (guarded
+          (log/warn application "being rolled back in" environment "using deprecated API")
+          (let [{:keys [id]} (dep/prepare-rollback
+                              default-region
+                              application
+                              environment
+                              (or user default-user)
+                              message)]
+            (dep/start-deployment id)
+            (response {:id id}))))
 
    (POST "/applications/:application/:environment/rollback"
          [application environment message user]
-         (let [{:keys [id]} (dep/prepare-rollback
-                             default-region
-                             application
-                             environment
-                             (or user default-user)
-                             message)]
-           (dep/start-deployment id)
-           (response {:id id})))
+         (guarded
+          (let [{:keys [id]} (dep/prepare-rollback
+                              default-region
+                              application
+                              environment
+                              (or user default-user)
+                              message)]
+            (dep/start-deployment id)
+            (response {:id id}))))
 
    (GET "/environments"
         []
