@@ -14,7 +14,7 @@
              [collection :as mcol :only (ensure-index)]
              [core :as mc :only (connect! mongo-options
                                           server-address use-db!)]]
-            [ring.adapter.jetty :refer [run-jetty]])
+            [nokia.adapter.instrumented-jetty :refer [run-jetty]])
   (:import (java.lang Integer Throwable)
            (java.util.concurrent TimeUnit)
            (java.util.logging LogManager)
