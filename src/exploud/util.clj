@@ -44,3 +44,27 @@
   [message task]
   (let [updated-log (conj (vec (:log task)) {:message message :date (time/now)})]
     (assoc task :log updated-log)))
+
+(defn as-table
+  "Prints a collection of maps in a textual table. Prints table headings
+   ks, and then a line of output for each row, corresponding to the keys
+   in ks. If ks are not specified, use the keys of the first item in rows."
+  ([ks rows]
+     (with-out-str
+      (when (seq rows)
+        (let [widths (map
+                      (fn [k]
+                        (apply max (count (str k)) (map #(count (str (get % k))) rows)))
+                      ks)
+              spacers (map #(apply str (repeat % "-")) widths)
+              fmts (map #(str "%" % "s") widths)
+              fmt-row (fn [leader divider trailer row]
+                        (str leader
+                             (apply str (interpose divider
+                                                   (for [[col fmt] (map vector (map #(get row %) ks) fmts)]
+                                                     (format fmt (str col)))))
+                             trailer))]
+          (println (fmt-row "" "\t" "" (zipmap ks ks)))
+          (doseq [row rows]
+            (println (fmt-row "" "\t" "" row)))))))
+  ([rows] (as-table (keys (first rows)) rows)))

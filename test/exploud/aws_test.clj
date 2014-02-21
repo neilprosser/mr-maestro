@@ -122,3 +122,55 @@
                          :delay-seconds 0
                          :message-body "{\"Message\":\"delete\"}")
        => ..send-result..))
+
+(fact-group :unit :describe-instances
+  (fact "ec2/describe-instances is called with name and state"
+        (describe-instances ..env.. ..region.. "name" "state") => truthy
+        (provided
+         (ec2/describe-instances anything
+                                 :filters
+                                 [{:name "tag:Name" :values ["name*"]}
+                                  {:name "instance-state-name" :values ["state"]}]) => [{}]))
+
+  (fact "ec2/describe-instances defaults name and state if nil"
+        (describe-instances ..env.. ..region.. nil nil) => truthy
+        (provided
+         (ec2/describe-instances anything
+                                 :filters
+                                 [{:name "tag:Name" :values ["*"]}
+                                  {:name "instance-state-name" :values ["running"]}]) => [{}]))
+
+  (fact "describe instances formats response for multiple reservations"
+        (describe-instances ..env.. ..region.. nil nil) => (contains "two")
+        (provided
+         (ec2/describe-instances anything
+                                 anything
+                                 anything) => {:reservations [{:instances [..instance1..]}
+                                                              {:instances [..instance2..]}]}
+                                 (transform-instance-description ..instance1..) => {:name "one"}
+                                 (transform-instance-description ..instance2..) => {:name "two"}))
+
+  (fact "describe instances formats response from multiple instances in one reservation"
+        (describe-instances ..env.. ..region.. nil nil) => (contains "two")
+        (provided
+         (ec2/describe-instances anything
+                                 anything
+                                 anything) => {:reservations [{:instances [..instance1.. ..instance2..]}]}
+                                 (transform-instance-description ..instance1..) => {:name "one"}
+                                 (transform-instance-description ..instance2..) => {:name "two"}))
+
+  (fact "transform-instance-description returns a transformed description"
+        (transform-instance-description
+         {:tags [{:key "Name" :value ..name..}]
+          :instance-id ..instance..
+          :image-id ..image..
+          :private-ip-address ..ip..})
+        => {:name ..name.. :instance-id ..instance.. :image-id ..image.. :private-ip ..ip..})
+
+  (fact "transform-instance-description handles missing Name tag"
+        (transform-instance-description
+         {:tags []
+          :instance-id ..instance..
+          :image-id ..image..
+          :private-ip-address ..ip..})
+        => {:name "none" :instance-id ..instance.. :image-id ..image.. :private-ip ..ip..}))

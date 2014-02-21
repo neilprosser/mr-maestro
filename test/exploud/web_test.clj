@@ -3,6 +3,7 @@
             [clj-time.format :as fmt]
             [exploud
              [store :as store]
+             [aws :as aws]
              [info :as info]
              [web :refer :all]]
             [midje.sweet :refer :all]))
@@ -152,3 +153,16 @@
       => (contains {:status 201})
       (provided
        (info/upsert-application anything "myapplication" anything) => {}))
+
+(fact-group :unit :describe-instances
+  (fact "describe instances returns 200 text/plain"
+        (request :get "/1.x/describe-instances/ditto/poke")
+        => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
+        (provided
+         (aws/describe-instances "poke" anything "ditto" nil) => ""))
+
+  (fact "optional state param is passed to describe instances"
+        (request :get "/1.x/describe-instances/ditto/poke" {:params {:state "stopped"}})
+        => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
+        (provided
+         (aws/describe-instances "poke" anything "ditto" "stopped") => "")))

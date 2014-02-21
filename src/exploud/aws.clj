@@ -9,7 +9,9 @@
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
-            [exploud.asgard :as asgard]))
+            [exploud
+             [asgard :as asgard]
+             [util :as util]]))
 
 (def autoscale-queue-name
   "The queue name we'll use for sending announcements."
@@ -129,3 +131,26 @@
 (with-pre-hook! #'asg-deleted
   (fn [region environment asg-name]
     (log/debug "Notifying that" asg-name "has been deleted in" region environment)))
+
+(defn transform-instance-description
+  "Takes an aws instance description and returns the fields we are interested in flattened"
+  [{:keys [tags instance-id image-id private-ip-address]}]
+  {:name (or (some (fn [{k :key v :value}] (when (= k "Name") v)) tags) "none")
+   :instance-id instance-id
+   :image-id image-id
+   :private-ip private-ip-address})
+
+(defn describe-instances
+  "Returns a column formatted string describing the instances in the supplied environment
+   with the given name and optional state (defaults to running)"
+  [environment region name state]
+  (let [name (or (and name (.endsWith name "*") name) (str name "*"))
+        state (or state "running")
+        config (merge (alternative-credentials-if-necessary environment) {:endpoint region})]
+    (->> (ec2/describe-instances config
+                                 :filters [{:name "tag:Name" :values [name]}
+                                           {:name "instance-state-name" :values [state]}])
+         :reservations
+         (mapcat :instances)
+         (map transform-instance-description)
+         (util/as-table))))

@@ -327,7 +327,12 @@
 
    (DELETE "/in-progress/:application/:environment"
            [application environment]
-           (unregister-deployment application environment)))
+           (unregister-deployment application environment))
+
+   (GET  "/describe-instances/:name/:environment"
+         [name environment state]
+         (response (aws/describe-instances environment default-region name state)
+                   "text/plain")))
 
   (route/not-found (error-response "Resource not found" 404)))
 
