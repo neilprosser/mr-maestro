@@ -141,7 +141,7 @@
    :private-ip private-ip-address})
 
 (defn describe-instances
-  "Returns a column formatted string describing the instances in the supplied environment
+  "Returns a json object describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
   (let [name (or (and name (.endsWith name "*") name) (str name "*"))
@@ -152,5 +152,10 @@
                                            {:name "instance-state-name" :values [state]}])
          :reservations
          (mapcat :instances)
-         (map transform-instance-description)
-         (util/as-table))))
+         (map transform-instance-description))))
+
+(defn describe-instances-plain
+  "Returns a column formatted string describing the instances in the supplied environment
+   with the given name and optional state (defaults to running)"
+  [environment region name state]
+  (util/as-table (describe-instances environment region name state)))

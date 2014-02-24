@@ -330,9 +330,10 @@
            (unregister-deployment application environment))
 
    (GET  "/describe-instances/:name/:environment"
-         [name environment state]
-         (response (aws/describe-instances environment default-region name state)
-                   "text/plain")))
+         [name environment state :as req]
+         (if (= (get-in req [:headers "accept"]) "text/plain")
+           (response (aws/describe-instances-plain environment default-region name state) "text/plain")
+           (response (aws/describe-instances environment default-region name state)))))
 
   (route/not-found (error-response "Resource not found" 404)))
 

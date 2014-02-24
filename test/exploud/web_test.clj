@@ -11,11 +11,13 @@
 (defn request
   "Creates a compojure request map and applies it to our application.
    Accepts method, resource and optionally an extended map"
-  [method resource & [{:keys [params]
-                       :or {:params {}}}]]
+  [method resource & [{:keys [params headers]
+                       :or {:params {}
+                            :headers {}}}]]
   (let [{:keys [body] :as res} (app {:request-method method
                                      :uri resource
-                                     :params params})]
+                                     :params params
+                                     :headers headers})]
     (cond-> res
             (instance? java.io.InputStream body)
             (assoc :body (json/parse-string (slurp body) true)))))
@@ -155,14 +157,14 @@
        (info/upsert-application anything "myapplication" anything) => {}))
 
 (fact-group :unit :describe-instances
-  (fact "describe instances returns 200 text/plain"
-        (request :get "/1.x/describe-instances/ditto/poke")
+  (fact "describe instances returns 200 text/plain when text/plain requested"
+        (request :get "/1.x/describe-instances/ditto/poke" {:headers {"accept" "text/plain"}})
         => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
         (provided
          (aws/describe-instances "poke" anything "ditto" nil) => ""))
 
-  (fact "optional state param is passed to describe instances"
+  (fact "optional state param is passed to describe instances, response is json when not requested"
         (request :get "/1.x/describe-instances/ditto/poke" {:params {:state "stopped"}})
-        => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
+        => (contains {:status 200 :headers (contains {"Content-Type" "application/json; charset=utf-8"})})
         (provided
          (aws/describe-instances "poke" anything "ditto" "stopped") => "")))

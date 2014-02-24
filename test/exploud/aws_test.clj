@@ -140,8 +140,8 @@
                                  [{:name "tag:Name" :values ["*"]}
                                   {:name "instance-state-name" :values ["running"]}]) => [{}]))
 
-  (fact "describe instances formats response for multiple reservations"
-        (describe-instances ..env.. ..region.. nil nil) => (contains "two")
+  (fact "describe instances plain formats response for multiple reservations"
+        (describe-instances-plain ..env.. ..region.. nil nil) => (contains "two")
         (provided
          (ec2/describe-instances anything
                                  anything
@@ -150,8 +150,8 @@
                                  (transform-instance-description ..instance1..) => {:name "one"}
                                  (transform-instance-description ..instance2..) => {:name "two"}))
 
-  (fact "describe instances formats response from multiple instances in one reservation"
-        (describe-instances ..env.. ..region.. nil nil) => (contains "two")
+  (fact "describe instances plain formats response from multiple instances in one reservation"
+        (describe-instances-plain ..env.. ..region.. nil nil) => (contains "two")
         (provided
          (ec2/describe-instances anything
                                  anything
