@@ -64,7 +64,7 @@
                                                    (for [[col fmt] (map vector (map #(get row %) ks) fmts)]
                                                      (format fmt (str col)))))
                              trailer))]
-          (println (fmt-row "" "\t" "" (zipmap ks ks)))
+          (println (fmt-row "" "\t" "" (zipmap ks (map name ks))))
           (doseq [row rows]
             (println (fmt-row "" "\t" "" row)))))))
   ([rows] (as-table (keys (first rows)) rows)))
