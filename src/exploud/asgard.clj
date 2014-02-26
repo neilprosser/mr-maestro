@@ -482,7 +482,7 @@
 (defn stacks
   "Retrieves a list of stacks from all Asgards."
   [region]
-  (apply sorted-set (merge (flatten (map (fn [e] (stacks-for-environment e region)) [:poke :prod])))))
+  (apply sorted-set (flatten (map (fn [e] (stacks-for-environment e region)) [:poke :prod]))))
 
 (defn task-by-url
   "Retrieves a task by its URL."

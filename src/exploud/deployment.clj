@@ -125,7 +125,7 @@
   "Determines whether we should check for instance health. Will return `false` if
    the deployment hasn't told us to skip the healthcheck or hasn't started any instances."
   [{:keys [parameters]} app-properties]
-  (let [perform-healthcheck? (not (or (Boolean/valueOf (:service.healthcheck.skip app-properties "false"))))
+  (let [perform-healthcheck? (not (Boolean/valueOf (:service.healthcheck.skip app-properties "false")))
         min (or (:min parameters) asgard/default-minimum)]
     (and perform-healthcheck?
          (pos? min))))
