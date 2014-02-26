@@ -129,7 +129,7 @@
         (provided
          (ec2/describe-instances anything
                                  :filters
-                                 [{:name "tag:Name" :values ["name*"]}
+                                 [{:name "tag:Name" :values ["name-*"]}
                                   {:name "instance-state-name" :values ["state"]}]) => [{}]))
 
   (fact "ec2/describe-instances defaults name and state if nil"
@@ -138,6 +138,14 @@
          (ec2/describe-instances anything
                                  :filters
                                  [{:name "tag:Name" :values ["*"]}
+                                  {:name "instance-state-name" :values ["running"]}]) => [{}]))
+
+  (fact "ec2/describe-instances preserves name if contains *"
+        (describe-instances ..env.. ..region.. "part-*-part" nil) => truthy
+        (provided
+         (ec2/describe-instances anything
+                                 :filters
+                                 [{:name "tag:Name" :values ["part-*-part"]}
                                   {:name "instance-state-name" :values ["running"]}]) => [{}]))
 
   (fact "describe instances plain formats response for multiple reservations"
