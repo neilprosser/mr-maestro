@@ -1,6 +1,7 @@
 (ns exploud.shuppet
   "## Integration with Shuppet"
-  (:require [cheshire.core :as json]
+  (:require [cemerick.url :refer [url]]
+            [cheshire.core :as json]
             [environ.core :refer [env]]
             [exploud.http :as http]))
 
@@ -10,22 +11,22 @@
 
 (def shuppet-url
   "We only need the URL for the 'poke' Shuppet."
-  (env :service-shuppet-url))
+  (url (env :service-shuppet-url)))
 
 (defn create-application-url
   "The URL to create a new app in Shuppet."
   [app-name]
-  (str shuppet-url "/1.x/apps/" app-name))
+  (str (url shuppet-url "1.x" "apps" app-name)))
 
 (defn apply-url
   "The URL we use to apply configuration."
   [environment app-name]
-  (str shuppet-url "/1.x/envs/" environment "/apps/" app-name "/apply"))
+  (str (url shuppet-url "1.x" "envs" environment "apps" app-name "apply")))
 
 (defn envs-url
   "The URL to find environments in Shuppet."
   []
-  (str shuppet-url "/1.x/envs"))
+  (str (url shuppet-url "1.x" "envs")))
 
 (defn apply-config
   "tells shuppet to apply a config to all environments."

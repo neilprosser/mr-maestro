@@ -1,23 +1,24 @@
 (ns exploud.onix
   "## Integration with Onix"
   (:require [cheshire.core :as json]
+            [cemerick.url :refer [url]]
             [environ.core :refer [env]]
             [exploud.http :as http]))
 
 (def onix-url
   "The URL where Onix is running."
-  (env :service-onix-url))
+  (url (env :service-onix-url)))
 
 (defn applications-url
   "The URL where we can get information about the applications Onix knows
    about."
   []
-  (str onix-url "/1.x/applications"))
+  (str (url onix-url "1.x" "applications")))
 
 (defn application-url
   "The URL where we can get information about a specific application."
   [application-name]
-  (str onix-url "/1.x/applications/" application-name))
+  (str (url onix-url "1.x" "applications" application-name)))
 
 (defn create-application
   "Creates an applcation in Onix and returns the application. If the

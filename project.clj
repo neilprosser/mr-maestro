@@ -8,6 +8,7 @@
                  [cheshire "5.3.1"]
                  [clj-http "0.7.9"]
                  [clj-time "0.6.0"]
+                 [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.1"]
                  [com.novemberain/monger "1.7.0"]
                  [com.ovi.common.logging/logback-appender "0.0.45"]

@@ -13,7 +13,8 @@
 
    The information can be obtained for each application in different
    environments. Each version of the files can be obtained by its commit hash."
-  (:require [cheshire.core :as json]
+  (:require [cemerick.url :refer [url]]
+            [cheshire.core :as json]
             [environ.core :refer [env]]
             [exploud.http :as http]))
 
@@ -27,24 +28,24 @@
 
 (def tyranitar-url
   "The URL where Tyranitar is deployed."
-  (env :service-tyranitar-url))
+  (url (env :service-tyranitar-url)))
 
 (defn- file-url
   "Creates the URL where we can find the content of a particular file for an
    application and environment combination."
   [environment application-name commit-hash file-name]
-  (str tyranitar-url "/1.x/applications/" environment "/" application-name "/" commit-hash "/" file-name))
+  (str (url tyranitar-url "1.x" "applications" environment application-name commit-hash file-name)))
 
 (defn- commits-url
   "Creates the URL where we can find the commits for an application in an
    environment."
   [environment application-name]
-  (str tyranitar-url "/1.x/applications/" environment "/" application-name))
+  (str (url tyranitar-url "1.x" "applications" environment application-name)))
 
 (defn- applications-url
   "The URL where we'll find a list of applications."
   []
-  (str tyranitar-url "/1.x/applications"))
+  (str (url tyranitar-url "1.x" "applications")))
 
 (defn- get-file-content
   "Gets the content of a file for an application and environment."
