@@ -1,6 +1,7 @@
 (ns exploud.healthchecks
   "## Involved in the business of checking health"
-  (:require [clojure.tools.logging :as log]
+  (:require [clojure.string :as str]
+            [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [exploud
              [asgard :as asgard]
@@ -30,47 +31,57 @@
   [ip port healthcheck-path]
   (str "http://" ip ":" port "/" healthcheck-path))
 
-(defn instance-healthy?
-  "`true` if the healthcheck returns `200`, otherwise `false."
-  [instance port healthcheck-path]
+(defn ok-response?
+  "`true` if the given `url` returns `200` in 2s, otherwise `false`."
+  [url]
   (try+
-   (let [ip (instance-ip instance)
-         healthcheck-path (util/strip-first-forward-slash healthcheck-path)
-         url (create-url ip port healthcheck-path)
-         {:keys [status]} (http/simple-get url {:socket-timeout 2000})]
+   (let [{:keys [status]} (http/simple-get url {:socket-timeout 2000})]
      (= status 200))
    (catch ExceptionInfo _
      false)))
 
+(defn check-instance-health
+  "Checks that a call to `http://{ip}:{port}{healthcheck-path}` gives an OK response. Returns a map with `:url` and `:success`."
+  [ip port healthcheck-path]
+  (let [healthcheck-path (util/strip-first-forward-slash healthcheck-path)
+        url (create-url ip port healthcheck-path)]
+    {:url url
+     :successful? (ok-response? url)}))
+
 ;; # Concerning the checking of ASGs
 
-(defn asg-healthy?
-  "`true` if `min-instances` instances in `asg-name` are giving a `200` response
-   on their heathchecks, otherwise `false."
+(defn determine-asg-health
+  "Checks the health of all instances in the ASG and gives back those results and the overall health of the ASG."
   [environment region asg-name min-instances port healthcheck-path]
   (when-let [instances (asgard/instances-in-asg environment region asg-name)]
-    (let [check (fn [i] (instance-healthy? i port healthcheck-path))]
-      (= min-instances (count (filter true? (map check instances)))))))
+    (let [check (fn [i] (check-instance-health (instance-ip i) port healthcheck-path))
+          check-results (map check instances)]
+      {:healthy? (>= (count (filter :successful? check-results)) min-instances)
+       :results check-results})))
 
 ;; We're going to need this guy in a minute.
 (declare check-asg-health)
 
 (defn schedule-asg-check
-  "Schedules an ASG healthcheck, which will use `asg-healthy?` to determine
-   health."
+  "Schedules an ASG healthcheck, which will use `determine-asg-health` to figure out health."
   [environment region asg-name min-instances port healthcheck-path deployment-id task
    completed-fn timed-out-fn polls & [delay]]
   (let [f #(check-asg-health environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn polls)]
     (at-at/after (or delay 5000) f tasks/pool :desc (str "asg-healthcheck-" deployment-id))))
 
+(defn- message-from
+  "Creates the log message from an ASG's check results"
+  [results]
+  (str/join "\n" (map #(format "Healthcheck at %s - %s" (:url %) (:successful? %)) results)))
+
 (defn check-asg-health
-  "If `asg-name` is healthy call `completed-fn` otherwise reschedule until
-   `seconds` has elapsed. If we've timed out call `timed-out-fn`."
+  "If `asg-name` is healthy call `completed-fn` otherwise reschedule until `seconds` has elapsed. If we've timed out call `timed-out-fn`."
   [environment region asg-name min-instances port healthcheck-path deployment-id task
    completed-fn timed-out-fn polls]
   (try
-    (let [healthy? (asg-healthy? environment region asg-name min-instances port healthcheck-path)
-          message (str "Checking healthcheck on port " port " and path /" (util/strip-first-forward-slash healthcheck-path) ".")
+    (let [asg-health (determine-asg-health environment region asg-name min-instances port healthcheck-path)
+          healthy? (:healthy? asg-health)
+          message (message-from (:results asg-health))
           updated-task (assoc (util/append-to-task-log message task) :status "running")]
       (store/store-task deployment-id updated-task)
       (if healthy?
@@ -84,8 +95,7 @@
         (throw e)))))
 
 (defn wait-until-asg-healthy
-  "Polls every 5 seconds until `asg-healthy?` comes back `true` or until we've
-   done `poll-count` checks."
+  "Polls every 5 seconds until `determine-asg-health` shows healthy or until we've done `poll-count` checks."
   [environment region asg-name min-instances port healthcheck-path deployment-id task
    completed-fn timed-out-fn]
   (schedule-asg-check environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn poll-count 100))

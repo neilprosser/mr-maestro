@@ -10,49 +10,43 @@
   (:import clojure.lang.ExceptionInfo))
 
 (fact "that an instance is unhealthy when a connect timeout exception is thrown"
-      (instance-healthy? ..instance.. "port" "healthcheck")
-      => false
+      (check-instance-health "ip" "port" "healthcheck")
+      => (contains {:successful? false})
       (provided
-       (instance-ip ..instance..)
-       => "ip"
        (http/simple-get "http://ip:port/healthcheck" {:socket-timeout 2000})
        =throws=> (ex-info "Whoops!" {:type :exploud.http/connect-timeout})))
 
 (fact "that an instance is unhealthy when a socket timeout exception is thrown"
-      (instance-healthy? ..instance.. "port" "healthcheck")
-      => false
+      (check-instance-health "ip" "port" "healthcheck")
+      => (contains {:successful? false})
       (provided
-       (instance-ip ..instance..)
-       => "ip"
        (http/simple-get "http://ip:port/healthcheck" {:socket-timeout 2000})
        =throws=> (ex-info "Whoops!" {:type :exploud.http/socket-timeout})))
 
 (fact "that when checking the health of an instance we use the direct IP to get hold of the information."
-      (instance-healthy? ..instance.. "port" "healthcheck")
-      => true
+      (check-instance-health "10.123.71.23" "port" "healthcheck")
+      => (contains {:successful? true})
       (provided
-       (instance-ip ..instance..)
-       => "10.123.71.23"
        (http/simple-get "http://10.123.71.23:port/healthcheck" {:socket-timeout 2000})
        => {:status 200}))
 
 (fact "that when checking ASG health no instances returns true if none are wanted"
-      (asg-healthy? "environment" "region" "asg" 0 8080 "healthcheck")
-      => true
+      (determine-asg-health "environment" "region" "asg" 0 8080 "healthcheck")
+      => (contains {:healthy? true})
       (provided
        (asgard/instances-in-asg "environment" "region" "asg")
        => []))
 
 (fact "that when checking ASG health no instances returns false if any are wanted"
-      (asg-healthy? "environment" "region" "asg" 1 8080 "healthcheck")
-      => false
+      (determine-asg-health "environment" "region" "asg" 1 8080 "healthcheck")
+      => (contains {:healthy? false})
       (provided
        (asgard/instances-in-asg "environment" "region" "asg")
        => []))
 
 (fact "that when checking ASG health all healthy instances returns true"
-      (asg-healthy? "environment" "region" "asg" 2 8080 "healthcheck")
-      => true
+      (determine-asg-health "environment" "region" "asg" 2 8080 "healthcheck")
+      => (contains {:healthy? true})
       (provided
        (asgard/instances-in-asg "environment" "region" "asg")
        => [{:instance {:privateIpAddress "100.100.100.101"}}
@@ -62,21 +56,9 @@
        (http/simple-get "http://100.100.100.102:8080/healthcheck" {:socket-timeout 2000})
        => {:status 200}))
 
-(fact "that when checking ASG health no healthy instances returns false"
-      (asg-healthy? "environment" "region" "asg" 2 8080 "healthcheck")
-      => false
-      (provided
-       (asgard/instances-in-asg "environment" "region" "asg")
-       => [{:instance {:privateIpAddress "100.100.100.101"}}
-           {:instance {:privateIpAddress "100.100.100.102"}}]
-       (http/simple-get "http://100.100.100.101:8080/healthcheck" {:socket-timeout 2000})
-       => {:status 500}
-       (http/simple-get "http://100.100.100.102:8080/healthcheck" {:socket-timeout 2000})
-       => {:status 500}))
-
-(fact "that when checking ASG health one unhealthy instance returns false"
-      (asg-healthy? "environment" "region" "asg" 2 8080 "healthcheck")
-      => false
+(fact "that when checking ASG health all healthy instances returns true"
+      (determine-asg-health "environment" "region" "asg" 2 8080 "healthcheck")
+      => (contains {:healthy? true})
       (provided
        (asgard/instances-in-asg "environment" "region" "asg")
        => [{:instance {:privateIpAddress "100.100.100.101"}}
@@ -84,21 +66,72 @@
        (http/simple-get "http://100.100.100.101:8080/healthcheck" {:socket-timeout 2000})
        => {:status 200}
        (http/simple-get "http://100.100.100.102:8080/healthcheck" {:socket-timeout 2000})
-       => {:status 500}))
+       => {:status 200}))
+
+(fact "that when checking ASG health `min` healthy instances returns true"
+      (determine-asg-health "environment" "region" "asg" 2 8080 "healthcheck")
+      => (contains {:healthy? true})
+      (provided
+       (asgard/instances-in-asg "environment" "region" "asg")
+       => [{:instance {:privateIpAddress "100.100.100.101"}}
+           {:instance {:privateIpAddress "100.100.100.102"}}
+           {:instance {:privateIpAddress "100.100.100.103"}}]
+       (http/simple-get "http://100.100.100.101:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}
+       (http/simple-get "http://100.100.100.102:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}
+       (http/simple-get "http://100.100.100.103:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}))
+
+(fact "that when checking ASG health minimum healthy instances returns true"
+      (determine-asg-health "environment" "region" "asg" 2 8080 "healthcheck")
+      => (contains {:healthy? true})
+      (provided
+       (asgard/instances-in-asg "environment" "region" "asg")
+       => [{:instance {:privateIpAddress "100.100.100.101"}}
+           {:instance {:privateIpAddress "100.100.100.102"}}
+           {:instance {:privateIpAddress "100.100.100.103"}}
+           {:instance {:privateIpAddress "100.100.100.104"}}]
+       (http/simple-get "http://100.100.100.101:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 500}
+       (http/simple-get "http://100.100.100.102:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 500}
+       (http/simple-get "http://100.100.100.103:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}
+       (http/simple-get "http://100.100.100.104:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}))
+
+(fact "that when checking ASG health at least minimum healthy instances returns true"
+      (determine-asg-health "environment" "region" "asg" 2 8080 "healthcheck")
+      => (contains {:healthy? true})
+      (provided
+       (asgard/instances-in-asg "environment" "region" "asg")
+       => [{:instance {:privateIpAddress "100.100.100.101"}}
+           {:instance {:privateIpAddress "100.100.100.102"}}
+           {:instance {:privateIpAddress "100.100.100.103"}}
+           {:instance {:privateIpAddress "100.100.100.104"}}]
+       (http/simple-get "http://100.100.100.101:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 500}
+       (http/simple-get "http://100.100.100.102:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}
+       (http/simple-get "http://100.100.100.103:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}
+       (http/simple-get "http://100.100.100.104:8080/healthcheck" {:socket-timeout 2000})
+       => {:status 200}))
 
 (fact "that checking ASG health does the right things when unhealthy"
       (check-asg-health "environment" "region" "asg" 2 8080 "healthcheck" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
       => ..reschedule-result..
       (provided
-       (asg-healthy? "environment" "region" "asg" 2 8080 "healthcheck")
-       => false
+       (determine-asg-health "environment" "region" "asg" 2 8080 "healthcheck")
+       => {:healthy? false :results [{:successful? false :url "http://somewhere:8080/healthcheck"}]}
        (time/now)
        => ..now..
-       (store/store-task ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
+       (store/store-task ..deploy-id.. {:log [{:message "Healthcheck at http://somewhere:8080/healthcheck - false"
                                                :date ..now..}]
                                         :status "running"})
        => ..store-result..
-       (schedule-asg-check "environment" "region" "asg" 2 8080 "healthcheck" ..deploy-id.. {:log [{:message "Checking healthcheck on port 8080 and path /healthcheck."
+       (schedule-asg-check "environment" "region" "asg" 2 8080 "healthcheck" ..deploy-id.. {:log [{:message "Healthcheck at http://somewhere:8080/healthcheck - false"
                                                                                      :date ..now..}]
                                                                               :status "running"} ..completed.. ..timed-out.. 4)
        => ..reschedule-result..))
