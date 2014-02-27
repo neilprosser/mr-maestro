@@ -75,8 +75,8 @@
 (defn bootstrap-mongo
   "Makes sure that all the indexes we want are present on our collections."
   []
-  (mcol/ensure-index "deployments" (array-map "tasks.status" 1))
-  (mcol/ensure-index "deployments" (array-map "start" -1 "end" -1 "name" 1)))
+  (mcol/ensure-index "deployments" (array-map "tasks.status" 1) {:background true})
+  (mcol/ensure-index "deployments" (array-map "start" -1 "end" -1 "name" 1) {:background true}))
 
 (defn start-graphite-reporting
   "Starts Graphite reporting."
