@@ -18,6 +18,7 @@
              [info :as info]
              [jsonp :refer [wrap-json-with-padding]]
              [pokemon :as pokemon]
+             [stats :as stats]
              [store :as store]
              [tasks :as tasks]
              [util :as util]
@@ -333,7 +334,27 @@
          [name environment state :as req]
          (if (= (get-in req [:headers "accept"]) "text/plain")
            (response (aws/describe-instances-plain environment default-region name state) "text/plain")
-           (response (aws/describe-instances environment default-region name state)))))
+           (response (aws/describe-instances environment default-region name state))))
+
+   (GET "/stats/deployments/by-user"
+        []
+        (response {:result (stats/deployments-by-user)}))
+
+   (GET "/stats/deployments/by-application"
+        []
+        (response {:result (stats/deployments-by-application)}))
+
+   (GET "/stats/deployments/by-month"
+        []
+        (response {:result (stats/deployments-by-month)}))
+
+   (GET "/stats/deployments/by-month-and-application"
+        []
+        (response {:result (stats/deployments-by-month-and-application)}))
+
+   (GET "/stats/deployments/by-month/:application"
+        [application]
+        (response {:result (stats/deployments-of-application-by-month application)})))
 
   (route/not-found (error-response "Resource not found" 404)))
 
