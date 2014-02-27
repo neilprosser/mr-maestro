@@ -93,11 +93,16 @@
   [{:keys [status]}]
   (= "pending" status))
 
+(defn- replace-failed
+  "Switches the `:status` of any failed tasks from `failed` to `undone`."
+  [tasks with]
+  (map (fn [t] (if (= "failed" (:status t)) (assoc t :status with) t)) tasks))
+
 (defn create-undo-tasks
   "Takes a list of tasks and attempts to create a suitable undo plan which will
    reverse all actions already completed or started."
   [tasks]
-  (let [active-tasks (vec (remove pending? tasks))
+  (let [active-tasks (vec (replace-failed (remove pending? tasks) "undone"))
         undo-tasks (reverse (remove nil? (flatten (map #(reverse (create-undo %)) active-tasks))))]
     (apply merge active-tasks undo-tasks)))
 

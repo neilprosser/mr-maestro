@@ -32,7 +32,7 @@
 (fact "creating the undo tasks for a deployment which has stopped at `:create-asg` creates a task which deletes that ASG"
       (create-undo-tasks [{:action :create-asg :status "failed"}
                           {:action :whatever :status "pending"}])
-      => [{:action :create-asg :status "failed"}
+      => [{:action :create-asg :status "undone"}
           {:action :delete-asg :id ..id.. :status "pending" :undo true}]
       (provided
        (util/generate-id)
@@ -40,11 +40,11 @@
 
 (fact "creating the undo tasks for a deployment which has stopped at `:wait-for-instance-health` creates nothing"
       (create-undo-tasks [{:action :wait-for-instance-health :status "failed"}])
-      => [{:action :wait-for-instance-health :status "failed"}])
+      => [{:action :wait-for-instance-health :status "undone"}])
 
 (fact "creating the undo tasks for a deployment which has stopped at `:enable-asg` creates a task which disables that ASG"
       (create-undo-tasks [{:action :enable-asg :status "failed"}])
-      => [{:action :enable-asg :status "failed"}
+      => [{:action :enable-asg :status "undone"}
           {:action :disable-asg :id ..id.. :status "pending" :undo true}]
       (provided
        (util/generate-id)
@@ -52,11 +52,11 @@
 
 (fact "creating the undo tasks for a deployment which has stopped at `:wait-for-elb-health` creates nothing"
       (create-undo-tasks [{:action :wait-for-elb-health :status "failed"}])
-      => [{:action :wait-for-elb-health :status "failed"}])
+      => [{:action :wait-for-elb-health :status "undone"}])
 
 (fact "creating the undo tasks for a deployment which has stopped at `:disable-asg` creates tasks which enable that ASG and wait for the instances to be healthy in the ELB"
       (create-undo-tasks [{:action :disable-asg :status "failed"}])
-      => [{:action :disable-asg :status "failed"}
+      => [{:action :disable-asg :status "undone"}
           {:action :enable-asg :id ..id.. :status "pending" :undo true}
           {:action :wait-for-elb-health :id ..id.. :status "pending" :undo true}]
       (provided
@@ -65,7 +65,7 @@
 
 (fact "creating the undo tasks for a deployment which has stopped at `:delete-asg` creates tasks which create that ASG and wait for it to be healthy"
       (create-undo-tasks [{:action :delete-asg :status "failed"}])
-      => [{:action :delete-asg :status "failed"}
+      => [{:action :delete-asg :status "undone"}
           {:action :create-asg :id ..id.. :status "pending" :undo true}
           {:action :wait-for-instance-health :id ..id.. :status "pending" :undo true}]
       (provided
@@ -80,7 +80,7 @@
                           {:action :disable-asg :status "pending"}
                           {:action :delete-asg :status "pending"}])
       => [{:action :create-asg :status "completed"}
-          {:action :wait-for-instance-health :status "failed"}
+          {:action :wait-for-instance-health :status "undone"}
           {:action :delete-asg :id ..id.. :status "pending" :undo true}]
       (provided
        (util/generate-id)
@@ -98,7 +98,7 @@
           {:action :enable-asg :status "completed"}
           {:action :wait-for-elb-health :status "skipped"}
           {:action :disable-asg :status "completed"}
-          {:action :delete-asg :status "failed"}
+          {:action :delete-asg :status "undone"}
           {:action :create-asg :id ..id.. :status "pending" :undo true}
           {:action :wait-for-instance-health :id ..id.. :status "pending" :undo true}
           {:action :enable-asg :id ..id.. :status "pending" :undo true}
