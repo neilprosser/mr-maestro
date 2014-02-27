@@ -144,7 +144,9 @@
   "Returns a json object describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
-  (let [name (or (and name (.endsWith name "*") name) (str name "*"))
+  (let [name (or (and (clojure.string/blank? name) "*")
+                 (and (.contains name "*") name)
+                 (str name "-*"))
         state (or state "running")
         config (merge (alternative-credentials-if-necessary environment) {:endpoint region})]
     (->> (ec2/describe-instances config
