@@ -352,9 +352,13 @@
         []
         (response {:result (stats/deployments-by-month-and-application)}))
 
-   (GET "/stats/deployments/by-month/:application"
+   (GET "/stats/deployments/by-month/application/:application"
         [application]
-        (response {:result (stats/deployments-of-application-by-month application)})))
+        (response {:result (stats/deployments-of-application-by-month application)}))
+
+   (GET "/stats/deployments/by-month/environment/:environment"
+        [environment]
+        (response {:result (stats/deployments-in-environment-by-month environment)})))
 
   (route/not-found (error-response "Resource not found" 404)))
 

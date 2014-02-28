@@ -40,6 +40,17 @@
     (map (fn [r] {:date (time/date-time (get-in r [:_id :year]) (get-in r [:_id :month]))
                  :count (get-in r [:count])}) result)))
 
+(defn deployments-in-environment-by-month
+  [environment]
+  (let [result (mc/aggregate (deployments-collection) [{$match {$and [{:environment environment}
+                                                                      {:start {$exists true}}]}}
+                                                       {$group {:_id {:year {$year "$start"}
+                                                                      :month {$month "$start"}}
+                                                                :count {$sum 1}}}])]
+    (prn result)
+    (map (fn [r] {:date (time/date-time (get-in r [:_id :year]) (get-in r [:_id :month]))
+                 :count (get-in r [:count])}) result)))
+
 (defn deployments-by-month-and-application
   []
   (let [result (mc/aggregate (deployments-collection) [{$match {$and [{:application {$exists true}}
@@ -60,5 +71,5 @@
                                                        {$group {:_id {:year {$year "$start"}
                                                                       :month {$month "$start"}}
                                                                 :count {$sum 1}}}])]
-    (map (fn [r] {:date (str (get-in r [:_id :year]) "-" (get-in r [:_id :month]))
+    (map (fn [r] {:date (time/date-time (get-in r [:_id :year]) (get-in r [:_id :month]))
                  :count (get-in r [:count])}) result)))
