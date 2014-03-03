@@ -339,14 +339,13 @@
         {:keys [version]} (util/ami-details (get-in image [:image :name]))
         parameters (tyr/deployment-params environment application hash)
         tasks (create-standard-deployment-tasks)
-        deployment {:ami ami :application application :contact (get-in onix [:metadata :contact]) :created (time/now)
-                    :environment environment :hash hash :id (util/generate-id) :message message :nagios (get-in onix [:metadata :nagios])
+        deployment {:ami ami :application application :contact (:contact onix) :created (time/now)
+                    :environment environment :hash hash :id (util/generate-id) :message message :nagios (:nagios onix)
                     :parameters parameters :region region :tasks tasks :user user :version version}]
     (store/store-deployment deployment)
     deployment))
 
-;; Precondition attached to `prepare-deployment` to check that the AMI
-;; application matches the application being deployed.
+;; Precondition attached to `prepare-deployment` to check that the AMI application matches the application being deployed.
 (with-precondition! #'prepare-deployment
   :ami-name-matches
   (fn [region application _ _ ami _ _]
@@ -354,12 +353,24 @@
           ami-application (or (get-in image [:image :name]) "")]
       (= application (second (re-find #"^ent-([^-]+)-" ami-application))))))
 
-;; Handler attached to `prepare-deployment` to throw an error if the AMI
-;; application doesn't match the one being deployed.
+;; Precondition attached to `prepare-deployment` to check that the `contact` property has been set for the application in Onix.
+(with-precondition! #'prepare-deployment
+  :contact-property-set
+  (fn [_ application _ _ _ _ _]
+    (let [onix-details (onix/application application)]
+      (:contact onix-details))))
+
+;; Handler attached to `prepare-deployment` to throw an error if the AMI application doesn't match the one being deployed.
 (with-handler! #'prepare-deployment
   {:precondition :ami-name-matches}
   (fn [e region application _ _ ami _ _]
     (throw (ex-info "Image does not match application" {:type ::mismatched-image :region region :application application :ami ami}))))
+
+;; Handler attached to `prepare-deployment` to throw an error if the `contact` property has been set.
+(with-handler! #'prepare-deployment
+  {:precondition :contact-property-set}
+   (fn [e _ application _ _ _ _ _]
+     (throw (ex-info "Contact property has not been set in Onix" {:type ::no-contact :application application}))))
 
 (defn prepare-rollback
   "Prepares a rollback of the `application` in an `environment` within the

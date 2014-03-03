@@ -36,7 +36,7 @@
   [application-name]
   (let [{:keys [body status]} (http/simple-get (application-url application-name))]
     (if (= status 200)
-      (json/parse-string body true))))
+      (:metadata (json/parse-string body true)))))
 
 (defn applications
   "Gets all applications Onix knows about."

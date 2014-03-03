@@ -129,7 +129,7 @@
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-1-2013-10-12_19-23-12"}}
        (onix/application "app")
-       => {:name "app" :metadata {:contact "contact" :nagios true}}
+       => {:contact "contact" :nagios true}
        (tyr/last-commit-hash ..env.. "app")
        => ..hash..
        (tyr/application-properties ..env.. "app" ..hash..)
@@ -164,7 +164,7 @@
       (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..hash.. ..message..)
       => {:ami ..ami..
           :application "app"
-          :contact nil
+          :contact "contact"
           :created ..created..
           :environment ..env..
           :hash ..hash..
@@ -180,7 +180,7 @@
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-1-2012-03-01_01-12-54"}}
        (onix/application "app")
-       => {:name "app"}
+       => {:contact "contact"}
        (tyr/application-properties ..env.. "app" ..hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..hash..)
@@ -195,7 +195,7 @@
        => ..created..
        (store/store-deployment {:ami ..ami..
                                 :application "app"
-                                :contact nil
+                                :contact "contact"
                                 :created ..created..
                                 :environment ..env..
                                 :hash ..hash..
@@ -209,14 +209,14 @@
                                 :version "0.23"})
        => ..deploy-id..))
 
-(fact "that an invalid file from Tyranitar fails throws up"
+(fact "that an invalid file from Tyranitar throws up"
       (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..hash.. ..message..)
       => (throws ExceptionInfo "One or more Tyranitar files are invalid")
       (provided
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-4-2011-12-09_08-12-00"}}
        (onix/application "app")
-       => {}
+       => {:contact "contact"}
        (tyr/application-properties ..env.. "app" ..hash..)
        =throws=> (Exception.)))
 
@@ -258,7 +258,7 @@
        (asgard/image ..region.. ..old-ami..)
        => {:image {:name "ent-app-0.23-1-2014-05-23_12-00-00"}}
        (onix/application "app")
-       => {:name "app" :metadata {:contact "contact" :nagios false}}
+       => {:contact "contact" :nagios false}
        (tyr/application-properties ..env.. "app" ..old-hash..)
        => ..props..
        (tyr/deployment-params ..env.. "app" ..old-hash..)
@@ -748,8 +748,17 @@
       (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
       => (throws ExceptionInfo "Image does not match application")
       (provided
+       (onix/application "application")
+       => {:contact "contact"}
        (asgard/image "region" "ami")
        => {:image {:name "ent-somethingelse-0.12"}}))
+
+(fact "that preparing a deployment for an application which doesn't have the `contact` property set throws a wobbly"
+      (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
+      => (throws ExceptionInfo "Contact property has not been set in Onix")
+      (provided
+       (onix/application "application")
+       => {}))
 
 (fact "that preparing an undo for a deployment with no tasks gives back the deployment"
       (prepare-undo {:tasks []})

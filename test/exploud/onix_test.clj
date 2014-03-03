@@ -35,14 +35,14 @@
 
 (fact "that when getting an application we do the right thing in the happy case"
       (application "app-name")
-      => ..application..
+      => ..details..
       (provided
        (http/simple-get
         "http://onix:8080/1.x/applications/app-name")
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
-       => ..application..))
+       => {:metadata ..details..}))
 
 (fact "that when getting an application that doesn't exist we get `nil`"
       (application "app-name")
