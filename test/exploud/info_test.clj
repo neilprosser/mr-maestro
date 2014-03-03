@@ -34,7 +34,7 @@
                  :owner "owner"}}))
 
 (fact "that upserting an application attempts to put it into Onix, Tyranitar and Asgard"
-      (upsert-application "region" "application" ..details..)
+      (upsert-application "region" "application" {:email "contact@somewhere.com"})
       => {:tyranitar "business" :asgard "business" :shuppet "business"}
       (provided
        (onix/upsert-application "application")
@@ -43,7 +43,9 @@
        => {:tyranitar "business"}
        (shuppet/upsert-application "application")
        => {:shuppet "business"}
-       (asgard/upsert-application "application" ..details..)
+       (onix/add-property "application" :contact "contact@somewhere.com")
+       => nil
+       (asgard/upsert-application "application" {:email "contact@somewhere.com"})
        => ..asgard..
        (shuppet/apply-config "application")
        => ..shuppet-apply..

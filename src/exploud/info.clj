@@ -25,6 +25,7 @@
   (let [onix-application (onix/upsert-application application-name)
         tyranitar-application (tyr/upsert-application application-name)
         shuppet-application (shuppet/upsert-application application-name)]
+    (onix/add-property application-name :contact (:email details))
     (asgard/upsert-application application-name details)
     (shuppet/apply-config application-name)
     (merge (application "poke" region application-name) tyranitar-application shuppet-application)))

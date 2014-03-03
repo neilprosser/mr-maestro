@@ -20,6 +20,11 @@
   [application-name]
   (str (url onix-url "1.x" "applications" application-name)))
 
+(defn property-url
+  "The URL where we can get information about the property of an application."
+  [application-name property-name]
+  (str (url onix-url "1.x" "applications" application-name property-name)))
+
 (defn create-application
   "Creates an applcation in Onix and returns the application. If the
    application is already present, this method will fail."
@@ -29,6 +34,14 @@
     (if (= status 201)
       (json/parse-string body true)
       (throw (ex-info "Unexpected status while creating application" {:type ::unexpected-response :response response})))))
+
+(defn add-property
+  "Add the given property to the application."
+  [application-name property-name property-value]
+  (let [body (json/generate-string {:value property-value})
+        {:keys [status] :as response} (http/simple-put (property-url application-name (name property-name)) {:content-type :json :body body})]
+    (when-not (= status 201)
+      (throw (ex-info "Unexpected status while adding property" {:type ::unexpected-response :response response})))))
 
 (defn application
   "Gets a particular application. Returns `nil` if the application doesn't

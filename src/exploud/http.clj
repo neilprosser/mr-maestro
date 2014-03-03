@@ -24,29 +24,25 @@
   (fn [response]
     (log/debug "Response was" response)))
 
-;; Exception handler attached to `simple-get` which deals with
-;; `ConnectException`.
+;; Exception handler attached to `simple-get` which deals with `ConnectException`.
 (with-handler! #'simple-get
   java.net.ConnectException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connection-refused :class :http}))))
 
-;; Exception handler attached to `simple-get` which deals with
-;; `ConnectTimeoutException`.
+;; Exception handler attached to `simple-get` which deals with `ConnectTimeoutException`.
 (with-handler! #'simple-get
   org.apache.http.conn.ConnectTimeoutException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connect-timeout :class :http}))))
 
-;; Exception handler attached to `simple-get` which deals with
-;; `SocketTimeoutException`.
+;; Exception handler attached to `simple-get` which deals with `SocketTimeoutException`.
 (with-handler! #'simple-get
   java.net.SocketTimeoutException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::socket-timeout :class :http}))))
 
-;; Exception handler attached to `simple-get` which deals with
-;; `UnknownHostException`.
+;; Exception handler attached to `simple-get` which deals with `UnknownHostException`.
 (with-handler! #'simple-get
   java.net.UnknownHostException
   (fn [e url & [_]]
@@ -67,30 +63,65 @@
   (fn [response]
     (log/debug "Response was" response)))
 
-;; Exception handler attached to `simple-post` which deals with
-;; `ConnectException`.
+;; Exception handler attached to `simple-post` which deals with `ConnectException`.
 (with-handler! #'simple-post
   java.net.ConnectException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connection-refused :class :http}))))
 
-;; Exception handler attached to `simple-post` which deals with
-;; `ConnectTimeoutException`.
+;; Exception handler attached to `simple-post` which deals with `ConnectTimeoutException`.
 (with-handler! #'simple-post
   org.apache.http.conn.ConnectTimeoutException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::connect-timeout :class :http}))))
 
-;; Exception handler attached to `simple-post` which deals with
-;; `SocketTimeoutException`.
+;; Exception handler attached to `simple-post` which deals with `SocketTimeoutException`.
 (with-handler! #'simple-post
   java.net.SocketTimeoutException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::socket-timeout :class :http}))))
 
-;; Exception handler attached to `simple-post` which deals with
-;; `UnknownHostException`.
+;; Exception handler attached to `simple-post` which deals with `UnknownHostException`.
 (with-handler! #'simple-post
+  java.net.UnknownHostException
+  (fn [e url & [_]]
+    (throw (ex-info (.getMessage e) {:type ::unknown-host :class :http}))))
+
+(defn simple-put
+  "Performs a PUT request to the URL provided."
+  [url & [params]]
+  (http/put url (merge-with-default-params params)))
+
+;; A pre-hook attached to `simple-put` to log the URL and params.
+(with-pre-hook! #'simple-put
+  (fn [url & [params]]
+    (log/debug "PUTting to" url "with params" params)))
+
+;; A post-hook attched to `simple-put` to log the response.
+(with-post-hook! #'simple-put
+  (fn [response]
+    (log/debug "Response was" response)))
+
+;; Exception handler attached to `simple-put` which deals with `ConnectException`.
+(with-handler! #'simple-put
+  java.net.ConnectException
+  (fn [e url & [_]]
+    (throw (ex-info (.getMessage e) {:type ::connection-refused :class :http}))))
+
+;; Exception handler attached to `simple-put` which deals with `ConnectTimeoutException`.
+(with-handler! #'simple-put
+  org.apache.http.conn.ConnectTimeoutException
+  (fn [e url & [_]]
+    (throw (ex-info (.getMessage e) {:type ::connect-timeout :class :http}))))
+
+;; Exception handler attached to `simple-put` which deals with `SocketTimeoutException`.
+(with-handler! #'simple-put
+  java.net.SocketTimeoutException
+  (fn [e url & [_]]
+    (throw (ex-info (.getMessage e) {:type ::socket-timeout :class :http}))))
+
+;; Exception handler attached to `simple-put` which deals with `UnknownHostException`.
+(with-handler! #'simple-put
   java.net.UnknownHostException
   (fn [e url & [_]]
     (throw (ex-info (.getMessage e) {:type ::unknown-host :class :http}))))

@@ -33,6 +33,30 @@
          :body ..body..})
        => {:status 500}))
 
+(fact "that when adding a property we do the right thing"
+      (add-property "application" :property "some value")
+      => nil
+      (provided
+       (json/generate-string {:value "some value"})
+       => ..body..
+       (http/simple-put
+        "http://onix:8080/1.x/applications/application/property"
+        {:content-type :json
+         :body ..body..})
+       => {:status 201}))
+
+(fact "that when adding a property and getting an error we do what we're supposed to do"
+      (add-property "application" "property" "some value")
+      => (throws ExceptionInfo "Unexpected status while adding property")
+      (provided
+       (json/generate-string {:value "some value"})
+       => ..body..
+       (http/simple-put
+        "http://onix:8080/1.x/applications/application/property"
+        {:content-type :json
+         :body ..body..})
+       => {:status 500}))
+
 (fact "that when getting an application we do the right thing in the happy case"
       (application "app-name")
       => ..details..
