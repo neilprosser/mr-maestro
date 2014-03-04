@@ -370,7 +370,7 @@
 (with-handler! #'prepare-deployment
   {:precondition :contact-property-set}
    (fn [e _ application _ _ _ _ _]
-     (throw (ex-info "Contact property has not been set in Onix" {:type ::no-contact :application application}))))
+     (throw (ex-info "The 'contact' property has not been set for the application in Onix" {:type ::no-contact :application application}))))
 
 (defn prepare-rollback
   "Prepares a rollback of the `application` in an `environment` within the
@@ -409,8 +409,7 @@
     nil))
 
 (defn finish-deployment
-  "Puts an `:end` date on the deployment and we all breathe a sigh of relief. Unless
-   it failed of course."
+  "Puts an `:end` date on the deployment and we all breathe a sigh of relief. Unless it failed of course."
   [deployment]
   (store/store-deployment (assoc deployment :end (time/now)))
   (notification/send-completion-message deployment)

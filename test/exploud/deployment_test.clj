@@ -755,7 +755,7 @@
 
 (fact "that preparing a deployment for an application which doesn't have the `contact` property set throws a wobbly"
       (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
-      => (throws ExceptionInfo "Contact property has not been set in Onix")
+      => (throws ExceptionInfo "The 'contact' property has not been set for the application in Onix")
       (provided
        (onix/application "application")
        => {}))

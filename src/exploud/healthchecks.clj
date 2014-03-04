@@ -64,8 +64,7 @@
 
 (defn schedule-asg-check
   "Schedules an ASG healthcheck, which will use `determine-asg-health` to figure out health."
-  [environment region asg-name min-instances port healthcheck-path deployment-id task
-   completed-fn timed-out-fn polls & [delay]]
+  [environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn polls & [delay]]
   (let [f #(check-asg-health environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn polls)]
     (at-at/after (or delay 5000) f tasks/pool :desc (str "asg-healthcheck-" deployment-id))))
 
@@ -76,8 +75,7 @@
 
 (defn check-asg-health
   "If `asg-name` is healthy call `completed-fn` otherwise reschedule until `seconds` has elapsed. If we've timed out call `timed-out-fn`."
-  [environment region asg-name min-instances port healthcheck-path deployment-id task
-   completed-fn timed-out-fn polls]
+  [environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn polls]
   (try
     (let [asg-health (determine-asg-health environment region asg-name min-instances port healthcheck-path)
           healthy? (:healthy? asg-health)
@@ -96,8 +94,7 @@
 
 (defn wait-until-asg-healthy
   "Polls every 5 seconds until `determine-asg-health` shows healthy or until we've done `poll-count` checks."
-  [environment region asg-name min-instances port healthcheck-path deployment-id task
-   completed-fn timed-out-fn]
+  [environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn]
   (schedule-asg-check environment region asg-name min-instances port healthcheck-path deployment-id task completed-fn timed-out-fn poll-count 100))
 
 ;; Pre-hook attached to `wait-until-asg-healthy` to log parameters.
@@ -123,8 +120,7 @@
 (defn schedule-elb-check
   "Schedules an ELB healthcheck, which will use `elb-healthy?` to determine
    health of all `elb-names`."
-  [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls
-   & [delay]]
+  [environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls & [delay]]
   (let [f #(check-elb-health environment region elb-names asg-name deployment-id task completed-fn timed-out-fn polls)]
     (at-at/after (or delay 5000) f tasks/pool :desc (str "elb-healthcheck-" deployment-id))))
 
