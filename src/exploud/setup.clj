@@ -149,5 +149,5 @@
 (defn -main
   "The entry point for the application."
   [& args]
-  (.addShutdownHook (Runtime/getRuntime) (Thread. #(shutdown-agents)))
+  (.addShutdownHook (Runtime/getRuntime) (Thread. shutdown-agents))
   (start))
