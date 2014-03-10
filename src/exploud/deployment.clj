@@ -13,6 +13,7 @@
              [healthchecks :as health]
              [notification :as notification]
              [onix :as onix]
+             [shuppet :as shuppet]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]))
@@ -360,6 +361,12 @@
     (let [onix-details (onix/application application)]
       (:contact onix-details))))
 
+;; Precondition attached to `prepare-deployment` to check that we have Shuppet configuration for the application and environment.
+(with-precondition! #'prepare-deployment
+  :shuppet-config-exists
+  (fn [_ application environment _ _ _ _]
+    (shuppet/configuration environment application)))
+
 ;; Handler attached to `prepare-deployment` to throw an error if the AMI application doesn't match the one being deployed.
 (with-handler! #'prepare-deployment
   {:precondition :ami-name-matches}
@@ -371,6 +378,12 @@
   {:precondition :contact-property-set}
    (fn [e _ application _ _ _ _ _]
      (throw (ex-info "The 'contact' property has not been set for the application in Onix" {:type ::no-contact :application application}))))
+
+;; Handler attached to `prepare-deployment` to throw an error if we are missing Shuppet configuration for the application and environment.
+(with-handler! #'prepare-deployment
+  {:precondition :shuppet-config-exists}
+  (fn [e _ application environment _ _ _ _]
+    (throw (ex-info "There is no Shuppet configuration for the application" {:type ::no-shuppet :application application :environment environment}))))
 
 (defn prepare-rollback
   "Prepares a rollback of the `application` in an `environment` within the

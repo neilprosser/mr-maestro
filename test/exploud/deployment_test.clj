@@ -8,6 +8,7 @@
              [healthchecks :as health]
              [notification :as notification]
              [onix :as onix]
+             [shuppet :as shuppet]
              [store :as store]
              [tyranitar :as tyr]
              [util :as util]]
@@ -130,6 +131,8 @@
        => {:image {:name "ent-app-0.23-1-2013-10-12_19-23-12"}}
        (onix/application "app")
        => {:contact "contact" :nagios true}
+       (shuppet/configuration ..env.. "app")
+       => {}
        (tyr/last-commit-hash ..env.. "app")
        => ..hash..
        (tyr/application-properties ..env.. "app" ..hash..)
@@ -177,6 +180,8 @@
           :user ..user..
           :version "0.23"}
       (provided
+       (shuppet/configuration ..env.. "app")
+       => {}
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-1-2012-03-01_01-12-54"}}
        (onix/application "app")
@@ -213,6 +218,8 @@
       (prepare-deployment ..region.. "app" ..env.. ..user.. ..ami.. ..hash.. ..message..)
       => (throws ExceptionInfo "One or more Tyranitar files are invalid")
       (provided
+       (shuppet/configuration ..env.. "app")
+       => {}
        (asgard/image ..region.. ..ami..)
        => {:image {:name "ent-app-0.23-4-2011-12-09_08-12-00"}}
        (onix/application "app")
@@ -255,6 +262,8 @@
             :tasks ..old-tasks..
             :user ..old-user..
             :version "0.23"}]
+       (shuppet/configuration ..env.. "app")
+       => {}
        (asgard/image ..region.. ..old-ami..)
        => {:image {:name "ent-app-0.23-1-2014-05-23_12-00-00"}}
        (onix/application "app")
@@ -748,6 +757,8 @@
       (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
       => (throws ExceptionInfo "Image does not match application")
       (provided
+       (shuppet/configuration "environment" "application")
+       => {}
        (onix/application "application")
        => {:contact "contact"}
        (asgard/image "region" "ami")
@@ -757,8 +768,17 @@
       (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
       => (throws ExceptionInfo "The 'contact' property has not been set for the application in Onix")
       (provided
+       (shuppet/configuration "environment" "application")
+       => {}
        (onix/application "application")
        => {}))
+
+(fact "that preparing a deployment for an application which doesn't have any Shuppet configuration throws a wobbly"
+      (prepare-deployment "region" "application" "environment" "user" "ami" nil "message")
+      => (throws ExceptionInfo "There is no Shuppet configuration for the application")
+      (provided
+       (shuppet/configuration "environment" "application")
+       => nil))
 
 (fact "that preparing an undo for a deployment with no tasks gives back the deployment"
       (prepare-undo {:tasks []})
