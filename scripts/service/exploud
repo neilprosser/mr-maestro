@@ -7,13 +7,13 @@
 # Here is a little (and extremely primitive) startup/shutdown script
 # for RedHat systems. It assumes that Exploud lives in /usr/local/exploud,
 # it's run by user 'exploud' and JDK binaries are in /usr/java/default/bin.
-# All this can be changed in the script itself. 
+# All this can be changed in the script itself.
 #
 # Either modify this script for your requirements or just ensure that
 # the following variables are set correctly before calling the script.
-# chkconfig: 345 99 05 
-# description: Runs the Exploud Server 
-# processname: exploud 
+# chkconfig: 345 99 05
+# description: Runs the Exploud Server
+# processname: exploud
 
 #define where exploud is
 GIVEN_HOME="/usr/local/exploud"
@@ -25,9 +25,6 @@ JETTY_USER=${JETTY_USER:-"exploud"}
 
 #make sure java is in your path
 JAVAPTH=${JAVAPTH:-"/usr/java/default/bin"}
-
-#define property file location
-export SERVICE_JVMARGS="-Dconfig=/etc/exploud.properties"
 
 #define the script to use to start exploud
 JETTYSH=${JETTYSH:-"$JETTY_HOME/bin/start.sh"}
@@ -68,7 +65,7 @@ stop)
         $JETTY_CMD_STOP
     else
         $SUBIT "$JETTY_CMD_STOP"
-    fi 
+    fi
     ;;
 restart)
     $0 stop

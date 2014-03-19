@@ -10,10 +10,8 @@ then
   exit 1
 fi
 
-JETTY_HOME=/usr/local/exploud
+JETTY_HOME=/usr/local/${SERVICE_NAME}
 JAR_NAME=$JETTY_HOME/${SERVICE_NAME}.jar
-LOG_FILE=$JETTY_HOME/log/jetty.log
-ERR_FILE=$JETTY_HOME/log/jetty.err
 
 IFS="$(echo -e "\n\r")"
 for LINE in `cat /etc/${SERVICE_NAME}.properties`
@@ -33,6 +31,11 @@ IFS="$(echo -e " ")"
 SERVICE_PORT=${SERVICE_PORT:-"8080"}
 STATUS_PATH=${SERVICE_STATUS_PATH:-"/1.x/status"}
 SERVICE_JETTY_START_TIMEOUT_SECONDS=${SERVICE_JETTY_START_TIMEOUT_SECONDS:-"15"}
+SERVICE_LOGGING_PATH=${SERVICE_LOGGING_PATH:-"/var/log/${SERVICE_NAME}"}
+LOG_FILE=${SERVICE_LOGGING_PATH}/jetty.log
+ERR_FILE=${SERVICE_LOGGING_PATH}/jetty.err
+
+mkdir -p /var/encrypted/logs/${SERVICE_NAME}
 
 nohup java $SERVICE_JVMARGS -Dservice.logging.path=${SERVICE_LOGGING_PATH} -jar $JAR_NAME > $LOG_FILE 2> $ERR_FILE < /dev/null &
 

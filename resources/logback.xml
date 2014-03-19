@@ -8,8 +8,6 @@
   <!-- As is Jetty -->
   <logger name="org.eclipse.jetty" level="info" />
 
-  <!-- Properties should be provided as environment variables or the defaults will be used -->
-
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>${SERVICE_LOGGING_FILETHRESHOLD:-debug}</level>
@@ -29,7 +27,7 @@
       <level>${SERVICE_LOGGING_SERVICETHRESHOLD:-off}</level>
     </filter>
     <filter class="com.ovi.common.logging.GraphiteReporterFilter" />
-    <LoggingServiceUrl>${ENVIRONMENT_MUSIC_ERRORLOGGING1JAVA_BASEURL:-http://errorlogging.music.cq1.brislabs.com:8080/ErrorLogging/1.x}/logitems</LoggingServiceUrl>
+    <LoggingServiceUrl>${ENVIRONMENT_MUSIC_ERRORLOGGING1JAVA_BASEURL:-http://errorlogging.music.cq3.brislabs.com:8080/ErrorLogging/1.x}/logitems</LoggingServiceUrl>
     <ServiceName>${SERVICE_NAME}</ServiceName>
     <DefaultCategory>Service</DefaultCategory>
     <FailureLoggerName>failure</FailureLoggerName>

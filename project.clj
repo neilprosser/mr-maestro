@@ -2,7 +2,7 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
-  :dependencies [[amazonica "0.2.8"]
+  :dependencies [[amazonica "0.2.10"]
                  [bouncer "0.3.0"]
                  [ch.qos.logback/logback-classic "1.1.1"]
                  [cheshire "5.3.1"]
@@ -17,7 +17,6 @@
                  [compojure "1.1.6" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
                  [environ "0.4.0"]
-                 [org.flatland/ordered "1.5.2"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
                  [nokia/instrumented-ring-jetty-adapter "0.1.8"]
@@ -28,6 +27,7 @@
                  [org.clojure/data.zip "0.1.1"]
                  [org.clojure/tools.logging "0.2.6"]
                  [org.eclipse.jetty/jetty-server "8.1.14.v20131031"]
+                 [org.flatland/ordered "1.5.2"]
                  [org.slf4j/jcl-over-slf4j "1.7.6"]
                  [org.slf4j/jul-to-slf4j "1.7.6"]
                  [org.slf4j/log4j-over-slf4j "1.7.6"]
@@ -39,44 +39,44 @@
   :exclusions [commons-logging
                log4j]
 
-  :profiles {:dev {:dependencies [[midje "1.6.2"]]
-                   :plugins [[lein-rpm "0.0.5"]
+  :profiles {:dev {:dependencies [[midje "1.6.3"]]
+                   :plugins [[jonase/kibit "0.0.8"]
                              [lein-midje "3.1.3"]
-                             [jonase/kibit "0.0.8"]]}}
+                             [lein-rpm "0.0.5"]]}}
 
   :plugins [[lein-cloverage "1.0.2"]
             [lein-embongo "0.2.1"]
-            [lein-marginalia "0.7.1"]
-            [lein-ring "0.8.10"]
             [lein-environ "0.4.0"]
-            [lein-release "1.0.73"]]
+            [lein-marginalia "0.7.1"]
+            [lein-release "1.0.73"]
+            [lein-ring "0.8.10"]]
 
-  :env {:environment-name "Dev"
-        :service-name "exploud"
-        :service-port "8080"
-        :environment-entertainment-graphite-host "graphite.brislabs.com"
-        :environment-entertainment-graphite-port "8080"
-        :service-graphite-post-interval "1"
-        :service-graphite-post-unit "MINUTES"
-        :service-graphite-enabled "ENABLED"
-        :service-production "false"
-        :service-dev-asgard-url "http://dev.asgard:8080"
-        :service-prod-asgard-url "http://prod.asgard:8080"
-        :service-onix-url "http://onix:8080"
-        :service-shuppet-url "http://shuppet:8080"
-        :service-tyranitar-url "http://tyranitar:8080"
-        :service-smtp-host ""
-        :service-mail-from "exploud@brislabs.com"
-        :service-mail-to "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
-        :mongo-hosts "localhost:27017"
-        :mongo-connections-max "50"
-        :service-dev-vpc-id "vpc-dev"
-        :service-prod-vpc-id "vpc-prod"
-        :aws-poke-account-id "poke-account-id"
+  :env {:aws-poke-account-id "poke-account-id"
         :aws-poke-autoscaling-topic-arn "poke-autoscaling-topic-arn"
         :aws-prod-account-id "prod-account-id"
         :aws-prod-autoscaling-topic-arn "prod-autoscaling-topic-arn"
-        :aws-prod-role-arn "prod-role-arn"}
+        :aws-prod-role-arn "prod-role-arn"
+        :environment-entertainment-graphite-host "graphite.brislabs.com"
+        :environment-entertainment-graphite-port "8080"
+        :environment-name "Dev"
+        :mongo-connections-max "50"
+        :mongo-hosts "localhost:27017"
+        :service-dev-asgard-url "http://dev.asgard:8080"
+        :service-dev-vpc-id "vpc-dev"
+        :service-graphite-post-interval "1"
+        :service-graphite-post-unit "MINUTES"
+        :service-graphite-enabled "ENABLED"
+        :service-mail-from "exploud@brislabs.com"
+        :service-mail-to "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
+        :service-name "exploud"
+        :service-port "8080"
+        :service-onix-url "http://onix:8080"
+        :service-prod-asgard-url "http://prod.asgard:8080"
+        :service-prod-vpc-id "vpc-prod"
+        :service-production "false"
+        :service-shuppet-url "http://shuppet:8080"
+        :service-smtp-host ""
+        :service-tyranitar-url "http://tyranitar:8080"}
 
   :clean-targets [:target-path "docs"]
 
@@ -117,9 +117,6 @@
                     :username "exploud"
                     :groupname "exploud"
                     :sources {:source [{:location "scripts/bin"}]}}
-                   {:directory "/usr/local/deployment/exploud/bin"
-                    :filemode "744"
-                    :sources {:source [{:location "scripts/dmt"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "744"
                     :username "exploud"
