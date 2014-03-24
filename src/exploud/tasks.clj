@@ -1,7 +1,6 @@
 (ns exploud.tasks
-  (:require [overtone.at-at :as at-at]))
+  (:require [exploud.redis :as redis]))
 
-(def pool
-  "Our trusty task pool. Used for tracking healthchecks and keeping Asgard tasks
-   up to date."
-  (at-at/mk-pool))
+(defn enqueue
+  [task]
+  (redis/enqueue task))

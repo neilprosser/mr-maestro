@@ -1,4 +1,4 @@
-(ns exploud.notification_test
+(ns exploud.notification-test
   (:require [environ.core :refer [env]]
             [exploud.notification :refer :all]
             [midje.sweet :refer :all]

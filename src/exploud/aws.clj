@@ -3,15 +3,14 @@
             [amazonica.aws
              [autoscaling :as auto]
              [ec2 :as ec2]
+             [elasticloadbalancing :as elb]
              [securitytoken :as sts]
              [sqs :as sqs]]
             [cheshire.core :as json]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
-            [exploud
-             [asgard :as asgard]
-             [util :as util]]))
+            [exploud.util :as util]))
 
 (def autoscale-queue-name
   "The queue name we'll use for sending announcements."
@@ -58,13 +57,26 @@
   (if-not (use-current-role? environment)
     (:credentials (sts/assume-role {:role-arn role-arn :role-session-name "exploud"}))))
 
+(def ^:private proxy-details
+  (let [proxy-host (env :aws-proxy-host)
+        proxy-port (env :aws-proxy-port)]
+    (when (and proxy-host proxy-port)
+      {:client-config {:proxy-host proxy-host
+                       :proxy-port (Integer/valueOf proxy-port)}})))
+
+(defn config
+  [environment region]
+  (merge (alternative-credentials-if-necessary environment)
+         {:endpoint region}
+         proxy-details))
+
 (defn account-id
   "Get the account ID we should use for an environment. We'll default to whatever `:poke` uses in the event of not knowing."
   [environment]
   ((keyword environment) account-ids (:poke account-ids)))
 
 (defn autoscaling-topic
-  "Get the autoscaling topic ARN we should use for an environment. We'll default ot wahtever `:poke` uses in the event of not knowing."
+  "Get the autoscaling topic ARN we should use for an environment. We'll default ot whatever `:poke` uses in the event of not knowing."
   [environment]
   ((keyword environment) autoscaling-topics (:poke autoscaling-topics)))
 
@@ -76,61 +88,12 @@
 (defn asg-created-message
   "Create the message describing the creation of an ASG."
   [asg-name]
-  {:Message (json/generate-string {:Event "autoscaling:ASG_LAUNCH" :AutoScalingGroupName asg-name})})
+  (json/generate-string {:Message (json/generate-string {:Event "autoscaling:ASG_LAUNCH" :AutoScalingGroupName asg-name})}))
 
 (defn asg-deleted-message
   "Create the message describing the deletion of an ASG."
   [asg-name]
-  {:Message (json/generate-string {:Event "autoscaling:ASG_TERMINATE" :AutoScalingGroupName asg-name})})
-
-(defn create-tags-on-asg-and-instances
-  "Creates tags on an ASG and sets them to propagate at launch. Also creates tags on all instances in that ASG."
-  [config environment region asg-name tags]
-  (when-let [tag-list (seq (filter :value (map (fn [[k v]] {:resource-id asg-name
-                                                           :resource-type "auto-scaling-group"
-                                                           :propagate-at-launch true
-                                                           :key (name k)
-                                                           :value v}) tags)))]
-    (auto/create-or-update-tags config :tags (vec tag-list))
-    (when-let [instance-ids (seq (map (fn [i] (get-in i [:instance :instanceId])) (asgard/instances-in-asg environment region asg-name)))]
-      (let [instance-tag-list (map (fn [t] (select-keys t [:key :value])) tag-list)]
-        (ec2/create-tags config :resources (vec instance-ids) :tags (vec instance-tag-list))))))
-
-(defn asg-created
-  "Perform AWS-related events that should occur when an ASG has been created."
-  [region environment asg-name tags]
-  (let [config (merge (alternative-credentials-if-necessary environment)
-                      {:endpoint region})]
-    (create-tags-on-asg-and-instances config environment region asg-name tags)
-    (sqs/send-message config
-                      :queue-url (announcement-queue-url region environment)
-                      :delay-seconds 0
-                      :message-body (json/generate-string (asg-created-message asg-name)))
-    (auto/put-notification-configuration config
-                                         :auto-scaling-group-name asg-name
-                                         :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
-                                         :topic-arn (autoscaling-topic environment))
-    nil))
-
-;; Pre-hook attached to `asg-created` to log parameters.
-(with-pre-hook! #'asg-created
-  (fn [region environment asg-name tags]
-    (log/debug "Notifying that" asg-name "has been created in" region environment "with tags" tags)))
-
-(defn asg-deleted
-  "Perform AWS-related events that should occur when an ASG has been deleted."
-  [region environment asg-name]
-  (let [config (merge (alternative-credentials-if-necessary environment) {:endpoint region})]
-    (sqs/send-message config
-                      :queue-url (announcement-queue-url region environment)
-                      :delay-seconds 0
-                      :message-body (json/generate-string (asg-deleted-message asg-name)))
-    nil))
-
-;; Pre-hook attached to `asg-deleted` to log parameters.
-(with-pre-hook! #'asg-deleted
-  (fn [region environment asg-name]
-    (log/debug "Notifying that" asg-name "has been deleted in" region environment)))
+  (json/generate-string {:Message (json/generate-string {:Event "autoscaling:ASG_TERMINATE" :AutoScalingGroupName asg-name})}))
 
 (defn transform-instance-description
   "Takes an aws instance description and returns the fields we are interested in flattened"
@@ -148,7 +111,7 @@
                  (and (.contains name "*") name)
                  (str name "-*"))
         state (or state "running")
-        config (merge (alternative-credentials-if-necessary environment) {:endpoint region})]
+        config (config environment region)]
     (->> (ec2/describe-instances config
                                  :filters [{:name "tag:Name" :values [name]}
                                            {:name "instance-state-name" :values [state]}])
@@ -161,3 +124,84 @@
    with the given name and optional state (defaults to running)"
   [environment region name state]
   (util/as-table (describe-instances environment region name state)))
+
+(def auto-scaling-groups
+  (fn [environment region]
+    (let [config (config environment region)]
+      (loop [t nil gs []]
+        (let [{:keys [next-token auto-scaling-groups]} (if t (auto/describe-auto-scaling-groups config :next-token t) (auto/describe-auto-scaling-groups config))]
+          (if-not next-token
+            (apply conj gs auto-scaling-groups)
+            (recur next-token (apply conj gs auto-scaling-groups))))))))
+
+(defn last-application-auto-scaling-group
+  [application environment region]
+  (let [asgs (auto-scaling-groups environment region)
+        asg-names (map :auto-scaling-group-name asgs)
+        pattern (re-pattern (str "^" application "-" environment))
+        last-name (last (sort (filter #(re-find pattern %) asg-names)))]
+    (first (filter #(= last-name (:auto-scaling-group-name %)) asgs))))
+
+(defn auto-scaling-group
+  [auto-scaling-group-name environment region]
+  (first (:auto-scaling-groups (auto/describe-auto-scaling-groups (config environment region)
+                                                                  :auto-scaling-group-names [auto-scaling-group-name]
+                                                                  :max-records 1))))
+
+(defn auto-scaling-group-instances
+  [auto-scaling-group-name environment region]
+  (:instances (auto-scaling-group auto-scaling-group-name environment region)))
+
+(defn launch-configuration
+  [launch-configuration-name environment region]
+  (first (:launch-configurations (auto/describe-launch-configurations (config environment region)
+                                                                     :launch-configuration-names [launch-configuration-name]))))
+
+(defn image
+  [image-id environment region]
+  (first (:images (ec2/describe-images (config environment region)
+                                       :image-ids [image-id]))))
+
+(defn security-groups
+  [environment region]
+  (:security-groups (ec2/describe-security-groups (config environment region))))
+
+(defn security-groups-by-id
+  [environment region]
+  (util/map-by-property :group-id (security-groups environment region)))
+
+(defn security-groups-by-name
+  [environment region]
+  (util/map-by-property :group-name (security-groups environment region)))
+
+(defn load-balancers
+  [environment region]
+  (:load-balancer-descriptions (elb/describe-load-balancers (config environment region))))
+
+(defn load-balancers-with-names
+  [environment region names]
+  (when (seq names)
+    (let [load-balancers-by-name (util/map-by-property :load-balancer-name (load-balancers environment region))]
+      (apply merge (map (fn [n] {n (get load-balancers-by-name n)}) names)))))
+
+(defn load-balancer-health
+  [environment region load-balancer-name]
+  (:instance-states (elb/describe-instance-health (config environment region) :load-balancer-name load-balancer-name)))
+
+(defn- metadata-from-tag
+  [subnet]
+  (json/decode (:value (get (util/map-by-property :key (:tags subnet)) "immutable_metadata")) true))
+
+(defn- has-purpose?
+  [purpose subnet]
+  (let [metadata (metadata-from-tag subnet)]
+    (= (:purpose metadata) purpose)))
+
+(defn subnets-by-purpose
+  [environment region purpose]
+  (seq (filter (partial has-purpose? purpose) (:subnets (ec2/describe-subnets (config environment region))))))
+
+(defn instances
+  [environment region instance-ids]
+  (flatten (map :instances (flatten (:reservations (ec2/describe-instances (config environment region)
+                                                                           :instance-ids (vec instance-ids)))))))

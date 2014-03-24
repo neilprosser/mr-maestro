@@ -1,4 +1,4 @@
-(ns exploud.onix_test
+(ns exploud.onix-test
   (:require [cheshire.core :as json]
             [exploud
              [http :as http]
