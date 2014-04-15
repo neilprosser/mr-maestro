@@ -119,6 +119,13 @@
        (http/simple-get "http://100.100.100.104:8080/healthcheck" {:socket-timeout 2000})
        => {:status 200}))
 
+(fact "that when checking ASG health exception on reading ASG returns false"
+      (determine-asg-health "environment" "region" "asg" 1 8080 "healthcheck")
+      => (contains {:healthy? false})
+      (provided
+       (asgard/instances-in-asg "environment" "region" "asg")
+       =throws=> (Exception.)))
+
 (fact "that checking ASG health does the right things when unhealthy"
       (check-asg-health "environment" "region" "asg" 2 8080 "healthcheck" ..deploy-id.. {:log []} ..completed.. ..timed-out.. 5)
       => ..reschedule-result..

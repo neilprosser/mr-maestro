@@ -37,7 +37,7 @@
   (try+
    (let [{:keys [status]} (http/simple-get url {:socket-timeout 2000})]
      (= status 200))
-   (catch ExceptionInfo _
+   (catch Exception _
      false)))
 
 (defn check-instance-health
@@ -53,11 +53,15 @@
 (defn determine-asg-health
   "Checks the health of all instances in the ASG and gives back those results and the overall health of the ASG."
   [environment region asg-name min-instances port healthcheck-path]
-  (when-let [instances (asgard/instances-in-asg environment region asg-name)]
-    (let [check (fn [i] (check-instance-health (instance-ip i) port healthcheck-path))
-          check-results (map check instances)]
-      {:healthy? (>= (count (filter :successful? check-results)) min-instances)
-       :results check-results})))
+  (try
+    (when-let [instances (asgard/instances-in-asg environment region asg-name)]
+      (let [check (fn [i] (check-instance-health (instance-ip i) port healthcheck-path))
+            check-results (map check instances)]
+        {:healthy? (>= (count (filter :successful? check-results)) min-instances)
+         :results check-results}))
+    (catch Exception e
+      (log/warn e "Failed to determine ASG health, we'll assume it's not yet healthy")
+      {:healthy? false})))
 
 ;; We're going to need this guy in a minute.
 (declare check-asg-health)
