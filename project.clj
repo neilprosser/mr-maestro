@@ -80,7 +80,7 @@
 
   :clean-targets [:target-path "docs"]
 
-  :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
+  :lein-release {:release-tasks [:clean :compile :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
 
   :ring {:handler exploud.web/app
