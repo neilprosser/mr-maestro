@@ -8,6 +8,8 @@ git pull
 version=`cat project.clj | grep 'defproject' | cut -f2 -d '"' | cut -f1 -d '-'`
 echo "VERSION=$version" > release_version.properties
 
+lein compile
+
 export http_no_proxy=*.brislabs.com
 export no_proxy=*.brislabs.com
 export JVM_OPTS="-Dservice.port=$JETTY_PORT"
