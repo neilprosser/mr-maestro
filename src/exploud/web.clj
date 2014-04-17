@@ -14,13 +14,13 @@
             [environ.core :refer [env]]
             [exploud
              [aws :as aws]
-             [deployment :as dep]
+             [deployments :as deployments]
+             [elasticsearch :as es]
              [info :as info]
              [jsonp :refer [wrap-json-with-padding]]
              [pokemon :as pokemon]
+             [redis :as redis]
              [stats :as stats]
-             [store :as store]
-             [tasks :as tasks]
              [util :as util]
              [validators :as v]]
             [metrics.ring
@@ -86,61 +86,12 @@
          (catch Exception e v))
     v))
 
-(def locked?
-  "Atom holding a boolean indicating whether Exploud is locked for actions with side-effects."
-  (atom false))
-
-(defn- lock!
-  "Lock Exploud, preventing deployments etc."
-  []
-  (reset! locked? true))
-
-(defn- unlock!
-  "Unlock Exploud, allowing deployment etc."
-  []
-  (reset! locked? false))
-
 (defmacro guarded
   "Replace the given body with a Conflict response if Exploud has been locked."
   [& body]
-  `(if @locked?
+  `(if (deployments/locked?)
      (response "Exploud is currently closed for business." "text/plain" 409)
      (do ~@body)))
-
-(def ongoing-deployments
-  "An atom containing the set of all in-progress deployments."
-  (atom #{}))
-
-(defn- deployment-string
-  "Generate a string which combined the environment and application name."
-  [application environment]
-  (str environment "-" application))
-
-(defn- can-deploy?
-  "Determine whether the set of ongoing deployment already contains an entry for the environment and application."
-  [application environment]
-  (not (contains? @ongoing-deployments (deployment-string application environment))))
-
-(defn- register-deployment
-  "Register a deployment in the set of ongoing deployments."
-  [application environment]
-  (swap! ongoing-deployments conj (deployment-string application environment)))
-
-(defn- unregister-deployment
-  "Removes a deployment from the set of ongoing deployments."
-  [application environment]
-  (swap! ongoing-deployments disj (deployment-string application environment)))
-
-(defmacro one-at-a-time-please
-  "We only allow one action against an application in an environment at a time."
-  [application environment & body]
-  `(if (can-deploy? ~application ~environment)
-    (try
-      (register-deployment ~application ~environment)
-      (do ~@body)
-      (finally
-        (unregister-deployment ~application ~environment)))
-    (response (str "An action for " ~application " in " ~environment " is already underway") "text/plain" 409)))
 
 (defroutes routes
   "The RESTful routes we provide."
@@ -168,89 +119,59 @@
                    (clojure.java.io/resource "exploud.jpg"))
                   "image/jpeg"))
 
-   (GET "/instances/:app-name"
-        [app-name]
-        (response {:instances (info/instances-for-application default-region app-name)}))
-
-   (GET "/images/:app-name"
-        [app-name]
-        (response {:images (info/active-amis-for-app default-region app-name)}))
+   (GET "/queue-status"
+        []
+        (response (redis/queue-status)))
 
    (GET "/lock"
         []
-        (if @locked?
+        (if (deployments/locked?)
           (response "Exploud is currently locked." "text/plain")
           (response "Exploud is currently unlocked." "text/plain" 404)))
 
    (POST "/lock"
          []
-         (lock!)
+         (deployments/lock)
          (response "" "text/plain" 204))
 
    (DELETE "/lock"
            []
-           (unlock!)
+           (deployments/unlock)
            (response "" "text/plain" 204))
 
    (GET "/deployments"
-        [application environment start-from start-to size from]
+        [application environment from region size start-from start-to]
         (let [parameters {:application application
                           :environment environment
+                          :from from
+                          :region region
+                          :size size
                           :start-from start-from
-                          :start-to start-to
-                          :size size
-                          :from from}
+                          :start-to start-to}
               result (apply b/validate parameters v/query-param-validators)]
           (if-let [details (first result)]
             (response {:message "Query parameter validation failed"
                        :details details} nil 400)
-            (response {:deployments (store/get-deployments
+            (response {:deployments (es/get-deployments
                                      {:application application
                                       :environment environment
+                                      :from (util/string->int from)
+                                      :region region
+                                      :size (util/string->int size)
                                       :start-from (fmt/parse start-from)
-                                      :start-to (fmt/parse start-to)
-                                      :size (util/string->int size)
-                                      :from (util/string->int from)})}))))
-
-   (GET "/completed-deployments"
-        [application environment size from]
-        (let [parameters {:application application
-                          :environment environment
-                          :size size
-                          :from from}
-              result (apply b/validate parameters v/query-param-validators)]
-          (if-let [details (first result)]
-            (response {:message "Query parameter validation failed"
-                       :details details} nil 400)
-            (response {:deployments (store/get-completed-deployments
-                                     {:application application
-                                      :environment environment
-                                      :size (util/string->int size)
-                                      :from (util/string->int from)})}))))
-
-   (GET "/incomplete-deployments"
-        []
-        (response {:deployments (store/deployments-with-incomplete-tasks)}))
-
-   (GET "/broken-deployments"
-        []
-        (response {:deployments (store/broken-deployments)}))
+                                      :start-to (fmt/parse start-to)})}))))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]
-        (response (store/get-deployment deployment-id)))
+        (response (es/deployment deployment-id)))
 
-   (POST "/deployments/:deployment-id"
-         [deployment-id deployment]
-         (guarded
-          (store/store-deployment (postwalk date-string-to-date (keywordize-keys deployment)))
-          (response nil nil 201)))
+   (GET "/deployments/:deployment-id/tasks"
+        [deployment-id]
+        (response (es/deployment-tasks deployment-id)))
 
-   (DELETE "/deployments/:deployment-id"
-           [deployment-id]
-           (guarded
-            (store/delete-deployment deployment-id)
-            (response nil nil 204)))
+   (GET "/deployments/:deployment-id/logs"
+        [deployment-id]
+        (response (es/deployment-logs deployment-id)))
 
    (GET "/applications"
         []
@@ -258,7 +179,7 @@
 
    (GET "/applications/:application"
         [application]
-        (response (info/application default-environment default-region application)))
+        (response (info/application application)))
 
    (PUT "/applications/:application"
         [application description email owner]
@@ -274,61 +195,47 @@
    (POST "/applications/:application/:environment/deploy"
          [application ami environment hash message user]
          (guarded
-          (one-at-a-time-please application environment
-                                (register-deployment application environment)
-                                (let [{:keys [id]} (dep/prepare-deployment
-                                                    default-region
-                                                    application
-                                                    environment
-                                                    (or user default-user)
-                                                    ami
-                                                    hash
-                                                    message)]
-                                  (dep/start-deployment id)
-                                  (response {:id id})))))
+          (let [id (util/generate-id)]
+            (deployments/begin {:application application
+                                :environment environment
+                                :id id
+                                :message message
+                                :new-state {:hash hash
+                                            :image-details {:id ami}}
+                                :region default-region
+                                :user (or user default-user)})
+            (response {:id id}))))
 
    (POST "/applications/:application/:environment/undo"
          [application environment]
          (guarded
-          (one-at-a-time-please application environment
-                                (register-deployment application environment)
-                                (if-let [deployment (first (store/get-deployments {:application application
-                                                                                   :environment environment
-                                                                                   :size 1}))]
-                                  (let [{:keys [id]} (dep/prepare-undo deployment)]
-                                    (dep/start-deployment id)
-                                    (response {:id id}))
-                                  (error-response "No previous deployment" 500)))))
+          (let [id (deployments/undo {:application application
+                                      :environment environment
+                                      :region default-region})]
+            (response {:id id}))))
 
    (POST "/applications/:application/:environment/rollback"
          [application environment message user]
          (guarded
-          (one-at-a-time-please application environment
-                                (register-deployment application environment)
-                                (let [{:keys [id]} (dep/prepare-rollback
-                                                    default-region
-                                                    application
-                                                    environment
-                                                    (or user default-user)
-                                                    message)]
-                                  (dep/start-deployment id)
-                                  (response {:id id})))))
+          (let [id (util/generate-id)]
+            (deployments/rollback {:application application
+                                   :environment environment
+                                   :id id
+                                   :message message
+                                   :region default-region
+                                   :user user})
+            (response {:id id}))))
 
    (GET "/environments"
         []
         (response {:environments (info/environments default-region)}))
 
-   (GET "/tasks"
-        []
-        (response (with-out-str (at-at/show-schedule tasks/pool))))
-
    (GET "/in-progress"
         []
-        (response {:deployments (sort @ongoing-deployments)}))
+        (response {:deployments (deployments/in-progress)}))
 
    (DELETE "/in-progress/:application/:environment"
-           [application environment]
-           (unregister-deployment application environment))
+           [application environment])
 
    (GET  "/describe-instances/:name/:environment"
          [name environment state :as req]
@@ -347,14 +254,6 @@
    (GET "/stats/deployments/by-month"
         []
         (response {:result (stats/deployments-by-month)}))
-
-   (GET "/stats/deployments/by-month-and-application"
-        []
-        (response {:result (stats/deployments-by-month-and-application)}))
-
-   (GET "/stats/deployments/by-month/application/:application"
-        [application]
-        (response {:result (stats/deployments-of-application-by-month application)}))
 
    (GET "/stats/deployments/by-month/environment/:environment"
         [environment]
@@ -375,8 +274,8 @@
   "Sets up our application, adding in various bits of middleware."
   (-> routes
       (instrument)
-      (wrap-cors-headers)
       (wrap-error-handling)
+      (wrap-cors-headers)
       (wrap-ignore-trailing-slash)
       (wrap-json-response)
       (wrap-json-with-padding)

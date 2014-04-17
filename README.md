@@ -2,7 +2,7 @@
 
 ## Intro
 
-Exploud is the main port of call for deploying applications to AWS. It does this via Asgard. It will kick of each stage of the deployment and track any resulting task which describes the progress of the operation.
+Exploud is the main port of call for deploying applications to AWS. It will kick of each stage of the deployment and track any resulting task which describes the progress of the operation.
 
 ## Resources
 
@@ -44,7 +44,7 @@ The list of all applications known about by Onix.
 The details of a specific application.
 
 `PUT /1.x/applications/:application`
-Upsert an application to Asgard, Onix and Tyranitar.
+Upsert an application to Onix, Shuppet and Tyranitar.
 
 `POST /1.x/applications/:application/deploy`
 Begin the deployment of an application. JSON body must include the following:

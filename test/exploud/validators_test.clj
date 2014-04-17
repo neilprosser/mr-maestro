@@ -1,4 +1,4 @@
-(ns exploud.validators_test
+(ns exploud.validators-test
   (:require [exploud.validators :refer :all]
             [midje.sweet :refer :all]))
 

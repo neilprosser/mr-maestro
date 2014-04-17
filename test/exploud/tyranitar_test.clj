@@ -1,4 +1,4 @@
-(ns exploud.tyranitar_test
+(ns exploud.tyranitar-test
   (:require [cheshire.core :as json]
             [exploud
              [http :as http]
@@ -94,6 +94,16 @@
        => {:commits [{:hash "last-commit"}
                      {:hash "b-commit"}
                      {:hash "a-commit"}]}))
+
+(fact "that verifying a hash works when the commit list contains that hash"
+      (verify-commit-hash "environment" "application" "hash") => true
+      (provided
+       (commits "environment" "application") => [{:hash "not the hash"} {:hash "hash"}]))
+
+(fact "that verifying a hash works when the commit doesn't contain that hash"
+      (verify-commit-hash "environment" "application" "hash") => false
+      (provided
+       (commits "environment" "application") => [{:hash "not the hash"}]))
 
 (fact "that creating an application does the right thing"
       (create-application "application")

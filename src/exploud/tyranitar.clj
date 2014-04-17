@@ -87,6 +87,11 @@
   [environment application-name]
   (:hash (first (commits environment application-name))))
 
+(defn verify-commit-hash
+  "Verifies that the given hash exists for an application and environment."
+  [environment application-name hash]
+  (contains? (apply hash-set (map :hash (commits environment application-name))) hash))
+
 (defn create-application
   "Creates an application in Tyranitar. Will fail if the application already
    exists."

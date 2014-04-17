@@ -17,6 +17,7 @@
 
 #define where exploud is
 GIVEN_HOME="/usr/local/exploud"
+LOCK_FILE=/var/lock/subsys/exploud
 
 JETTY_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
 
@@ -58,6 +59,7 @@ start)
     else
         $SUBIT "$JETTY_CMD_START"
     fi
+    touch $LOCK_FILE
     ;;
 stop)
     echo Stopping Exploud
@@ -66,6 +68,7 @@ stop)
     else
         $SUBIT "$JETTY_CMD_STOP"
     fi
+    rm -f $LOCK_FILE
     ;;
 restart)
     $0 stop

@@ -1,4 +1,4 @@
-(ns exploud.shuppet_test
+(ns exploud.shuppet-test
   (:require [cheshire.core :as json]
             [exploud
              [http :as http]
