@@ -16,6 +16,10 @@
   (let [f (fn [[k v]] [(clojurize k) v])]
     (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
 
+(defn remove-nil-values
+  [m]
+  (apply hash-map (flatten (remove (fn [[k v]] (nil? v)) m))))
+
 (defn string->int
   "Attempts to turn a string into an integer, or nil if not an integer."
   [s]

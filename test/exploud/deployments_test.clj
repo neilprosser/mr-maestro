@@ -8,6 +8,21 @@
             [midje.sweet :refer :all])
   (:import clojure.lang.ExceptionInfo))
 
+(fact "that asking whether Exploud is locked works"
+      (locked?) => ..locked..
+      (provided
+       (redis/locked?) => ..locked..))
+
+(fact "that locking Exploud works"
+      (lock) => ..lock..
+      (provided
+       (redis/lock) => ..lock..))
+
+(fact "that unlocking Exploud works"
+      (unlock) => ..unlock..
+      (provided
+       (redis/unlock) => ..unlock..))
+
 (def in-progress-params
   {:application "application"
    :environment "environment"
@@ -17,6 +32,11 @@
       (in-progress? in-progress-params) => ..result..
       (provided
        (redis/in-progress? "application" "environment" "region") => ..result..))
+
+(fact "that getting the in progress deployments works"
+      (in-progress) => ..in-progress..
+      (provided
+       (redis/in-progress) => ..in-progress..))
 
 (def begin-params
   {:application "application"

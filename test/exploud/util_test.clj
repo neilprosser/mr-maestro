@@ -1,7 +1,8 @@
 (ns exploud.util-test
   (:require [clj-time.core :as time]
             [exploud.util :refer :all]
-            [midje.sweet :refer :all]))
+            [midje.sweet :refer :all])
+  (:import java.util.UUID))
 
 (fact "that extracting details from an AMI name works"
       (ami-details "ent-exploud-0.19-1-2013-10-24_18-41-23")
@@ -74,3 +75,12 @@
 
 (fact "that clojurizing things works"
       (clojurize :somethingThatIsCamelCase) => :something-that-is-camel-case)
+
+(fact "that generating an ID works"
+      (string? (generate-id)) => truthy)
+
+(fact "that removing nil values works"
+      (remove-nil-values {:key1 "something"
+                          :key2 false
+                          :key3 nil}) => {:key1 "something"
+                                          :key2 false})

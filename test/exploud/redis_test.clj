@@ -12,6 +12,21 @@
         (provided
          (car-mq/enqueue "scheduled-tasks" ..task..) => ..id..))
 
+  (fact "that determining whether Exploud is locked does what it's supposed to do"
+        (locked?) => ..result..
+        (provided
+         (car/get "exploud:lock") => ..result..))
+
+  (fact "that locking Exploud does what it's supposed to do"
+        (lock) => ..result..
+        (provided
+         (car/set "exploud:lock" "true") => ..result..))
+
+  (fact "that unlocking Exploud does what it's supposed to do"
+        (unlock) => ..result..
+        (provided
+         (car/del "exploud:lock") => ..result..))
+
   (fact "Application/environment combination is not in-progress when not present"
         (in-progress? "app" "env" "region") => falsey
         (provided
@@ -21,6 +36,12 @@
         (in-progress? "app" "env" "region") => truthy
         (provided
          (car/hget "exploud:deployments:in-progress" "app-env-region") => "id"))
+
+  (fact "that retrieving in-progress deployments works"
+        (in-progress) => [{:application "app" :environment "env" :id "id" :region "reg"}
+                          {:application "ppa" :environment "vne" :id "di" :region "ger"}]
+        (provided
+         (car/hgetall "exploud:deployments:in-progress") => ["app-env-reg" "id" "ppa-vne-ger" "di"]))
 
   (def begin-deployment-params
     {:application "app"
@@ -51,4 +72,9 @@
   (fact "Ending a deployment which didn't exist returns false"
         (end-deployment end-deployment-params) => false
         (provided
-         (car/hdel "exploud:deployments:in-progress" "app-env-region") => 0)))
+         (car/hdel "exploud:deployments:in-progress" "app-env-region") => 0))
+
+  (fact "that obtaining the queue status works"
+        (queue-status) => ..status..
+        (provided
+         (car-mq/queue-status anything "scheduled-tasks") => ..status..)))

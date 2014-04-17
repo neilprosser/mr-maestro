@@ -1,5 +1,6 @@
 (ns exploud.userdata
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [exploud.util :as util]))
 
 (defn- write-to-file
   [file lines]
@@ -13,7 +14,8 @@
 
 (defn- create-environment-variables
   [{:keys [application environment region] :as parameters}]
-  (let [state (:new-state parameters)
+  (let [state-key (util/new-state-key parameters)
+        state (state-key parameters)
         {:keys [auto-scaling-group-name hash launch-configuration-name]} state]
     (->> {:CLOUD_APP application
           :CLOUD_STACK environment
@@ -22,6 +24,7 @@
           :CLOUD_LAUNCH_CONFIG launch-configuration-name
           :EC2_REGION region
           :HASH hash}
+         util/remove-nil-values
          (into (sorted-map))
          (filter (fn [[k v]] (some? v)))
          (map (fn [[k v]] (export (name k) v)))
@@ -29,7 +32,8 @@
 
 (defn- create-application-properties
   [{:keys [application] :as parameters}]
-  (let [state (:new-state parameters)
+  (let [state-key (util/new-state-key parameters)
+        state (state-key parameters)
         {:keys [tyranitar]} state
         {:keys [application-properties]} tyranitar]
     (->> application-properties
@@ -43,7 +47,8 @@
 
 (defn- create-launch-data
   [parameters]
-  (let [state (:new-state parameters)
+  (let [state-key (util/new-state-key parameters)
+        state (state-key parameters)
         {:keys [tyranitar]} state
         {:keys [launch-data]} tyranitar]
     (str/join "\n" launch-data)))
