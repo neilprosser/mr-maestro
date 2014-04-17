@@ -11,6 +11,7 @@
                  [clojurewerkz/elastisch "2.0.0-beta3"]
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.1"]
+                 [com.github.frankiesardo/linked "0.1.0"]
                  [com.ovi.common.logging/logback-appender "0.0.45"]
                  [com.ovi.common.metrics/metrics-graphite "2.1.23"]
                  [com.taoensso/carmine "2.6.0"]
@@ -28,7 +29,6 @@
                  [org.clojure/data.zip "0.1.1"]
                  [org.clojure/tools.logging "0.2.6"]
                  [org.eclipse.jetty/jetty-server "8.1.14.v20131031"]
-                 [org.flatland/ordered "1.5.2"]
                  [org.slf4j/jcl-over-slf4j "1.7.7"]
                  [org.slf4j/jul-to-slf4j "1.7.7"]
                  [org.slf4j/log4j-over-slf4j "1.7.7"]
@@ -80,7 +80,7 @@
 
   :clean-targets [:target-path "docs"]
 
-  :lein-release {:release-tasks [:clean :compile :uberjar :pom :rpm]
+  :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
 
   :ring {:handler exploud.web/app
