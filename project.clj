@@ -7,7 +7,7 @@
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
                  [clj-http "0.9.1"]
-                 [clj-time "0.6.0"]
+                 [clj-time "0.7.0"]
                  [clojurewerkz/elastisch "2.0.0-beta3"]
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.1"]
