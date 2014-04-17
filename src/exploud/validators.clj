@@ -35,7 +35,7 @@
 
 (def query-param-validators
   "The validators we should `apply` to validate query parameters."
-  [:start-from [[valid-date? :message "start-from must be a valid date"]]
-   :start-to [[valid-date? :message "start-to must be a valid date"]]
+  [:from [[zero-or-more? :message "from must be zero or more"]]
    :size [[positive? :message "size must positive"]]
-   :from [[zero-or-more? :message "from must be zero or more"]]])
+   :start-from [[valid-date? :message "start-from must be a valid date"]]
+   :start-to [[valid-date? :message "start-to must be a valid date"]]])

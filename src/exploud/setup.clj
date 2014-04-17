@@ -2,18 +2,14 @@
   "## Setting up our application"
   (:require [cheshire.custom :as json]
             [clojure.java.io :as io]
-            [clojure.string :as cs :only (split)]
-            [clojure.tools.logging :refer (info warn error)]
+            [clojure.string :as cs :only [split]]
+            [clojure.tools.logging :refer [info warn error]]
             [exploud
-             [asgard :as asgard]
-             [deployment :as deployment]
-             [store :as store]
+             [elasticsearch :as elasticsearch]
+             [messages :as messages]
+             [redis :as redis]
              [web :as web]]
             [environ.core :refer [env]]
-            [monger
-             [collection :as mcol :only (ensure-index)]
-             [core :as mc :only (connect! mongo-options
-                                          server-address use-db!)]]
             [nokia.adapter.instrumented-jetty :refer [run-jetty]])
   (:import (java.lang Integer Throwable)
            (java.util.concurrent TimeUnit)
@@ -42,41 +38,12 @@
   (.reset (LogManager/getLogManager))
   (SLF4JBridgeHandler/install))
 
-(defn build-server-addresses
-  "Takes a comma-separated list of `host:port` pairs and breaks them up into
-   Mongo server addresses."
-  [comma-sep-hosts]
-  (map (fn [[h p]] (mc/server-address h (Integer/parseInt p))) (map #(cs/split % #":") (cs/split comma-sep-hosts #","))))
-
 (defn configure-joda
   "Configures Joda Time to use UTC as the default timezone (in case someone
    hasn't included it in the JVM args."
   []
   (json/add-encoder org.joda.time.DateTime (fn [dt jg] (.writeString jg (str dt))))
   (DateTimeZone/setDefault DateTimeZone/UTC))
-
-(defn configure-mongo-conn-pool
-  "Configures the Mongo connection pool."
-  []
-  (let [^MongoOptions opts (mc/mongo-options :threads-allowed-to-block-for-connection-multiplier 10
-                                             :connections-per-host (Integer/parseInt (env :mongo-connections-max))
-                                             :max-wait-time 120000
-                                             :connect-timeout 30000
-                                             :socket-timeout 10000
-                                             :socket-keep-alive false)
-        sa (build-server-addresses (env :mongo-hosts))]
-    (mc/connect! sa opts)))
-
-(defn configure-mongo-db
-  "Configures Mongo to use the right database."
-  []
-  (mc/use-db! "exploud"))
-
-(defn bootstrap-mongo
-  "Makes sure that all the indexes we want are present on our collections."
-  []
-  (mcol/ensure-index "deployments" (array-map "tasks.status" 1) {:background true})
-  (mcol/ensure-index "deployments" (array-map "start" -1 "end" -1 "name" 1) {:background true}))
 
 (defn start-graphite-reporting
   "Starts Graphite reporting."
@@ -92,17 +59,6 @@
      (TimeUnit/valueOf (env :service-graphite-post-unit))
      (ReporterState/valueOf (env :service-graphite-enabled)))))
 
-(defn pick-up-tasks
-  "Picks up incomplete tasks and schedules them for tracking.
-
-   The intention is that even if exploud is redeployed while another
-   deployment is going on, that deployment can be picked up and carry on."
-  []
-  (doseq [deployment (store/deployments-with-incomplete-tasks)]
-    (let [{:keys [id tasks]} deployment]
-      (doseq [task tasks]
-        (asgard/track-until-completed id task (* 1 60 60) deployment/task-finished deployment/task-timed-out)))))
-
 (def version
   "Gets the version of the application from the project properties."
   (delay
@@ -115,12 +71,10 @@
   []
   (web/set-version! @version)
   (configure-joda)
-  (configure-mongo-conn-pool)
-  (configure-mongo-db)
-  (bootstrap-mongo)
   (configure-logging)
   (start-graphite-reporting)
-  (comment (pick-up-tasks)))
+  (redis/init messages/handler)
+  (elasticsearch/init))
 
 (def server
   "Our trusty server."
