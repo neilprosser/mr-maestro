@@ -20,15 +20,13 @@
   nil)
 
 (def redis-connection
-  {:pool {}
-   :spec {:host (env :redis-host "localhost")
-          :port (Integer/valueOf (str (env :redis-port "6379")))}})
+  (atom nil))
 
 (defmacro using-redis
   [& body]
   `(if-not *dummy-connection*
      (do
-       (wcar redis-connection ~@body))
+       (wcar @redis-connection ~@body))
      (do
        ~@body)))
 
@@ -78,11 +76,14 @@
 
 (defn queue-status
   []
-  (car-mq/queue-status redis-connection scheduled-tasks-key))
+  (car-mq/queue-status @redis-connection scheduled-tasks-key))
 
 (defn init
   [handler]
-  (reset! worker (car-mq/worker redis-connection scheduled-tasks-key
+  (reset! redis-connection {:pool {}
+                            :spec {:host (env :redis-host "localhost")
+                                   :port (Integer/valueOf (str (env :redis-port "6379")))}})
+  (reset! worker (car-mq/worker @redis-connection scheduled-tasks-key
                                 {:handler handler
                                  :lock-ms 60000
                                  :eoq-backoff-ms 200

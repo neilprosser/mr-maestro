@@ -63,7 +63,7 @@
       (do
         (log/write "Skipping healthcheck.")
         (success parameters))
-      (if (= 0 min)
+      (if (zero? min)
         (do
           (log/write "Minimum number of instances is 0 so skipping healthcheck.")
           (success parameters))

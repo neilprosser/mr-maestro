@@ -3,6 +3,7 @@
             [clj-time.format :as fmt]
             [exploud
              [aws :as aws]
+             [deployments :as deployments]
              [elasticsearch :as es]
              [info :as info]
              [web :refer :all]]
@@ -142,12 +143,15 @@
 
 (fact "that creating an application with an illegal name returns 400."
       (request :put "/1.x/applications/my-application")
-      => (contains {:status 400}))
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false))
 
 (fact "that creating an application with a legal name returns 201."
       (request :put "/1.x/applications/myapplication")
       => (contains {:status 201})
       (provided
+       (deployments/locked?) => false
        (info/upsert-application anything "myapplication" anything) => {}))
 
 (fact-group :unit :describe-instances
