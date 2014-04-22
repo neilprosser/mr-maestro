@@ -52,27 +52,6 @@
       (strip-first-forward-slash "this/that")
       => "this/that")
 
-(fact "that appending to a non-existent `:log` creates a new one"
-      (append-to-task-log "Some message" {})
-      => {:log [{:date ..date.. :message "Some message"}]}
-      (provided
-       (time/now)
-       => ..date..))
-
-(fact "that appending to a nil `:log` creates a new one"
-      (append-to-task-log "Some message" {:log nil})
-      => {:log [{:date ..date.. :message "Some message"}]}
-      (provided
-       (time/now)
-       => ..date..))
-
-(fact "that appending to an already existing `:log` puts the message at the end"
-      (append-to-task-log "Some message" {:log [{:date ..first-date.. :message "First thing"}]})
-      => {:log [{:date ..first-date.. :message "First thing"} {:date ..second-date.. :message "Some message"}]}
-      (provided
-       (time/now)
-       => ..second-date..))
-
 (fact "that clojurizing things works"
       (clojurize :somethingThatIsCamelCase) => :something-that-is-camel-case)
 

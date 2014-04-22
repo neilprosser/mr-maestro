@@ -59,13 +59,6 @@
   [thing]
   (second (re-find #"^/*(.+)" thing)))
 
-(defn append-to-task-log
-  "Appends the given message to the task's `:log`, creating a new one if it
-   doesn't exist."
-  [message task]
-  (let [updated-log (conj (vec (:log task)) {:message message :date (time/now)})]
-    (assoc task :log updated-log)))
-
 (defn as-table
   "Prints a collection of maps in a textual table. Prints table headings
    ks, and then a line of output for each row, corresponding to the keys

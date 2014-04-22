@@ -1,6 +1,6 @@
 (ns exploud.setup
   "## Setting up our application"
-  (:require [cheshire.custom :as json]
+  (:require [cheshire.generate :as json]
             [clojure.java.io :as io]
             [clojure.string :as cs :only [split]]
             [clojure.tools.logging :refer [info warn error]]
