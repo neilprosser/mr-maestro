@@ -10,7 +10,8 @@
             [exploud.messages
              [asg :as asg]
              [data :as data]
-             [health :as health]]
+             [health :as health]
+             [notification :as notification]]
             [linked.set :refer [linked-set]]))
 
 (def ^:private action-ordering
@@ -70,6 +71,7 @@
               :exploud.messages.asg/delete-old-auto-scaling-group
               :exploud.messages.asg/wait-for-old-auto-scaling-group-deletion
               :exploud.messages.asg/delete-old-launch-configuration
+              :exploud.messages.notification/send-completion-notification
               :exploud.messages.data/complete-deployment))
 
 (defn- to-function

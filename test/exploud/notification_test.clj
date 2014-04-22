@@ -4,10 +4,10 @@
             [midje.sweet :refer :all]
             [postal.core :as mail]))
 
-(def deployment {:ami "ami-1234abcd"
-                 :application "myapp"
+(def deployment {:application "myapp"
                  :environment "prod"
                  :id "some-id"
+                 :image "ami-1234abcd"
                  :message "Some message"
                  :user "auser"
                  :version "0.12"})
@@ -37,7 +37,7 @@
         <td>0.12</td>
       </tr>
       <tr>
-        <td>Ami:</td>
+        <td>Image:</td>
         <td>ami-1234abcd</td>
       </tr>
       <tr>

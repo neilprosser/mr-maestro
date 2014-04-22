@@ -3,14 +3,21 @@
   (:require [environ.core :refer [env]]
             [postal.core :as mail]))
 
+(def ^:private content-type
+  "text/html; charset=\"UTF-8\"")
+
+(defn- prod?
+  [environment]
+  (= :prod (keyword environment)))
+
 (defn build-message-title
   "Creates a message title from parameters contained in the given deployment."
-  [{:keys [ami application environment version]}]
+  [{:keys [application environment version]}]
   (format "%s: %s v%s deployed" (name environment) application version))
 
 (defn build-message-body
   "Creates a message body from parameters contained in the given deployment."
-  [{:keys [ami application id message user version]}]
+  [{:keys [application id image message user version]}]
   (format "<html>
   <head>
     <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">
@@ -34,7 +41,7 @@
         <td>%s</td>
       </tr>
       <tr>
-        <td>Ami:</td>
+        <td>Image:</td>
         <td>%s</td>
       </tr>
       <tr>
@@ -46,16 +53,19 @@
         <td><a href=\"http://jeff.brislabs.com/exploud/#/deployments/%s\">%s</a></td>
       </tr>
   </body>
-</html>" user application version ami message id id))
+</html>" user application version image message id id))
+
+(defn- build-message
+  [{:keys [undo] :as deployment}]
+  {:from (env :service-mail-from)
+   :to (env :service-mail-to)
+   :subject (build-message-title deployment)
+   :body [{:type content-type :content (build-message-body deployment)}]})
 
 (defn send-completion-message
   "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
   [{:keys [environment] :as deployment}]
-  (when (= :prod (keyword environment))
-    (when (seq (env :service-smtp-host))
-      (let [host (env :service-smtp-host)
-            from (env :service-mail-from)]
-        (mail/send-message {:host host} {:from from
-                                         :to (env :service-mail-to)
-                                         :subject (build-message-title deployment)
-                                         :body [{:type "text/html; charset=\"UTF-8\"" :content (build-message-body deployment)}]})))))
+  (when (prod? environment)
+    (let [host (env :service-smtp-host)]
+      (when (seq host)
+        (mail/send-message {:host host} (build-message deployment))))))
