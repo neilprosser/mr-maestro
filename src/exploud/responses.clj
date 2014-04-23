@@ -1,9 +1,5 @@
 (ns exploud.responses)
 
-(defn error
-  []
-  {:status :error})
-
 (defn error-with
   [e]
   {:status :error
@@ -21,7 +17,7 @@
 (defn capped-retry-after
   [millis attempt max-attempts]
   (if (<= max-attempts attempt)
-    (error)
+    (error-with (ex-info "Maximum number of attempts has been reached." {}))
     (retry-after millis)))
 
 (defn success
