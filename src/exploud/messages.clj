@@ -4,6 +4,7 @@
              [bindings :refer :all]
              [deployments :as deployments]
              [elasticsearch :as es]
+             [log :as log]
              [responses :refer :all]
              [tasks :as tasks]
              [util :as util]]
@@ -149,6 +150,14 @@
     (catch Exception e
       (assoc details :result (error-with e)))))
 
+(defn- log-error-if-necessary
+  [{:keys [result] :as details}]
+  (if (= (:status result) :error)
+    (if-let [throwable (:throwable result)]
+      (log/write (.getMessage throwable))
+      (log/write "An unspecified error has occurred. It might be worth checking Exploud's logs.")))
+  details)
+
 (defn- determine-next-action
   [{:keys [message] :as details}]
   (let [{:keys [action]} message]
@@ -219,6 +228,7 @@
         (->> details
              ensure-task
              (perform-action action-fn)
+             log-error-if-necessary
              determine-next-action
              update-task
              update-deployment
