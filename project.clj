@@ -12,6 +12,7 @@
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.1"]
                  [com.github.frankiesardo/linked "0.1.0"]
+                 [com.ninjakoala/monotony "1.0"]
                  [com.ovi.common.logging/logback-appender "0.0.45"]
                  [com.ovi.common.metrics/metrics-graphite "2.1.23"]
                  [com.taoensso/carmine "2.6.0"]

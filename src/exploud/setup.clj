@@ -4,12 +4,13 @@
             [clojure.java.io :as io]
             [clojure.string :as cs :only [split]]
             [clojure.tools.logging :refer [info warn error]]
+            [environ.core :refer [env]]
             [exploud
              [elasticsearch :as elasticsearch]
              [messages :as messages]
              [redis :as redis]
              [web :as web]]
-            [environ.core :refer [env]]
+            [ninjakoala.monotony :refer  [redirect-logging]]
             [nokia.adapter.instrumented-jetty :refer [run-jetty]])
   (:import (java.lang Integer Throwable)
            (java.util.concurrent TimeUnit)
@@ -69,6 +70,7 @@
 (defn setup
   "Sets up the application."
   []
+  (redirect-logging)
   (web/set-version! @version)
   (configure-joda)
   (configure-logging)
