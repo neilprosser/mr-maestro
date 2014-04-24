@@ -96,18 +96,22 @@
 (defroutes routes
   "The RESTful routes we provide."
 
+  (GET "/ping"
+       []
+       (response "pong" "text/plain"))
+
+  (GET "/healthcheck"
+       []
+       (response {:name "exploud"
+                  :version *version*
+                  :success true}))
+
   (context
    "/1.x" []
 
    (GET "/ping"
         []
         (response "pong" "text/plain"))
-
-   (GET "/status"
-        []
-        (response {:name "exploud"
-                   :version *version*
-                   :success true}))
 
    (GET "/pokemon"
         []
