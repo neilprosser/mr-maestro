@@ -417,9 +417,10 @@
                 (let [load-balancer-instances (aws/load-balancer-instances environment region lb)
                       lb-instance-ids (apply hash-set (map :instance-id load-balancer-instances))
                       present-instance-ids (set/intersection lb-instance-ids instance-ids)]
-                  (elb/deregister-instances-from-load-balancer (aws/config environment region)
-                                                               :load-balancer-name lb
-                                                               :instances (vec (map (fn [i] {:instance-id i}) present-instance-ids))))))
+                  (when (seq present-instance-ids)
+                    (elb/deregister-instances-from-load-balancer (aws/config environment region)
+                                                                 :load-balancer-name lb
+                                                                 :instances (vec (map (fn [i] {:instance-id i}) present-instance-ids)))))))
             (success parameters))
           (catch Exception e
             (error-with e))))
