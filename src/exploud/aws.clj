@@ -178,6 +178,15 @@
   [environment region]
   (:load-balancer-descriptions (elb/describe-load-balancers (config environment region))))
 
+(defn load-balancer
+  [environment region load-balancer-name]
+  (first (:load-balancer-descriptions (elb/describe-load-balancers (config environment region)
+                                                                   :load-balancer-names [load-balancer-name]))))
+
+(defn load-balancer-instances
+  [environment region load-balancer-name]
+  (:instances (load-balancer environment region load-balancer-name)))
+
 (defn load-balancers-with-names
   [environment region names]
   (when (seq names)

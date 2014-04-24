@@ -614,15 +614,21 @@
       (deregister-old-instances-from-load-balancers {:parameters deregister-old-instances-from-load-balancers-params}) => (contains {:status :success})
       (provided
        (aws/auto-scaling-group-instances "old-asg" "environment" "region") => [{:instance-id "i-1"} {:instance-id "i-2"}]
+       (elb/describe-load-balancers anything
+                                    :load-balancer-names ["lb-1"])
+       => {:load-balancer-descriptions [{:instances [{:instance-id "i-1"}]}]}
        (elb/deregister-instances-from-load-balancer anything
                                                     :load-balancer-name "lb-1"
-                                                    :instances [{:instance-id "i-1"}
-                                                                {:instance-id "i-2"}])
+                                                    :instances [{:instance-id "i-1"}])
        => ..register-result-1..
+       (elb/describe-load-balancers anything
+                                    :load-balancer-names ["lb-2"])
+       => {:load-balancer-descriptions [{:instances [{:instance-id "i-1"}
+                                                     {:instance-id "i-2"}]}]}
        (elb/deregister-instances-from-load-balancer anything
                                                     :load-balancer-name "lb-2"
-                                                    :instances [{:instance-id "i-1"}
-                                                                {:instance-id "i-2"}])
+                                                    :instances [{:instance-id "i-2"}
+                                                                {:instance-id "i-1"}])
        => ..register-result-2..))
 
 (fact "that attempting to deregister old instances from load balancers for a deployment with no previous state is successful and does nothing"

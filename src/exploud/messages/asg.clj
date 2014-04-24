@@ -3,7 +3,9 @@
              [autoscaling :as auto]
              [elasticloadbalancing :as elb]
              [sqs :as sqs]]
-            [clojure.string :as str]
+            [clojure
+             [set :as set]
+             [string :as str]]
             [exploud
              [aws :as aws]
              [log :as log]
@@ -407,14 +409,17 @@
         (try
           (let [instances (seq (aws/auto-scaling-group-instances old-auto-scaling-group-name environment region))
                 instance-count (count instances)
-                instance-ids (map :instance-id instances)]
+                instance-ids (apply hash-set (map :instance-id instances))]
             (if-not instances
               (log/write "No instances to deregister.")
               (doseq [lb selected-load-balancers]
                 (log/write (format "Deregistering %s [%s] from load balancer %s." (util/pluralise instance-count "instance") (str/join ", " instance-ids) lb))
-                (elb/deregister-instances-from-load-balancer (aws/config environment region)
-                                                             :load-balancer-name lb
-                                                             :instances (vec (map (fn [i] {:instance-id i}) instance-ids)))))
+                (let [load-balancer-instances (aws/load-balancer-instances environment region lb)
+                      lb-instance-ids (apply hash-set (map :instance-id load-balancer-instances))
+                      present-instance-ids (set/intersection lb-instance-ids instance-ids)]
+                  (elb/deregister-instances-from-load-balancer (aws/config environment region)
+                                                               :load-balancer-name lb
+                                                               :instances (vec (map (fn [i] {:instance-id i}) present-instance-ids))))))
             (success parameters))
           (catch Exception e
             (error-with e))))
