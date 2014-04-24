@@ -32,5 +32,13 @@
                                                     :environment "environment"
                                                     :iteration 4})
 
+(fact "that extracting the information from an early ASG name works"
+      (asg-info "application-environment") => {:application "application"
+                                               :environment "environment"
+                                               :iteration 0})
+
 (fact "that creating the next ASG name works"
       (next-asg-name "application-environment-v045") => "application-environment-v046")
+
+(fact "that getting the next ASG name for an early ASG works"
+      (next-asg-name "application-environment") => "application-environment-v001")

@@ -11,7 +11,7 @@
   (fmt/formatter "yyyyMMddHHmmss"))
 
 (def ^:private asg-name-pattern
-  #"([a-z]+)-([a-z]+)-v([0-9]+)")
+  #"([a-z]+)-([a-z]+)(?:-v([0-9]+))?")
 
 (defn create-launch-config-name
   [{:keys [application environment iteration date]}]
@@ -42,7 +42,7 @@
         [_ application environment iteration] matches]
     {:application application
      :environment environment
-     :iteration (Integer/parseInt iteration)}))
+     :iteration (Integer/parseInt (or iteration "0"))}))
 
 (defn next-asg-info
   [asg-name]
