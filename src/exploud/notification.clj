@@ -12,13 +12,15 @@
 
 (defn build-message-title
   "Creates a message title from parameters contained in the given deployment."
-  [{:keys [application environment version]}]
-  (format "%s: %s v%s deployed" (name environment) application version))
+  [{:keys [application environment] :as deployment}]
+  (format "%s: %s v%s deployed" (name environment) application (get-in deployment [:new-state :image-details :version])))
 
 (defn build-message-body
   "Creates a message body from parameters contained in the given deployment."
-  [{:keys [application id image message user version]}]
-  (format "<html>
+  [{:keys [application id message user] :as deployment}]
+  (let [image (get-in deployment [:new-state :image-details :id])
+        version (get-in deployment [:new-state :image-details :version])]
+    (format "<html>
   <head>
     <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">
     <style type=\"text/css\">
@@ -53,7 +55,7 @@
         <td><a href=\"http://jeff.brislabs.com/exploud/#/deployments/%s\">%s</a></td>
       </tr>
   </body>
-</html>" user application version image message id id))
+</html>" user application version image message id id)))
 
 (defn- build-message
   [{:keys [undo] :as deployment}]

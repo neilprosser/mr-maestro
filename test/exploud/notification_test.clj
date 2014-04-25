@@ -7,10 +7,10 @@
 (def deployment {:application "myapp"
                  :environment "prod"
                  :id "some-id"
-                 :image "ami-1234abcd"
                  :message "Some message"
-                 :user "auser"
-                 :version "0.12"})
+                 :new-state {:image-details {:id "ami-1234abcd"
+                                             :version "0.12"}}
+                 :user "auser"})
 
 (fact "that the body is created correctly"
       (build-message-body deployment)
