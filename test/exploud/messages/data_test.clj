@@ -67,6 +67,83 @@
       (provided
        (onix/application "application") => ..onix..))
 
+(fact "that ensuring the Tyranitar hash doesn't go to Tyranitar if the hash is present"
+      (ensure-tyranitar-hash {:parameters {:application "application"
+                                           :environment "environment"
+                                           :new-state {:hash "hash"}}}) => {:status :success
+                                                                            :parameters {:application "application"
+                                                                                         :environment "environment"
+                                                                                         :new-state {:hash "hash"}}})
+
+(fact "that ensuring the Tyranitar hash goes to Tyranitar if the hash isn't present"
+      (ensure-tyranitar-hash {:parameters {:application "application"
+                                           :environment "environment"
+                                           :new-state {}}}) => {:status :success
+                                                                :parameters {:application "application"
+                                                                             :environment "environment"
+                                                                             :new-state {:hash "last-hash"}}}
+      (provided
+       (tyr/last-commit-hash "environment" "application") => "last-hash"))
+
+(fact "that ensuring the Tyranitar hash is an error if there's an exception"
+      (ensure-tyranitar-hash {:parameters {:application "application"
+                                           :environment "environment"
+                                           :new-state {}}}) => (contains {:status :error})
+      (provided
+       (tyr/last-commit-hash "environment" "application") =throws=> (ex-info "Busted" {})))
+
+(fact "that verifying the Tyranitar hash works"
+      (verify-tyranitar-hash {:parameters {:application "application"
+                                           :environment "environment"
+                                           :new-state {:hash "hash"}}})
+      => (contains {:status :success})
+      (provided
+       (tyr/verify-commit-hash "environment" "application" "hash") => true))
+
+(fact "that verifying the Tyranitar hash is an error if it doesn't match"
+      (verify-tyranitar-hash {:parameters {:application "application"
+                                           :environment "environment"
+                                           :new-state {:hash "hash"}}})
+      => (contains {:status :error})
+      (provided
+       (tyr/verify-commit-hash "environment" "application" "hash") => false))
+
+(fact "that an exception while verifying the Tyranitar hash is an error"
+      (verify-tyranitar-hash {:parameters {:application "application"
+                                           :environment "environment"
+                                           :new-state {:hash "hash"}}})
+      => (contains {:status :error})
+      (provided
+       (tyr/verify-commit-hash "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
+
+(fact "that getting no Tyranitar application properties is an error"
+      (get-tyranitar-application-properties {:parameters {:application "application"
+                                                          :environment "environment"
+                                                          :new-state {:hash "hash"}}})
+      => (contains {:status :error})
+      (provided
+       (tyr/application-properties "environment" "application" "hash") => nil))
+
+(fact "that an error while getting Tyranitar application properties is an error"
+      (get-tyranitar-application-properties {:parameters {:application "application"
+                                                          :environment "environment"
+                                                          :new-state {:hash "hash"}}})
+      => (contains {:status :error})
+      (provided
+       (tyr/application-properties "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
+
+(fact "that getting Tyranitar application properties works"
+      (get-tyranitar-application-properties {:parameters {:application "application"
+                                                          :environment "environment"
+                                                          :new-state {:hash "hash"}}})
+      => {:status :success
+          :parameters {:application "application"
+                       :environment "environment"
+                       :new-state {:hash "hash"
+                                   :tyranitar {:application-properties {:tyranitar :properties}}}}}
+      (provided
+       (tyr/application-properties "environment" "application" "hash") => {:tyranitar :properties}))
+
 (fact "that getting no Tyranitar deployment params is an error"
       (get-tyranitar-deployment-params {:parameters {:application "application"
                                                      :environment "environment"
@@ -91,6 +168,34 @@
                     :desired-capacity 23})
       (provided
        (tyr/deployment-params "environment" "application" "hash") => {:desiredCapacity 23}))
+
+(fact "that getting no Tyranitar launch data is an error"
+      (get-tyranitar-launch-data {:parameters {:application "application"
+                                               :environment "environment"
+                                               :new-state {:hash "hash"}}})
+      => (contains {:status :error})
+      (provided
+       (tyr/launch-data "environment" "application" "hash") => nil))
+
+(fact "that an error while getting Tyranitar launch data is an error"
+      (get-tyranitar-launch-data {:parameters {:application "application"
+                                               :environment "environment"
+                                               :new-state {:hash "hash"}}})
+      => (contains {:status :error})
+      (provided
+       (tyr/launch-data "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
+
+(fact "that getting Tyranitar launch data works"
+      (get-tyranitar-launch-data {:parameters {:application "application"
+                                               :environment "environment"
+                                               :new-state {:hash "hash"}}})
+      => {:status :success
+          :parameters {:application "application"
+                       :environment "environment"
+                       :new-state {:hash "hash"
+                                   :tyranitar {:launch-data {:launch :data}}}}}
+      (provided
+       (tyr/launch-data "environment" "application" "hash") => {:launch :data}))
 
 (fact "that a missing security group by ID is an error"
       (map-security-group-ids {:parameters {:environment "environment"

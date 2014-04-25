@@ -114,7 +114,11 @@
         {:keys [hash]} state]
     (try
       (log/write "Retrieving application-properties.")
-      (success (assoc-in parameters [:new-state :tyranitar :application-properties] (tyr/application-properties environment application hash)))
+      (if-let [application-properties (tyr/application-properties environment application hash)]
+        (success (assoc-in parameters [:new-state :tyranitar :application-properties] application-properties))
+        (error-with (ex-info "No application properties found." {:type ::no-application-properties
+                                                                 :application application
+                                                                 :environment environment})))
       (catch Exception e
         (error-with e)))))
 
@@ -153,7 +157,11 @@
         {:keys [hash]} state]
     (try
       (log/write "Retrieving launch-data.")
-      (success (assoc-in parameters [:new-state :tyranitar :launch-data] (tyr/launch-data environment application hash)))
+      (if-let [launch-data (tyr/launch-data environment application hash)]
+        (success (assoc-in parameters [:new-state :tyranitar :launch-data] launch-data))
+        (error-with (ex-info "No launch data found." {:type ::no-launch-data
+                                                      :application application
+                                                      :environment environment})))
       (catch Exception e
         (error-with e)))))
 
