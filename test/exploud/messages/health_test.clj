@@ -70,12 +70,12 @@
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") =throws=> (ex-info "Busted" {})))
 
-(fact "that after 100 attempts we give up checking health and getting no instances"
+(fact "that after the default maximum number of attempts we give up checking health and getting no instances"
       (wait-for-instances-to-be-healthy {:attempt 50 :parameters wait-for-instances-to-be-healthy-params}) => (contains {:status :error})
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => []))
 
-(fact "that after 100 attempts we give up checking health and getting unsuccessful responses"
+(fact "that after the default maximum number of attempts we give up checking health and get an unsuccessful responses"
       (wait-for-instances-to-be-healthy {:attempt 50 :parameters wait-for-instances-to-be-healthy-params}) => (contains {:status :error})
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "i-1"}
@@ -86,6 +86,11 @@
                                                                  :private-ip-address "ip2"}]
        (http/simple-get "http://ip1:9090/the/healthcheck" {:socket-timeout 2000}) => {:status 500}
        (http/simple-get "http://ip2:9090/the/healthcheck" {:socket-timeout 2000}) => {:status 200}))
+
+(fact "that after the given maximum number of attempts we give up checking health and getting no instances"
+      (wait-for-instances-to-be-healthy {:attempt 12 :parameters (assoc-in wait-for-instances-to-be-healthy-params [:new-state :tyranitar :deployment-params :instance-healthy-attempts] 12)}) => (contains {:status :error})
+      (provided
+       (aws/auto-scaling-group-instances "asg" "environment" "region") => []))
 
 (def wait-for-load-balancers-to-be-healthy-params
   {:environment "environment"
@@ -142,6 +147,16 @@
 (fact "that waiting for load balancer health errors if too many unsuccessful attempts have been made"
       (wait-for-load-balancers-to-be-healthy {:attempt 50
                                               :parameters wait-for-load-balancers-to-be-healthy-params}) => (contains {:status :error})
+      (provided
+       (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "id-1"} {:instance-id "id-2"}]
+       (aws/load-balancer-health "environment" "region" "lb-1") => [{:instance-id "id-1" :state "NotInService"}
+                                                                    {:instance-id "id-2" :state "InService"}]
+       (aws/load-balancer-health "environment" "region" "lb-2") => [{:instance-id "id-1" :state "InService"}
+                                                                    {:instance-id "id-2" :state "InService"}]))
+
+(fact "that waiting for load balancer health uses given maximum attempts"
+      (wait-for-load-balancers-to-be-healthy {:attempt 12
+                                              :parameters (assoc-in wait-for-load-balancers-to-be-healthy-params [:new-state :tyranitar :deployment-params :load-balancer-healthy-attempts] 12)}) => (contains {:status :error})
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "id-1"} {:instance-id "id-2"}]
        (aws/load-balancer-health "environment" "region" "lb-1") => [{:instance-id "id-1" :state "NotInService"}

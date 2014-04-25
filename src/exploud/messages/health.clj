@@ -57,7 +57,7 @@
         service-port (get application-properties :service.port default-service-port)
         skip-healthcheck? (get application-properties :service.healthcheck.skip default-healthcheck-skip)
         healthcheck-path (util/strip-first-forward-slash (get application-properties :service.healthcheck.path default-healthcheck-path))
-        max-attempts default-maximum-attempts
+        max-attempts (get deployment-params :instance-healthy-attempts  default-maximum-attempts)
         min (:min deployment-params)]
     (if skip-healthcheck?
       (do
@@ -104,7 +104,7 @@
         {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [selected-load-balancers]} deployment-params
-        max-attempts default-maximum-attempts]
+        max-attempts (get deployment-params :load-balancer-healthy-attempts default-maximum-attempts)]
     (if (seq selected-load-balancers)
       (try
         (let [instances (aws/auto-scaling-group-instances auto-scaling-group-name environment region)]
