@@ -40,6 +40,6 @@
       (enqueue-next-task params) => params
       (provided
        (successful? ..result..) => true
-       (should-pause? ..parameters..) => true
+       (should-pause? {:parameters ..parameters..}) => true
        (deployments/pause ..parameters..) => ..pause..
        (tasks/enqueue anything) => ..enqueue.. :times 0))

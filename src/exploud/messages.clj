@@ -103,12 +103,12 @@
   false)
 
 (defn should-pause-because-of-deployment-params?
-  [{:keys [action message next-action]}]
-  (when (= next-action ))
-  (get-in message [:parameters :new-state :tyranitar :deployment-params :pause-after-healthy]))
+  [{:keys [action parameters]}]
+  (when (= action :exploud.messages.health/wait-for-load-balancers-to-be-healthy)
+    (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-healthy])))
 
 (defn should-pause?
-  [{:keys [next-action] :as details}]
+  [details]
   (or (should-pause-because-told-to? details)
       (should-pause-because-of-deployment-params? details)))
 
@@ -117,7 +117,7 @@
   (when (and (successful? result)
              next-action)
     (let [{:keys [parameters]} message]
-      (if-not (should-pause? parameters)
+      (if-not (should-pause? message)
         (tasks/enqueue {:action next-action
                         :parameters parameters})
         (do
