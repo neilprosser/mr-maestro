@@ -56,12 +56,19 @@
   [application environment region]
   (str/join "-" [application environment region]))
 
-(defn- create-description
+(defn- create-description-with-id
   [[k id]]
   (let [[application environment region] (str/split k #"-" 3)]
     {:application application
      :environment environment
      :id id
+     :region region}))
+
+(defn- create-description
+  [k]
+  (let [[application environment region] (str/split k #"-" 3)]
+    {:application application
+     :environment environment
      :region region}))
 
 (defn paused?
@@ -70,11 +77,11 @@
 
 (defn paused
   []
-  (map create-description (apply hash-map (using-redis (car/hgetall paused-key)))))
+  (map create-description-with-id (apply hash-map (using-redis (car/hgetall paused-key)))))
 
 (defn pause
-  [application environment region]
-  (pos? (using-redis (car/hsetnx paused-key (field-for application environment region)))))
+  [application environment id region]
+  (pos? (using-redis (car/hsetnx paused-key (field-for application environment region) id))))
 
 (defn resume
   [application environment region]
@@ -82,19 +89,19 @@
 
 (defn pause-registered?
   [application environment region]
-  (using-redis (car/hget awaiting-pause-key (field-for application environment region))))
+  (using-redis (car/sismember awaiting-pause-key (field-for application environment region))))
 
 (defn awaiting-pause
   []
-  (map create-description (apply hash-map (using-redis (car/hgetall awaiting-pause-key)))))
+  (map create-description (using-redis (car/smembers awaiting-pause-key))))
 
 (defn register-pause
   [application environment region]
-  (pos? (using-redis (car/hsetnx awaiting-pause-key (field-for application environment region)))))
+  (pos? (using-redis (car/sadd awaiting-pause-key (field-for application environment region)))))
 
 (defn unregister-pause
   [application environment region]
-  (pos? (using-redis (car/hdel awaiting-pause-key (field-for application environment region)))))
+  (pos? (using-redis (car/srem awaiting-pause-key (field-for application environment region)))))
 
 (defn in-progress?
   [application environment region]
@@ -102,7 +109,7 @@
 
 (defn in-progress
   []
-  (map create-description (apply hash-map (using-redis (car/hgetall in-progress-key)))))
+  (map create-description-with-id (apply hash-map (using-redis (car/hgetall in-progress-key)))))
 
 (defn begin-deployment
   [{:keys [application environment id region]}]
