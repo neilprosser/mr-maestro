@@ -230,6 +230,40 @@
                                    :user user})
             (response {:id id}))))
 
+   (POST "/applications/:application/:environment/pause"
+         [application environment]
+         (let [parameters {:application application
+                           :environment environment
+                           :region default-region}]
+           (if (deployments/in-progress? parameters)
+             (do
+               (deployments/register-pause parameters)
+               (response "Pause registered and will take effect after the next task finishes" "text/plain" 200))
+             (response "No deployment is in progress" "text/plain" 409))))
+
+   (DELETE "/application/:application/:environment/pause"
+           [application environment]
+           (let [parameters {:application application
+                             :environment environment
+                             :region default-region}]
+             (if (deployments/pause-registered? parameters)
+               (do
+                 (deployments/unregister-pause parameters)
+                 (response "Pause unregistered" "text/plain" 200))
+               (response "No pause was registered" "text/plain" 409))))
+
+   (POST "/applications/:application/:environment/resume"
+         [application environment]
+         (guarded
+          (let [parameters {:application application
+                            :environment environment
+                            :region default-region}]
+            (if (deployments/paused? parameters)
+              (do
+                (deployments/resume parameters)
+                (response "Deployment resumed" "text/plain" 200))
+              (response "No deployment is paused" "text/plain" 409)))))
+
    (GET "/environments"
         []
         (response {:environments (info/environments default-region)}))
@@ -237,6 +271,14 @@
    (GET "/in-progress"
         []
         (response {:deployments (deployments/in-progress)}))
+
+   (GET "/paused"
+        []
+        (response {:deployments (deployments/paused)}))
+
+   (GET "/awaiting-pause"
+        []
+        (response {:deployments (deployments/awaiting-pause)}))
 
    (DELETE "/in-progress/:application/:environment"
            [application environment])

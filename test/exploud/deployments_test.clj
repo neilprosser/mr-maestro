@@ -94,13 +94,14 @@
        (es/deployment "id") => {:status "invalid"}))
 
 (fact "that undoing a deployment triggers the right task"
-      (undo undo-params) => {:status "failed"
-                             :undo true}
+      (undo undo-params) => "id"
       (provided
        (redis/in-progress? "application" "environment" "region") => "id"
-       (es/deployment "id") => {:status "failed"}
+       (es/deployment "id") => {:id "id"
+                                :status "failed"}
        (tasks/enqueue {:action :exploud.messages.data/start-deployment
-                       :parameters {:status "failed"
+                       :parameters {:id "id"
+                                    :status "failed"
                                     :undo true}}) => ..enqueue-result..))
 
 (def rollback-params

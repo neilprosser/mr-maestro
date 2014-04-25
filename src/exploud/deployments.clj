@@ -1,6 +1,7 @@
 (ns exploud.deployments
   (:require [clj-time.core :as time]
             [exploud
+             [actions :as actions]
              [elasticsearch :as es]
              [redis :as redis]
              [tasks :as tasks]]))
@@ -16,6 +17,30 @@
 (defn unlock
   []
   (redis/unlock))
+
+(defn paused?
+  [{:keys [application environment region]}]
+  (redis/paused? application environment region))
+
+(defn paused
+  []
+  (redis/paused))
+
+(defn register-pause
+  [{:keys [application environment region]}]
+  (redis/register-pause application environment region))
+
+(defn unregister-pause
+  [{:keys [application environment region]}]
+  (redis/unregister-pause application environment region))
+
+(defn pause-registered?
+  [{:keys [application environment region]}]
+  (redis/pause-registered? application environment region))
+
+(defn awaiting-pause
+  []
+  (redis/awaiting-pause))
 
 (defn in-progress?
   [{:keys [application environment region]}]
@@ -50,7 +75,7 @@
         (let [updated-deployment (assoc deployment :undo true)]
           (tasks/enqueue {:action :exploud.messages.data/start-deployment
                           :parameters updated-deployment})
-          updated-deployment)
+          (:id updated-deployment))
         (throw (ex-info "Deployment has not failed" {:type ::deployment-not-failed
                                                      :id id})))
       (throw (ex-info "Deployment could not be found" {:type ::deployment-not-found
@@ -79,3 +104,16 @@
     (throw (ex-info "No previous completed deployment could be found" {:type ::previous-completed-deployment-not-found
                                                                        :application application
                                                                        :environment environment}))))
+
+(defn pause
+  [{:keys [application environment region]}]
+  (redis/pause application environment region))
+
+(defn resume
+  [{:keys [application environment region]}]
+  (let [id (redis/in-progress? application environment region)
+        deployment (es/deployment id)
+        action (actions/resume-action (es/deployment-tasks id))]
+    (tasks/enqueue {:action action
+                    :parameters deployment})
+    (redis/resume application environment region)))

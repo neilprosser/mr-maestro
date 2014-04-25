@@ -1,107 +1,14 @@
 (ns exploud.messages
   (:require [clj-time.core :as time]
             [exploud
+             [actions :as actions]
              [bindings :refer :all]
              [deployments :as deployments]
              [elasticsearch :as es]
              [log :as log]
              [responses :refer :all]
              [tasks :as tasks]
-             [util :as util]]
-            [exploud.messages
-             [asg :as asg]
-             [data :as data]
-             [health :as health]
-             [notification :as notification]]
-            [linked.set :refer [linked-set]]))
-
-(def ^:private action-ordering
-  (linked-set :exploud.messages.data/start-deployment-preparation
-              :exploud.messages.data/validate-region
-              :exploud.messages.data/validate-environment
-              :exploud.messages.data/validate-application
-              :exploud.messages.data/validate-user
-              :exploud.messages.data/validate-image
-              :exploud.messages.data/validate-message
-              :exploud.messages.data/get-onix-metadata
-              :exploud.messages.data/ensure-tyranitar-hash
-              :exploud.messages.data/verify-tyranitar-hash
-              :exploud.messages.data/get-tyranitar-application-properties
-              :exploud.messages.data/get-tyranitar-deployment-params
-              :exploud.messages.data/get-tyranitar-launch-data
-              :exploud.messages.data/populate-previous-state
-              :exploud.messages.data/populate-previous-tyranitar-application-properties
-              :exploud.messages.data/get-previous-image-details
-              :exploud.messages.data/create-names
-              :exploud.messages.data/get-image-details
-              :exploud.messages.data/verify-image
-              :exploud.messages.data/check-contact-property
-              :exploud.messages.data/check-shuppet-configuration
-              :exploud.messages.data/add-required-security-groups
-              :exploud.messages.data/map-security-group-ids
-              :exploud.messages.data/verify-load-balancers
-              :exploud.messages.data/populate-subnets
-              :exploud.messages.data/populate-vpc-zone-identifier
-              :exploud.messages.data/populate-availability-zones
-              :exploud.messages.data/populate-termination-policies
-              :exploud.messages.data/create-auto-scaling-group-tags
-              :exploud.messages.data/generate-user-data
-              :exploud.messages.data/complete-deployment-preparation
-              :exploud.messages.data/start-deployment
-              :exploud.messages.asg/create-launch-configuration
-              :exploud.messages.asg/create-auto-scaling-group
-              :exploud.messages.asg/disable-adding-instances
-              :exploud.messages.asg/add-scaling-notifications
-              :exploud.messages.asg/notify-of-auto-scaling-group-creation
-              :exploud.messages.asg/resize-auto-scaling-group
-              :exploud.messages.asg/wait-for-instances-to-exist
-              :exploud.messages.asg/wait-for-instances-to-be-in-service
-              :exploud.messages.asg/disable-instance-launching
-              :exploud.messages.asg/disable-instance-termination
-              :exploud.messages.health/wait-for-instances-to-be-healthy
-              :exploud.messages.asg/enable-instance-launching
-              :exploud.messages.asg/enable-instance-termination
-              :exploud.messages.asg/enable-adding-instances
-              :exploud.messages.asg/register-instances-with-load-balancers
-              :exploud.messages.health/wait-for-load-balancers-to-be-healthy
-              :exploud.messages.asg/disable-old-instance-launching
-              :exploud.messages.asg/disable-old-instance-termination
-              :exploud.messages.asg/disable-old-adding-instances
-              :exploud.messages.asg/deregister-old-instances-from-load-balancers
-              :exploud.messages.asg/notify-of-auto-scaling-group-deletion
-              :exploud.messages.asg/delete-old-auto-scaling-group
-              :exploud.messages.asg/wait-for-old-auto-scaling-group-deletion
-              :exploud.messages.asg/delete-old-launch-configuration
-              :exploud.messages.notification/send-completion-notification
-              :exploud.messages.data/complete-deployment))
-
-(defn- to-function
-  [action]
-  (when action
-    (let [namespace (namespace action)
-          name (name action)]
-      (resolve (symbol (format "%s/%s" namespace name))))))
-
-(defn- validate-action-keyword
-  [action]
-  (when-not (keyword? action)
-    (throw (RuntimeException. (format "Not a keyword: %s" action))))
-  (when-not (to-function action)
-    (throw (RuntimeException. (format "Invalid task: %s" action)))))
-
-(defn- validate-action-ordering
-  []
-  (doseq [a action-ordering]
-    (validate-action-keyword a)))
-
-(validate-action-ordering)
-
-(defn action-after
-  [action]
-  (let [action-fn (to-function action)]
-    (->> action-ordering
-         (drop-while #(not= (to-function action) (to-function %)))
-         fnext)))
+             [util :as util]]))
 
 (defn- rewrap
   [{:keys [mid message attempt]}]
@@ -115,7 +22,7 @@
   (or (= status :error)
       (= status :success)))
 
-(defn- successful?
+(defn successful?
   [{:keys [status]}]
   (= :success status))
 
@@ -132,17 +39,17 @@
     :error "failed"
     "running"))
 
-(defn- ensure-task
+(defn ensure-task
   [{:keys [attempt message] :as details}]
   (let [{:keys [action]} message]
     (when (= 1 attempt)
       (es/create-task *task-id* *deployment-id* {:action action
-                                                 :sequence (count (take-while #(not= % action) action-ordering))
+                                                 :sequence (actions/sequence-number action)
                                                  :start (time/now)
                                                  :status "running"})))
   details)
 
-(defn- perform-action
+(defn perform-action
   [action-fn details]
   (try
     (let [result (action-fn (rewrap details))]
@@ -150,7 +57,7 @@
     (catch Exception e
       (assoc details :result (error-with e)))))
 
-(defn- log-error-if-necessary
+(defn log-error-if-necessary
   [{:keys [result] :as details}]
   (if (= (:status result) :error)
     (if-let [throwable (:throwable result)]
@@ -158,26 +65,26 @@
       (log/write "An unspecified error has occurred. It might be worth checking Exploud's logs.")))
   details)
 
-(defn- determine-next-action
+(defn determine-next-action
   [{:keys [message] :as details}]
   (let [{:keys [action]} message]
-    (assoc details :next-action (action-after action))))
+    (assoc details :next-action (actions/action-after action))))
 
-(defn- update-task
+(defn update-task
   [{:keys [message result] :as details}]
   (when (terminal? result)
     (es/update-task *task-id* *deployment-id* {:end (time/now)
                                                :status (task-status-for result)}))
   details)
 
-(defn- failure-status
+(defn failure-status
   [{:keys [message]}]
   (let [{:keys [parameters]} message]
     (if (= "preparation" (:phase parameters))
       "invalid"
       "failed")))
 
-(defn- update-deployment
+(defn update-deployment
   [{:keys [message result] :as details}]
   (case (:status result)
     :success (let [status (if (:next-action details) "running" "completed")
@@ -191,24 +98,40 @@
              (assoc-in details [:message :parameters] new-parameters))
     :retry details))
 
-(defn- enqueue-next-task
+(defn should-pause-because-told-to?
+  [details]
+  false)
+
+(defn should-pause-because-of-deployment-params?
+  [{:keys [action message next-action]}]
+  (when (= next-action ))
+  (get-in message [:parameters :new-state :tyranitar :deployment-params :pause-after-healthy]))
+
+(defn should-pause?
+  [{:keys [next-action] :as details}]
+  (or (should-pause-because-told-to? details)
+      (should-pause-because-of-deployment-params? details)))
+
+(defn enqueue-next-task
   [{:keys [message next-action result] :as details}]
   (when (and (successful? result)
              next-action)
     (let [{:keys [parameters]} message]
-      (tasks/enqueue {:action next-action
-                      :parameters parameters})))
+      (if-not (should-pause? parameters)
+        (tasks/enqueue {:action next-action
+                        :parameters parameters})
+        (deployments/pause parameters))))
   details)
 
-(defn- is-finishing?
+(defn is-finishing?
   [{:keys [next-action]}]
   (not next-action))
 
-(defn- is-safely-failed?
+(defn is-safely-failed?
   [{:keys [message]}]
   (= "invalid" (get-in message [:parameters :status])))
 
-(defn- unlock-deployment-if-allowed
+(defn unlock-deployment-if-allowed
   [{:keys [message] :as details}]
   (if (or (is-finishing? details)
           (is-safely-failed? details))
@@ -224,7 +147,7 @@
       (throw (ex-info "No deployment ID provided" {:type ::missing-deployment-id})))
     (binding [*task-id* mid
               *deployment-id* id]
-      (if-let [action-fn (to-function action)]
+      (if-let [action-fn (actions/to-function action)]
         (->> details
              ensure-task
              (perform-action action-fn)

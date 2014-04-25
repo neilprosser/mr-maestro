@@ -7,6 +7,12 @@
 (def ^:private in-progress-key
   "exploud:deployments:in-progress")
 
+(def ^:private paused-key
+  "exploud:deployments:paused")
+
+(def ^:private awaiting-pause-key
+  "exploud:deployments:awaiting-pause")
+
 (def ^:private lock-key
   "exploud:lock")
 
@@ -50,10 +56,6 @@
   [application environment region]
   (str/join "-" [application environment region]))
 
-(defn in-progress?
-  [application environment region]
-  (using-redis (car/hget in-progress-key (field-for application environment region))))
-
 (defn- create-description
   [[k id]]
   (let [[application environment region] (str/split k #"-" 3)]
@@ -61,6 +63,42 @@
      :environment environment
      :id id
      :region region}))
+
+(defn paused?
+  [application environment region]
+  (using-redis (car/hget paused-key (field-for application environment region))))
+
+(defn paused
+  []
+  (map create-description (apply hash-map (using-redis (car/hgetall paused-key)))))
+
+(defn pause
+  [application environment region]
+  (pos? (using-redis (car/hsetnx paused-key (field-for application environment region)))))
+
+(defn resume
+  [application environment region]
+  (pos? (using-redis (car/hdel paused-key (field-for application environment region)))))
+
+(defn pause-registered?
+  [application environment region]
+  (using-redis (car/hget awaiting-pause-key (field-for application environment region))))
+
+(defn awaiting-pause
+  []
+  (map create-description (apply hash-map (using-redis (car/hgetall awaiting-pause-key)))))
+
+(defn register-pause
+  [application environment region]
+  (pos? (using-redis (car/hsetnx awaiting-pause-key (field-for application environment region)))))
+
+(defn unregister-pause
+  [application environment region]
+  (pos? (using-redis (car/hdel awaiting-pause-key (field-for application environment region)))))
+
+(defn in-progress?
+  [application environment region]
+  (using-redis (car/hget in-progress-key (field-for application environment region))))
 
 (defn in-progress
   []

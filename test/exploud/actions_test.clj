@@ -1,22 +1,18 @@
 (ns exploud.actions-test
   (:require [exploud.actions :refer :all]
-            [midje.sweet :refer :all])
-  (:import com.amazonaws.AmazonServiceException
-           java.util.UUID))
+            [midje.sweet :refer :all]))
 
-(def exception
-  (doto
-      (AmazonServiceException. "Rate exceeded")
-    (.setErrorCode "Throttling")
-    (.setRequestId "3b7ae6c1-aec4-11e3-b3e5-b58fe9afe3b6")
-    (.setServiceName "AmazonAutoScaling")
-    (.setStatusCode 400)))
+(fact "that getting the next action works"
+      (action-after :exploud.messages.data/create-names)
+      => :exploud.messages.data/get-image-details)
 
-(defn fake-fn
-  []
-  1)
+(fact "that getting the sequence number works"
+      (sequence-number :exploud.messages.health/wait-for-load-balancers-to-be-healthy) => 47)
 
-(fact "Retrying does all the good business"
-      (retry-on-throttling-error 1 #(fake-fn "name")) => (throws AmazonServiceException)
+(fact "that getting the resume action for a running task gives the action of that task"
+      (resume-action [{} {:action "action" :status "running"}]) => :action)
+
+(fact "that getting the resume action for a complete task gives the next action"
+      (resume-action [{:action "action" :status "completed"}]) => :next-action
       (provided
-       (fake-fn "name") =throws=> exception :times 2))
+       (action-after :action) => :next-action))
