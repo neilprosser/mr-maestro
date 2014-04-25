@@ -171,11 +171,11 @@
 
    (GET "/deployments/:deployment-id/tasks"
         [deployment-id]
-        (response (es/deployment-tasks deployment-id)))
+        (response {:tasks (es/deployment-tasks deployment-id)}))
 
    (GET "/deployments/:deployment-id/logs"
         [deployment-id]
-        (response (es/deployment-logs deployment-id)))
+        (response {:logs (es/deployment-logs deployment-id)}))
 
    (GET "/applications"
         []

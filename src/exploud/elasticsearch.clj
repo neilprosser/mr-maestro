@@ -90,16 +90,16 @@
 
 (defn deployment-tasks
   [deployment-id]
-  {:tasks (->> (esd/search index-name task-type :routing deployment-id :query (q/match-all) :filter {:has_parent {:type deployment-type :query {:term {:_id {:value deployment-id}}}}} :sort {:sequence "asc"} :size 10000)
-               esrsp/hits-from
-               (map (fn [h] (assoc (:_source h) :id (:_id h))))
-               (map #(dissoc % :sequence)))})
+  (->> (esd/search index-name task-type :routing deployment-id :query (q/match-all) :filter {:has_parent {:type deployment-type :query {:term {:_id {:value deployment-id}}}}} :sort {:sequence "asc"} :size 10000)
+       esrsp/hits-from
+       (map (fn [h] (assoc (:_source h) :id (:_id h))))
+       (map #(dissoc % :sequence))))
 
 (defn deployment-logs
   [deployment-id]
-  {:logs (->> (esd/search index-name log-type :routing deployment-id :query (q/match-all) :filter {:has_parent {:type deployment-type :query {:term {:_id {:value deployment-id}}}}} :sort {:date "asc"} :size 10000)
-              esrsp/hits-from
-              (map (fn [h] (assoc (:_source h) :id (:_id h)))))})
+  (->> (esd/search index-name log-type :routing deployment-id :query (q/match-all) :filter {:has_parent {:type deployment-type :query {:term {:_id {:value deployment-id}}}}} :sort {:date "asc"} :size 10000)
+       esrsp/hits-from
+       (map (fn [h] (assoc (:_source h) :id (:_id h))))))
 
 (defn deployments-by-user
   []
