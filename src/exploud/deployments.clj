@@ -3,6 +3,7 @@
             [exploud
              [actions :as actions]
              [elasticsearch :as es]
+             [log :as log]
              [redis :as redis]
              [tasks :as tasks]]))
 
