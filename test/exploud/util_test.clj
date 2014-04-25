@@ -63,3 +63,15 @@
                           :key2 false
                           :key3 nil}) => {:key1 "something"
                                           :key2 false})
+
+(fact "that getting the previous state key is correct when undo isn't set"
+      (previous-state-key {}) => :previous-state)
+
+(fact "that getting the previous state key is correct when undo is set"
+      (previous-state-key {:undo true}) => :new-state)
+
+(fact "that getting the new state key is correct when undo isn't set"
+      (new-state-key {}) => :new-state)
+
+(fact "that getting the new state key is correct when undo is set"
+      (new-state-key {:undo true}) => :previous-state)
