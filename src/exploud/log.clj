@@ -5,9 +5,13 @@
              [elasticsearch :as es]
              [util :as util]]))
 
+(defn write*
+  [deployment-id message-text]
+  (let [log-id (util/generate-id)
+        message {:date (str (time/now)) :message message-text}]
+    (es/write-log log-id deployment-id message)))
+
 (defn write
   [message-text]
   (when-let [deployment-id *deployment-id*]
-    (let [log-id (util/generate-id)
-          message {:date (str (time/now)) :message message-text}]
-      (es/write-log log-id deployment-id message))))
+    (write* deployment-id message-text)))

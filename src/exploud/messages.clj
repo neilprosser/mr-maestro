@@ -120,7 +120,9 @@
       (if-not (should-pause? parameters)
         (tasks/enqueue {:action next-action
                         :parameters parameters})
-        (deployments/pause parameters))))
+        (do
+          (log/write "Pausing deployment")
+          (deployments/pause parameters)))))
   details)
 
 (defn is-finishing?
