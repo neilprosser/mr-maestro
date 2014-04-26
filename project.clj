@@ -29,7 +29,7 @@
                  [org.clojure/data.xml "0.0.7"]
                  [org.clojure/data.zip "0.1.1"]
                  [org.clojure/tools.logging "0.2.6"]
-                 [org.eclipse.jetty/jetty-server "8.1.14.v20131031"]
+                 [org.eclipse.jetty/jetty-server "8.1.15.v20140411"]
                  [org.slf4j/jcl-over-slf4j "1.7.7"]
                  [org.slf4j/jul-to-slf4j "1.7.7"]
                  [org.slf4j/log4j-over-slf4j "1.7.7"]
