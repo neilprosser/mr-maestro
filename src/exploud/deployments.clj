@@ -108,6 +108,7 @@
 
 (defn pause
   [{:keys [application environment id region]}]
+  (redis/unregister-pause application environment region)
   (redis/pause application environment id region))
 
 (defn resume
