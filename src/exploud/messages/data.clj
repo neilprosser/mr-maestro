@@ -127,9 +127,13 @@
    :desired-capacity 1
    :health-check-grace-period 600
    :health-check-type "EC2"
+   :instance-healthy-attempts 50
    :instance-type "t1.micro"
+   :load-balancer-healthy-attempts 50
    :max 1
    :min 1
+   :pause-after-instances-healthy false
+   :pause-after-load-balancers-healthy false
    :selected-zones ["a" "b"]
    :subnet-purpose "internal"
    :termination-policy "Default"})
