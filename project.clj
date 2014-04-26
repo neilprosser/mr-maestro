@@ -97,6 +97,8 @@
 
   :uberjar-name "exploud.jar"
 
+  :eastwood {:namespaces [:source-paths]}
+
   :rpm {:name "exploud"
         :summary "RPM for Exploud service"
         :copyright "Nokia 2013"
