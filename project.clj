@@ -19,7 +19,7 @@
                  [com.yammer.metrics/metrics-logback "2.2.0"]
                  [compojure "1.1.6" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
-                 [environ "0.4.0"]
+                 [environ "0.5.0"]
                  [metrics-clojure "1.0.1"]
                  [metrics-clojure-ring "1.0.1"]
                  [nokia/instrumented-ring-jetty-adapter "0.1.8"]
