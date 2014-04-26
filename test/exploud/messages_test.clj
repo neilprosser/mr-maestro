@@ -6,6 +6,41 @@
              [tasks :as tasks]]
             [midje.sweet :refer :all]))
 
+(fact "that we shouldn't pause for a random action"
+      (def params {:action :exploud.messages.health/something
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-instances-healthy true}}}}})
+      (should-pause-because-of-deployment-params? params) => falsey)
+
+(fact "that we should pause when the instances have been declared healthy and we're told we should"
+      (def params {:action :exploud.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-instances-healthy true}}}}})
+      (should-pause-because-of-deployment-params? params) => truthy)
+
+(fact "that we shouldn't pause when the instances have been declared healthy and we're told we shouldn't"
+      (def params {:action :exploud.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-instances-healthy false}}}}})
+      (should-pause-because-of-deployment-params? params) => falsey)
+
+(fact "that we shouldn't pause when the instances have been declared healthy and we've not been told anything"
+      (def params {:action :exploud.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {:new-state {:tyranitar {:deployment-params {}}}}})
+      (should-pause-because-of-deployment-params? params) => falsey)
+
+(fact "that we should pause when the load balancers have been declared healthy and we're told we should"
+      (def params {:action :exploud.messages.health/wait-for-load-balancers-to-be-healthy
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-load-balancers-healthy true}}}}})
+      (should-pause-because-of-deployment-params? params) => truthy)
+
+(fact "that we shouldn't pause when the load balancers have been declared healthy and we're told we shouldn't"
+      (def params {:action :exploud.messages.health/wait-for-load-balancers-to-be-healthy
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-load-balancers-healthy false}}}}})
+      (should-pause-because-of-deployment-params? params) => falsey)
+
+(fact "that we shouldn't pause when the load balancers have been declared healthy and we've not been told anything"
+      (def params {:action :exploud.messages.health/wait-for-load-balancers-to-be-healthy
+                   :parameters {:new-state {:tyranitar {:deployment-params {}}}}})
+      (should-pause-because-of-deployment-params? params) => falsey)
+
 (fact "that we enqueue the next task correctly"
       (def params {:message {:parameters ..parameters..}
                    :next-action :some-action

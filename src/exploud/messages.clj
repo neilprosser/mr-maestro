@@ -104,8 +104,11 @@
 
 (defn should-pause-because-of-deployment-params?
   [{:keys [action parameters]}]
-  (when (= action :exploud.messages.health/wait-for-load-balancers-to-be-healthy)
-    (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-healthy])))
+  (cond (= action :exploud.messages.health/wait-for-instances-to-be-healthy)
+        (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-instances-healthy])
+        (= action :exploud.messages.health/wait-for-load-balancers-to-be-healthy)
+        (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-load-balancers-healthy])
+        :else false))
 
 (defn should-pause?
   [details]
