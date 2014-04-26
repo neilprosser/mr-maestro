@@ -107,8 +107,8 @@
                                                                        :environment environment}))))
 
 (defn pause
-  [{:keys [application environment region]}]
-  (redis/pause application environment region))
+  [{:keys [application environment id region]}]
+  (redis/pause application environment id region))
 
 (defn resume
   [{:keys [application environment region]}]
