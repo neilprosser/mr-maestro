@@ -100,7 +100,7 @@
 
 (defn should-pause-because-told-to?
   [details]
-  false)
+  (deployments/pause-registered? details))
 
 (defn should-pause-because-of-deployment-params?
   [{:keys [action parameters]}]
@@ -128,18 +128,18 @@
           (deployments/pause parameters)))))
   details)
 
-(defn is-finishing?
+(defn finishing?
   [{:keys [next-action]}]
   (not next-action))
 
-(defn is-safely-failed?
+(defn safely-failed?
   [{:keys [message]}]
   (= "invalid" (get-in message [:parameters :status])))
 
 (defn unlock-deployment-if-allowed
   [{:keys [message] :as details}]
-  (if (or (is-finishing? details)
-          (is-safely-failed? details))
+  (if (or (finishing? details)
+          (safely-failed? details))
     (let [{:keys [parameters]} message]
       (deployments/end parameters)))
   details)
