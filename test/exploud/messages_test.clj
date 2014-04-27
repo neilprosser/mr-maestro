@@ -1,10 +1,50 @@
 (ns exploud.messages-test
   (:require [exploud
+             [bindings :refer [*deployment-id*]]
              [deployments :as deployments]
              [elasticsearch :as es]
              [messages :refer :all]
              [tasks :as tasks]]
             [midje.sweet :refer :all]))
+
+(fact "that rewrapping the message does what we want"
+      (binding [*deployment-id* ..deployment-id..]
+        (rewrap {:mid ..mid.. :message {:parameters {:something "woo"}} :attempt ..attempt..})
+        => {:id ..mid..
+            :parameters {:id ..deployment-id..
+                         :something "woo"
+                         :status "running"}
+            :attempt ..attempt..}))
+
+(fact "that determining whether something is terminal works when it has an error status"
+      (terminal? {:status :error}) => true)
+
+(fact "that determining whether something is terminal works when it has a success status"
+      (terminal? {:status :success}) => true)
+
+(fact "that determining whether something is terminal works when it has a different status"
+      (terminal? {:status :whatever}) => false)
+
+(fact "that determining whether something is successful works when it has a success status"
+      (successful? {:status :success}) => true)
+
+(fact "that determining whether something is successful works when it has a different status"
+      (successful? {:status :whatever}) => false)
+
+(fact "that a successful task has a completed status"
+      (task-status-for {:status :success}) => "completed")
+
+(fact "that an errored task has a failed status"
+      (task-status-for {:status :error}) => "failed")
+
+(fact "that a non-successful or errored task has a running status"
+      (task-status-for {:status :whatever}) => "running")
+
+(fact "that an errored deployment has a failed status"
+      (deployment-status-for {:status :error}) => "failed")
+
+(fact "that a non-errored deployment has a running status"
+      (deployment-status-for {:status :whatever}) => "running")
 
 (fact "that we should pause when the deployment has a pause registered"
       (def params {:parameters {:application "application"
@@ -124,3 +164,23 @@
 
 (fact "that we've not safely failed if the status isn't invalid"
       (safely-failed? {:message {:parameters {:status "not-invalid"}}}))
+
+(fact "that we end the deployment if we're finishing"
+      (end-deployment-if-allowed {}) => {}
+      (provided
+       (finishing? anything) => true
+       (deployments/end anything) => :whatever))
+
+(fact "that we end the deployment if we've safely failed"
+      (end-deployment-if-allowed {}) => {}
+      (provided
+       (finishing? anything) => false
+       (safely-failed? anything) => true
+       (deployments/end anything) => :whatever))
+
+(fact "that we don't end the deployment if we're not finishing and we haven't safely failed"
+      (end-deployment-if-allowed {}) => {}
+      (provided
+       (finishing? anything) => false
+       (safely-failed? anything) => false
+       (deployments/end anything) => :whatever :times 0))

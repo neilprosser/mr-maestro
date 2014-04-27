@@ -10,14 +10,14 @@
              [tasks :as tasks]
              [util :as util]]))
 
-(defn- rewrap
+(defn rewrap
   [{:keys [mid message attempt]}]
   (let [{:keys [parameters]} message]
     {:id mid
      :parameters (assoc parameters :id *deployment-id* :status "running")
      :attempt attempt}))
 
-(defn- terminal?
+(defn terminal?
   [{:keys [status]}]
   (or (= status :error)
       (= status :success)))
@@ -26,14 +26,14 @@
   [{:keys [status]}]
   (= :success status))
 
-(defn- task-status-for
+(defn task-status-for
   [{:keys [status]}]
   (case status
     :success "completed"
     :error "failed"
     "running"))
 
-(defn- deployment-status-for
+(defn deployment-status-for
   [{:keys [status]}]
   (case status
     :error "failed"
@@ -136,7 +136,7 @@
   [{:keys [message]}]
   (= "invalid" (get-in message [:parameters :status])))
 
-(defn unlock-deployment-if-allowed
+(defn end-deployment-if-allowed
   [{:keys [message] :as details}]
   (if (or (finishing? details)
           (safely-failed? details))
@@ -161,7 +161,7 @@
              update-task
              update-deployment
              enqueue-next-task
-             unlock-deployment-if-allowed
+             end-deployment-if-allowed
              :result)
         (error-with (ex-info "Unknown action" {:type ::unknown-action
                                                :action action}))))))
