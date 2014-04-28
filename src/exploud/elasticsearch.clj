@@ -23,6 +23,26 @@
   [index mapping-type id doc & {:as params}]
   (esr/post (esr/record-update-url index mapping-type id) :body {:doc doc} :query-params params))
 
+(defn start-date-facet
+  []
+  {:date_histogram {:field "start" :interval "month"}})
+
+(defn application-facet
+  []
+  {:terms {:field "application" :order "term" :size 1000}})
+
+(defn user-facet
+  []
+  {:terms {:field "user" :order "term" :size 1000}})
+
+(defn completed-status-filter
+  []
+  {:term {:status "completed"}})
+
+(defn environment-filter
+  [environment]
+  {:term {:environment environment}})
+
 (defn init
   []
   (esr/connect! (env :elasticsearch-url "http://localhost:9200")))
@@ -103,24 +123,24 @@
 
 (defn deployments-by-user
   []
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:term {:status "completed"}}) :size 0 :facets {:user {:terms {:field "user" :order "term" :size 1000}}})
+  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})
         facets (get-in result [:facets :user :terms])]
     (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
 
 (defn deployments-by-application
   []
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:term {:status "completed"}}) :size 0 :facets {:application {:terms {:field "application" :order "term" :size 1000}}})
+  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:application (application-facet)})
         facets (get-in result [:facets :application :terms])]
     (map (fn [f] {:application (:term f) :count (:count f)}) facets)))
 
 (defn deployments-by-month
   []
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:term {:status "completed"}}) :size 0 :facets {:date {:date_histogram {:field "start" :interval "month"}}})
+  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet)})
         facets (get-in result [:facets :date :entries])]
     (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
 
 (defn deployments-in-environment-by-month
   [environment]
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [{:term {:status "completed"}} {:term {:environment environment}}]}}) :size 0 :facets {:date {:date_histogram {:field "start" :interval "month"}}})
+  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet)})
         facets (get-in result [:facets :date :entries])]
     (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
