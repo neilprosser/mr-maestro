@@ -89,7 +89,7 @@
 
 (defn pause-registered?
   [application environment region]
-  (using-redis (car/sismember awaiting-pause-key (field-for application environment region))))
+  (pos? (using-redis (car/sismember awaiting-pause-key (field-for application environment region)))))
 
 (defn awaiting-pause
   []
