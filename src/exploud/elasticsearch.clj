@@ -69,16 +69,18 @@
     filters))
 
 (defn- create-date-filter
-  [field start-from start-to]
-  {:range {field {:gte start-from
-                  :lt start-to}}})
+  [field from to]
+  (let [from-filter (if from {:gte from})
+        to-filter (if to {:lt to})]
+    (when (or from-filter
+            to-filter)
+      {:range {field (merge from-filter to-filter)}})))
 
 (defn- add-date-filter
-  [filters start-from start-to]
-  (let [filter (create-date-filter :start start-from start-to)]
-    (if filter
-      (merge filters filter)
-      filters)))
+  [filters field from to]
+  (if-let [filter (create-date-filter field from to)]
+    (merge filters filter)
+    filters))
 
 (defn get-deployments
   [{:keys [application environment from region size start-from start-to status]}]
@@ -87,7 +89,7 @@
                     (add-filter :environment environment)
                     (add-filter :region region)
                     (add-filter :status status)
-                    (add-date-filter start-from start-to))
+                    (add-date-filter :start start-from start-to))
         response (esd/search index-name deployment-type :filter {:and {:filters filters}} :size (or size 10) :from (or from 0) :sort {:start "desc"})]
     (->> response
          esrsp/hits-from
@@ -115,11 +117,18 @@
        (map (fn [h] (assoc (:_source h) :id (:_id h))))
        (map #(dissoc % :sequence))))
 
+(defn parent-filter
+  [type parent-id]
+  {:has_parent {:type type
+                :query {:term {:_id {:value parent-id}}}}})
+
 (defn deployment-logs
-  [deployment-id]
-  (->> (esd/search index-name log-type :routing deployment-id :query (q/match-all) :filter {:has_parent {:type deployment-type :query {:term {:_id {:value deployment-id}}}}} :sort {:date "asc"} :size 10000)
-       esrsp/hits-from
-       (map (fn [h] (assoc (:_source h) :id (:_id h))))))
+  [deployment-id since]
+  (let [filters (-> [(parent-filter deployment-type deployment-id)]
+                    (add-date-filter :date since nil))]
+    (->> (esd/search index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
+         esrsp/hits-from
+         (map (fn [h] (assoc (:_source h) :id (:_id h)))))))
 
 (defn deployments-by-user
   []

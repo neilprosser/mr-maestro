@@ -39,3 +39,7 @@
    :size [[positive? :message "size must positive"]]
    :start-from [[valid-date? :message "start-from must be a valid date"]]
    :start-to [[valid-date? :message "start-to must be a valid date"]]])
+
+(def log-param-validators
+  "The validators we should `apply` to validate deployment log parameters."
+  [:since [[valid-date? :message "since must be a valid date"]]])

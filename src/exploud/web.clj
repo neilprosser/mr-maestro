@@ -174,8 +174,13 @@
         (response {:tasks (es/deployment-tasks deployment-id)}))
 
    (GET "/deployments/:deployment-id/logs"
-        [deployment-id]
-        (response {:logs (es/deployment-logs deployment-id)}))
+        [deployment-id since]
+        (let [parameters {:since since}
+              result (apply b/validate parameters v/log-param-validators)]
+          (if-let [details (first result)]
+            (response {:message "Query parameter validation failed"
+                       :details details} nil 400)
+            (response {:logs (es/deployment-logs deployment-id (fmt/parse since))}))))
 
    (GET "/applications"
         []

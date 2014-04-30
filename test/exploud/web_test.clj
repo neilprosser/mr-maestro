@@ -141,6 +141,23 @@
       (request :get "/1.x/deployments" {:params {:start-to "not a date"}})
       => (contains {:status 400}))
 
+(fact "that getting deployment logs without a since date passes nil to the underlying function"
+      (:body (request :get "/1.x/deployments/id/logs" {:params {}}))
+      => {:logs [{:a "log"}]}
+      (provided
+       (es/deployment-logs "id" nil) => [{:a "log"}]))
+
+(fact "that getting deployment logs with an invalid since date returns 400"
+      (request :get "/1.x/deployments/id/logs" {:params {:since "garbage"}})
+      => (contains {:status 400}))
+
+(fact "that getting deployment logs with a valid since date does the right thing"
+      (:body (request :get "/1.x/deployments/id/logs" {:params {:since "2003-01-04T00:02:01Z"}}))
+      => {:logs [{:a "log"}]}
+      (provided
+       (fmt/parse "2003-01-04T00:02:01Z") => ..date..
+       (es/deployment-logs "id" ..date..) => [{:a "log"}]))
+
 (fact "that creating an application with an illegal name returns 400."
       (request :put "/1.x/applications/my-application")
       => (contains {:status 400})
