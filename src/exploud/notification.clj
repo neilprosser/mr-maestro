@@ -58,7 +58,7 @@
 </html>" user application version image message id id)))
 
 (defn- build-message
-  [{:keys [undo] :as deployment}]
+  [deployment]
   {:from (env :service-mail-from)
    :to (env :service-mail-to)
    :subject (build-message-title deployment)
@@ -66,8 +66,9 @@
 
 (defn send-completion-message
   "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
-  [{:keys [environment] :as deployment}]
-  (when (prod? environment)
+  [{:keys [environment undo] :as deployment}]
+  (when (and (not undo)
+             (prod? environment))
     (let [host (env :service-smtp-host)]
       (when (seq host)
         (mail/send-message {:host host} (build-message deployment))))))

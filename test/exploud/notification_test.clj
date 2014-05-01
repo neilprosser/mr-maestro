@@ -68,4 +68,12 @@
 
 (fact "that we don't send when the environment is something other than `:prod`"
       (send-completion-message (assoc deployment :environment :something-else))
-      => nil)
+      => nil
+      (provided
+       (mail/send-message anything anything) => nil :times 0))
+
+(fact "that we don't send when the environment is `:prod` and it's an undo"
+      (send-completion-message (assoc deployment :undo true))
+      => nil
+      (provided
+       (mail/send-message anything anything) => nil :times 0))
