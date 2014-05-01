@@ -413,11 +413,11 @@
             (if-not instances
               (log/write "No instances to deregister.")
               (doseq [lb selected-load-balancers]
-                (log/write (format "Deregistering %s [%s] from load balancer %s." (util/pluralise instance-count "instance") (str/join ", " instance-ids) lb))
                 (let [load-balancer-instances (aws/load-balancer-instances environment region lb)
                       lb-instance-ids (apply hash-set (map :instance-id load-balancer-instances))
                       present-instance-ids (set/intersection lb-instance-ids instance-ids)]
                   (when (seq present-instance-ids)
+                    (log/write (format "Deregistering %s [%s] from load balancer %s." (util/pluralise (count present-instance-ids) "instance") (str/join ", " present-instance-ids) lb))
                     (elb/deregister-instances-from-load-balancer (aws/config environment region)
                                                                  :load-balancer-name lb
                                                                  :instances (vec (map (fn [i] {:instance-id i}) present-instance-ids)))))))
