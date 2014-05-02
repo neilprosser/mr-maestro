@@ -53,12 +53,14 @@
                                    :environment "environment"
                                    :id "id"
                                    :start ..start..
+                                   :status "running"
                                    :region "region"}) => ..es-result..
        (tasks/enqueue {:action :exploud.messages.data/start-deployment-preparation
                        :parameters {:application "application"
                                     :environment "environment"
                                     :id "id"
                                     :start ..start..
+                                    :status "running"
                                     :region "region"}}) => ..enqueue-result..))
 
 (fact "that beginning a deployment does what we expect when one already exists"

@@ -54,7 +54,7 @@
 (defn begin
   [{:keys [application environment id region] :as deployment}]
   (if (redis/begin-deployment deployment)
-    (let [updated-deployment (assoc deployment :start (time/now))]
+    (let [updated-deployment (assoc deployment :start (time/now) :status "running")]
       (es/upsert-deployment id updated-deployment)
       (tasks/enqueue {:action :exploud.messages.data/start-deployment-preparation
                       :parameters updated-deployment})
