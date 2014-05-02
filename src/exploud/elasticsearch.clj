@@ -94,15 +94,23 @@
     (merge filters filter)
     filters))
 
+(defn- source-filter
+  [full?]
+  (if full?
+    true
+    {:include ["application" "end" "environment" "message" "phase" "region" "start" "status" "user"
+               "new-state.hash" "new-state.image-details"
+               "previous-state.hash" "previous-state.image-details"]}))
+
 (defn get-deployments
-  [{:keys [application environment from region size start-from start-to status]}]
+  [{:keys [application environment full? from region size start-from start-to status]}]
   (let [filters (-> []
                     (add-filter :application application)
                     (add-filter :environment environment)
                     (add-filter :region region)
                     (add-filter :status status)
                     (add-date-filter :start start-from start-to))
-        response (esd/search index-name deployment-type :filter {:and {:filters filters}} :size (or size 10) :from (or from 0) :sort {:start "desc"})]
+        response (esd/search index-name deployment-type :filter {:and {:filters filters}} :size (or size 10) :from (or from 0) :sort {:start "desc"} :_source (source-filter full?))]
     (->> response
          esrsp/hits-from
          (map (fn [h] (assoc (:_source h) :id (:_id h)))))))

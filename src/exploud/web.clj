@@ -144,10 +144,11 @@
            (response "" "text/plain" 204))
 
    (GET "/deployments"
-        [application environment from region size start-from start-to status]
+        [application environment full from region size start-from start-to status]
         (let [parameters {:application application
                           :environment environment
                           :from from
+                          :full full
                           :region region
                           :size size
                           :start-from start-from
@@ -160,6 +161,7 @@
             (response {:deployments (es/get-deployments
                                      {:application application
                                       :environment environment
+                                      :full? (Boolean/valueOf full)
                                       :from (util/string->int from)
                                       :region region
                                       :size (util/string->int size)

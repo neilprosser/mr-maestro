@@ -33,9 +33,18 @@
         false))
     true))
 
+(defn valid-boolean?
+  "Whether the given input is a valid boolean."
+  [input]
+  (if input
+    (or (= (str input) "true")
+        (= (str input) "false"))
+    true))
+
 (def query-param-validators
   "The validators we should `apply` to validate query parameters."
   [:from [[zero-or-more? :message "from must be zero or more"]]
+   :full [[valid-boolean? :message "full must be 'true' or 'false'"]]
    :size [[positive? :message "size must positive"]]
    :start-from [[valid-date? :message "start-from must be a valid date"]]
    :start-to [[valid-date? :message "start-to must be a valid date"]]])

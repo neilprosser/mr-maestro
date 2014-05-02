@@ -69,3 +69,19 @@
 (fact "that `valid-date?` is unhappy with invalid date"
       (valid-date? "not a date")
       => falsey)
+
+(fact "that `valid-boolean?` is happy with true"
+      (valid-boolean? "true")
+      => truthy)
+
+(fact "that `valid-boolean?` is happy with false"
+      (valid-boolean? "false")
+      => truthy)
+
+(fact "that `valid-boolean?` is happy with nil"
+      (valid-boolean? nil)
+      => truthy)
+
+(fact "that `valid-boolean?` is unhappy with garbage"
+      (valid-boolean? "tfaafse")
+      => falsey)

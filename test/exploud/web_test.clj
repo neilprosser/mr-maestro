@@ -34,6 +34,7 @@
        (es/get-deployments {:application nil
                             :environment nil
                             :from nil
+                            :full? false
                             :region nil
                             :size nil
                             :start-from nil
@@ -52,6 +53,7 @@
        (es/get-deployments {:application nil
                             :environment nil
                             :from nil
+                            :full? false
                             :region nil
                             :size 12
                             :start-from nil
@@ -74,6 +76,7 @@
        (es/get-deployments {:application nil
                             :environment nil
                             :from 0
+                            :full? false
                             :region nil
                             :size nil
                             :start-from nil
@@ -88,6 +91,7 @@
        (es/get-deployments {:application nil
                             :environment nil
                             :from 12
+                            :full? false
                             :region nil
                             :size nil
                             :start-from nil
@@ -114,6 +118,7 @@
        (es/get-deployments {:application nil
                             :environment nil
                             :from nil
+                            :full? false
                             :region nil
                             :size nil
                             :start-from ..date..
@@ -136,6 +141,7 @@
        (es/get-deployments {:application nil
                             :environment nil
                             :from nil
+                            :full? false
                             :region nil
                             :size nil
                             :start-from nil
@@ -145,6 +151,24 @@
 
 (fact "that getting deployments with an invalid start-to gives a 400"
       (request :get "/1.x/deployments" {:params {:start-to "not a date"}})
+      => (contains {:status 400}))
+
+(fact "that getting deployments with a valid full works"
+      (request :get "/1.x/deployments" {:params {:full "true"}})
+      => (contains {:body {:deployments []}})
+      (provided
+       (es/get-deployments {:application nil
+                            :environment nil
+                            :from nil
+                            :full? true
+                            :region nil
+                            :size nil
+                            :start-from nil
+                            :start-to nil
+                            :status nil}) => []))
+
+(fact "that getting deployments with an invalid full gives a 400"
+      (request :get "/1.x/deployments" {:params {:full "fdasdsdas"}})
       => (contains {:status 400}))
 
 (fact "that getting deployment logs without a since date passes nil to the underlying function"
