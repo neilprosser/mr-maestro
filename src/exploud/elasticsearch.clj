@@ -73,12 +73,24 @@
   (let [from-filter (if from {:gte from})
         to-filter (if to {:lt to})]
     (when (or from-filter
-            to-filter)
+              to-filter)
       {:range {field (merge from-filter to-filter)}})))
+
+(defn- create-since-date-filter
+  [field from]
+  (let [from-filter (if from {:gt from})]
+    (when from-filter
+      {:range {field from-filter}})))
 
 (defn- add-date-filter
   [filters field from to]
   (if-let [filter (create-date-filter field from to)]
+    (merge filters filter)
+    filters))
+
+(defn- add-since-date-filter
+  [filters field from]
+  (if-let [filter (create-since-date-filter field from)]
     (merge filters filter)
     filters))
 
@@ -125,7 +137,7 @@
 (defn deployment-logs
   [deployment-id since]
   (let [filters (-> [(parent-filter deployment-type deployment-id)]
-                    (add-date-filter :date since nil))]
+                    (add-since-date-filter :date since))]
     (->> (esd/search index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
          esrsp/hits-from
          (map (fn [h] (assoc (:_source h) :id (:_id h)))))))
