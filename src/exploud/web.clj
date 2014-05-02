@@ -144,14 +144,15 @@
            (response "" "text/plain" 204))
 
    (GET "/deployments"
-        [application environment from region size start-from start-to]
+        [application environment from region size start-from start-to status]
         (let [parameters {:application application
                           :environment environment
                           :from from
                           :region region
                           :size size
                           :start-from start-from
-                          :start-to start-to}
+                          :start-to start-to
+                          :status status}
               result (apply b/validate parameters v/query-param-validators)]
           (if-let [details (first result)]
             (response {:message "Query parameter validation failed"
@@ -163,7 +164,8 @@
                                       :region region
                                       :size (util/string->int size)
                                       :start-from (fmt/parse start-from)
-                                      :start-to (fmt/parse start-to)})}))))
+                                      :start-to (fmt/parse start-to)
+                                      :status status})}))))
 
    (GET "/deployments/:deployment-id"
         [deployment-id]

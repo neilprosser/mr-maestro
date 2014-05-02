@@ -37,7 +37,8 @@
                             :region nil
                             :size nil
                             :start-from nil
-                            :start-to nil})
+                            :start-to nil
+                            :status nil})
        => []))
 
 (fact "that getting deployments with a zero size gives a 400"
@@ -54,7 +55,8 @@
                             :region nil
                             :size 12
                             :start-from nil
-                            :start-to nil})
+                            :start-to nil
+                            :status nil})
        => []))
 
 (fact "that getting deployments with a non-integer size gives a 400"
@@ -75,7 +77,8 @@
                             :region nil
                             :size nil
                             :start-from nil
-                            :start-to nil})
+                            :start-to nil
+                            :status nil})
        => []))
 
 (fact "that getting deployments with a positive from works"
@@ -88,7 +91,8 @@
                             :region nil
                             :size nil
                             :start-from nil
-                            :start-to nil})
+                            :start-to nil
+                            :status nil})
        => []))
 
 (fact "that getting deployments with a non-integer from gives a 400"
@@ -113,7 +117,8 @@
                             :region nil
                             :size nil
                             :start-from ..date..
-                            :start-to nil})
+                            :start-to nil
+                            :status nil})
        => []))
 
 (fact "that getting deployments with an invalid start-from gives a 400"
@@ -134,7 +139,8 @@
                             :region nil
                             :size nil
                             :start-from nil
-                            :start-to ..date..})
+                            :start-to ..date..
+                            :status nil})
        => []))
 
 (fact "that getting deployments with an invalid start-to gives a 400"
