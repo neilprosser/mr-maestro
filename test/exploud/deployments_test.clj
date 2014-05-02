@@ -49,6 +49,11 @@
       (provided
        (time/now) => ..start..
        (redis/begin-deployment begin-params) => true
+       (es/upsert-deployment "id" {:application "application"
+                                   :environment "environment"
+                                   :id "id"
+                                   :start ..start..
+                                   :region "region"}) => ..es-result..
        (tasks/enqueue {:action :exploud.messages.data/start-deployment-preparation
                        :parameters {:application "application"
                                     :environment "environment"
@@ -99,9 +104,12 @@
        (redis/in-progress? "application" "environment" "region") => "id"
        (es/deployment "id") => {:id "id"
                                 :status "failed"}
+       (es/upsert-deployment "id" {:id "id"
+                                   :status "running"
+                                   :undo true}) => ..es-result..
        (tasks/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:id "id"
-                                    :status "failed"
+                                    :status "running"
                                     :undo true}}) => ..enqueue-result..))
 
 (def rollback-params

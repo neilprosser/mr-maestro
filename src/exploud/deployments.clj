@@ -52,12 +52,13 @@
   (redis/in-progress))
 
 (defn begin
-  [{:keys [application environment id region] :as parameters}]
-  (if (redis/begin-deployment parameters)
-    (do
+  [{:keys [application environment id region] :as deployment}]
+  (if (redis/begin-deployment deployment)
+    (let [updated-deployment (assoc deployment :start (time/now))]
+      (es/upsert-deployment id updated-deployment)
       (tasks/enqueue {:action :exploud.messages.data/start-deployment-preparation
-                      :parameters (assoc parameters :start (time/now))})
-      parameters)
+                      :parameters updated-deployment})
+      deployment)
     (throw (ex-info "Deployment already in progress" {:type ::deployment-in-progress
                                                       :application application
                                                       :environment environment
@@ -73,7 +74,8 @@
   (if-let [id (in-progress? parameters)]
     (if-let [deployment (es/deployment id)]
       (if (= "failed" (:status deployment))
-        (let [updated-deployment (assoc deployment :undo true)]
+        (let [updated-deployment (assoc deployment :undo true :status "running")]
+          (es/upsert-deployment id updated-deployment)
           (tasks/enqueue {:action :exploud.messages.data/start-deployment
                           :parameters updated-deployment})
           (:id updated-deployment))
