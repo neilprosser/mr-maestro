@@ -7,7 +7,7 @@
       => :exploud.messages.data/get-image-details)
 
 (fact "that getting the sequence number works"
-      (sequence-number :exploud.messages.health/wait-for-load-balancers-to-be-healthy) => 47)
+      (sequence-number :exploud.messages.health/wait-for-load-balancers-to-be-healthy) => 48)
 
 (fact "that getting the resume action for a running task gives the action of that task"
       (resume-action [{} {:action "action" :status "running"}]) => :action)
