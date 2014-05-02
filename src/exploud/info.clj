@@ -30,4 +30,4 @@
 (defn environments
   "Retrieves a list of all the environments we know about."
   [region]
-  ["dev" "poke" "prod"])
+  ["poke" "prod"])

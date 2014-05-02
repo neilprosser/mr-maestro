@@ -39,4 +39,4 @@
 
 (fact "that we can get environments"
       (environments "region")
-      => ["dev" "poke" "prod"])
+      => ["poke" "prod"])
