@@ -358,9 +358,8 @@
   (let [{:keys [environment region]} parameters
         state (:new-state parameters)
         {:keys [tyranitar]} state
-        {:keys [deployment-params]} tyranitar
-        {:keys [selected-load-balancers]} deployment-params]
-    (if-let [selected-load-balancers (:selected-load-balancers deployment-params)]
+        {:keys [deployment-params]} tyranitar]
+    (if-let [selected-load-balancers (seq (:selected-load-balancers deployment-params))]
       (do
         (log/write "Verifying specified load balancers exist.")
         (let [found-load-balancers (aws/load-balancers-with-names environment region selected-load-balancers)]
@@ -368,6 +367,19 @@
             (success parameters)
             (error-with (ex-info "One or more load balancers could not be found." {:type ::missing-load-balancers
                                                                                    :load-balancers (filter (fn [[_ v]] (nil? v)) found-load-balancers)})))))
+      (success parameters))))
+
+(defn check-for-deleted-load-balancers
+  [{:keys [parameters]}]
+  (let [{:keys [environment region]} parameters
+        state (:previous-state parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar]
+    (if-let [selected-load-balancers (seq (:selected-load-balancers deployment-params))]
+      (do
+        (log/write "Checking for load balancers which were previously used but have been deleted.")
+        (let [found-load-balancers (aws/load-balancers-with-names environment region selected-load-balancers)]
+          (success (assoc-in parameters [:previous-state :tyranitar :deployment-params :selected-load-balancers] (keys (util/remove-nil-values found-load-balancers))))))
       (success parameters))))
 
 (defn populate-subnets

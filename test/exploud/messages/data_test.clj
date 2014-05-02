@@ -270,3 +270,15 @@
                                              :auto-scaling-group-name "application-environment-v001"}}})
       (provided
        (time/now) => (time/date-time 2014 1 2 3 4 5)))
+
+(fact "that checking for deleted load balancers removes previously used load balancers which no longer exist"
+      (check-for-deleted-load-balancers {:parameters {:environment "environment"
+                                                      :region "region"
+                                                      :previous-state {:tyranitar {:deployment-params {:selected-load-balancers ["existing" "nonexistent"]}}}}})
+      => {:parameters {:environment "environment"
+                       :region "region"
+                       :previous-state {:tyranitar {:deployment-params {:selected-load-balancers ["existing"]}}}}
+          :status :success}
+      (provided
+       (aws/load-balancers-with-names "environment" "region" ["existing" "nonexistent"]) => {"existing" {}
+                                                                                            "nonexistent" nil}))
