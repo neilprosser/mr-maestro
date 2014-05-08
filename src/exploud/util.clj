@@ -1,19 +1,15 @@
 (ns exploud.util
   "## Some helper functions"
-  (:require [clj-time.core :as time]
+  (:require [camel-snake-kebab :as csk]
+            [clj-time.core :as time]
             [clojure
              [string :as str]
              [walk :as walk]])
   (:import java.util.UUID))
 
-(defn clojurize
-  "Takes a value, obtains the `name` of it and converts any camel-case to hyphenated."
-  [v]
-  (keyword (str/replace (name v) #"([a-z])([A-Z])" (fn [[_ end start]] (str (str/lower-case end) "-" (str/lower-case start))))))
-
 (defn clojurize-keys
   [m]
-  (let [f (fn [[k v]] [(clojurize k) v])]
+  (let [f (fn [[k v]] [(csk/->kebab-case k) v])]
     (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
 
 (defn remove-nil-values

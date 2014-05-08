@@ -53,7 +53,7 @@
       => "this/that")
 
 (fact "that clojurizing things works"
-      (clojurize :somethingThatIsCamelCase) => :something-that-is-camel-case)
+      (clojurize-keys {:somethingThatIsCamelCase "woo"}) => {:something-that-is-camel-case "woo"})
 
 (fact "that generating an ID works"
       (string? (generate-id)) => truthy)

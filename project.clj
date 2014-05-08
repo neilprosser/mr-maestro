@@ -4,6 +4,7 @@
 
   :dependencies [[amazonica "0.2.12"]
                  [bouncer "0.3.0"]
+                 [camel-snake-kebab "0.1.5"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
                  [clj-http "0.9.1"]
