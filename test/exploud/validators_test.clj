@@ -58,6 +58,10 @@
       (positive? -1)
       => falsey)
 
+(fact "that `positive?` is unhappy with letters"
+      (positive? "a")
+      => falsey)
+
 (fact "that `valid-date?` is happy with nil input"
       (valid-date? nil)
       => truthy)
@@ -84,4 +88,32 @@
 
 (fact "that `valid-boolean?` is unhappy with garbage"
       (valid-boolean? "tfaafse")
+      => falsey)
+
+(fact "that `valid-healthcheck-type? is happy with `EC2`"
+      (valid-healthcheck-type? "EC2")
+      => truthy)
+
+(fact "that `valid-healthcheck-type? is happy with `ELB`"
+      (valid-healthcheck-type? "ELB")
+      => truthy)
+
+(fact "that `valid-healthcheck-type? is happy with `nil`"
+      (valid-healthcheck-type? nil)
+      => truthy)
+
+(fact "that `valid-healthcheck-type? is unhappy with garbage"
+      (valid-healthcheck-type? "dsjksdjk")
+      => falsey)
+
+(fact "that `valid-instance-type? is happy with a known instance type"
+      (valid-instance-type? "m1.small")
+      => truthy)
+
+(fact "that `valid-instance-type? is happy with `nil`"
+      (valid-instance-type? nil)
+      => truthy)
+
+(fact "that `valid-instance-type? is unhappy with garbage"
+      (valid-instance-type? "adkjlasd")
       => falsey)
