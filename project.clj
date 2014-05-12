@@ -16,7 +16,7 @@
                  [com.ninjakoala/monotony "1.0"]
                  [com.ovi.common.logging/logback-appender "0.0.45"]
                  [com.ovi.common.metrics/metrics-graphite "2.1.23"]
-                 [com.taoensso/carmine "2.6.0"]
+                 [com.taoensso/carmine "2.6.2"]
                  [com.yammer.metrics/metrics-logback "2.2.0"]
                  [compojure "1.1.6" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
