@@ -70,6 +70,11 @@
   (when-let [document (:_source (esd/get @conn index-name deployment-type deployment-id :routing deployment-id))]
     (assoc document :id deployment-id)))
 
+(defn delete-deployment
+  [deployment-id]
+  (esd/delete @conn index-name deployment-type deployment-id)
+  (esd/delete-by-query-across-all-types @conn index-name (q/filtered :query (q/match-all) :filter (parent-filter deployment-type deployment-id))))
+
 (defn- add-filter
   [filters field value]
   (if value

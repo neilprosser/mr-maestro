@@ -173,6 +173,11 @@
         [deployment-id]
         (response (es/deployment deployment-id)))
 
+   (DELETE "/deployments/:deployment-id"
+           [deployment-id]
+           (es/delete-deployment deployment-id)
+           (response "Deployment deleted" "text/plain" 204))
+
    (GET "/deployments/:deployment-id/tasks"
         [deployment-id]
         (response {:tasks (es/deployment-tasks deployment-id)}))
