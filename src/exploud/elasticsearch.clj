@@ -143,19 +143,26 @@
   (esd/create @conn index-name log-type (dissoc document :id) :id log-id :parent deployment-id :refresh true)
   (esi/refresh @conn index-name))
 
+(defn nil-if-no-deployment
+  [deployment-id results]
+  (if (or (not (empty? results))
+          (deployment deployment-id))
+    results
+    nil))
+
 (defn deployment-tasks
   [deployment-id]
-  (->> (esd/search @conn index-name task-type :routing deployment-id :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
-       esrsp/hits-from
-       (map (fn [h] (assoc (:_source h) :id (:_id h))))
-       (map #(dissoc % :sequence))))
+  (nil-if-no-deployment deployment-id (->> (esd/search @conn index-name task-type :routing deployment-id :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
+                                           esrsp/hits-from
+                                           (map (fn [h] (assoc (:_source h) :id (:_id h))))
+                                           (map #(dissoc % :sequence)))))
 
 (defn deployment-logs
   [deployment-id since]
-  (let [filters (add-since-date-filter [(parent-filter deployment-type deployment-id)] :date since)]
-    (->> (esd/search @conn index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
-         esrsp/hits-from
-         (map (fn [h] (assoc (:_source h) :id (:_id h)))))))
+  (nil-if-no-deployment deployment-id (let [filters (add-since-date-filter [(parent-filter deployment-type deployment-id)] :date since)]
+                                        (->> (esd/search @conn index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
+                                             esrsp/hits-from
+                                             (map (fn [h] (assoc (:_source h) :id (:_id h))))))))
 
 (defn deployments-by-user
   []

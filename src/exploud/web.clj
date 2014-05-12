@@ -180,7 +180,9 @@
 
    (GET "/deployments/:deployment-id/tasks"
         [deployment-id]
-        (response {:tasks (es/deployment-tasks deployment-id)}))
+        (if-let [tasks (es/deployment-tasks deployment-id)]
+          (response {:tasks tasks})
+          (response nil)))
 
    (GET "/deployments/:deployment-id/logs"
         [deployment-id since]
@@ -189,7 +191,9 @@
           (if-let [details (first result)]
             (response {:message "Query parameter validation failed"
                        :details details} nil 400)
-            (response {:logs (es/deployment-logs deployment-id (fmt/parse since))}))))
+            (if-let [logs (es/deployment-logs deployment-id (fmt/parse since))]
+              (response {:logs logs})
+              (response nil)))))
 
    (GET "/applications"
         []

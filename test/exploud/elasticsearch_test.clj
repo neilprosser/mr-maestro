@@ -21,6 +21,24 @@
 (fact "that our environment filter is correct"
       (environment-filter ..env..) => {:term {:environment ..env..}})
 
+(fact "that we give back nil if there is no deployment for the given empty results"
+      (nil-if-no-deployment "id" [])
+      => nil
+      (provided
+       (deployment "id") => nil))
+
+(fact "that we give back the results if they aren't empty and make sure we don't check for a deployment"
+      (nil-if-no-deployment "id" ["something"])
+      => ["something"]
+      (provided
+       (deployment "id") => {} :times 0))
+
+(fact "that we give back the result if they are empty but there is a deployment"
+      (nil-if-no-deployment "id" [])
+      => []
+      (provided
+       (deployment "id") => {}))
+
 (fact "that getting the deployments by user maps results correctly"
       (deployments-by-user) => [{:user "user1"
                                  :count 1}
