@@ -9,7 +9,7 @@
                  [cheshire "5.3.1"]
                  [clj-http "0.9.1"]
                  [clj-time "0.7.0"]
-                 [clojurewerkz/elastisch "2.0.0-beta3"]
+                 [clojurewerkz/elastisch "2.0.0-rc1"]
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.1"]
                  [com.github.frankiesardo/linked "0.1.0"]

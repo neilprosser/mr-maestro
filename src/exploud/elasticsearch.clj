@@ -7,6 +7,9 @@
             [clojurewerkz.elastisch.rest.response :as esrsp]
             [environ.core :refer :all]))
 
+(def ^:private conn
+  (atom nil))
+
 (def ^:private index-name
   "exploud")
 
@@ -20,8 +23,8 @@
   "log")
 
 (defn- update-doc
-  [index mapping-type id doc & {:as params}]
-  (esr/post (esr/record-update-url index mapping-type id) :body {:doc doc} :query-params params))
+  [conn index mapping-type id doc & {:as params}]
+  (esr/post (esr/record-update-url conn index mapping-type id) :body {:doc doc} :query-params params))
 
 (defn start-date-facet
   []
@@ -43,23 +46,28 @@
   [environment]
   {:term {:environment environment}})
 
+(defn parent-filter
+  [type parent-id]
+  {:has_parent {:type type
+                :query {:term {:_id {:value parent-id}}}}})
+
 (defn init
   []
-  (esr/connect! (env :elasticsearch-url "http://localhost:9200")))
+  (reset! conn (esr/connect (env :elasticsearch-url "http://localhost:9200"))))
 
 (defn upsert-deployment
   [deployment-id document]
-  (esd/create index-name deployment-type (dissoc document :id) :id deployment-id :refresh true)
-  (esi/refresh index-name))
+  (esd/create @conn index-name deployment-type (dissoc document :id) :id deployment-id :refresh true)
+  (esi/refresh @conn index-name))
 
 (defn update-deployment
   [deployment-id partial-document]
-  (update-doc index-name deployment-type deployment-id (dissoc partial-document :id))
-  (esi/refresh index-name))
+  (update-doc @conn index-name deployment-type deployment-id (dissoc partial-document :id))
+  (esi/refresh @conn index-name))
 
 (defn deployment
   [deployment-id]
-  (when-let [document (:_source (esd/get index-name deployment-type deployment-id :routing deployment-id))]
+  (when-let [document (:_source (esd/get @conn index-name deployment-type deployment-id :routing deployment-id))]
     (assoc document :id deployment-id)))
 
 (defn- add-filter
@@ -110,66 +118,60 @@
                     (add-filter :region region)
                     (add-filter :status status)
                     (add-date-filter :start start-from start-to))
-        response (esd/search index-name deployment-type :filter {:and {:filters filters}} :size (or size 10) :from (or from 0) :sort {:start "desc"} :_source (source-filter full?))]
+        response (esd/search @conn index-name deployment-type :filter {:and {:filters filters}} :size (or size 10) :from (or from 0) :sort {:start "desc"} :_source (source-filter full?))]
     (->> response
          esrsp/hits-from
          (map (fn [h] (assoc (:_source h) :id (:_id h)))))))
 
 (defn create-task
   [task-id deployment-id document]
-  (esd/create index-name task-type (dissoc document :id) :id task-id :parent deployment-id :refresh true)
-  (esi/refresh index-name))
+  (esd/create @conn index-name task-type (dissoc document :id) :id task-id :parent deployment-id :refresh true)
+  (esi/refresh @conn index-name))
 
 (defn update-task
   [task-id deployment-id partial-document]
-  (update-doc index-name task-type task-id (dissoc partial-document :id) :parent deployment-id)
-  (esi/refresh index-name))
+  (update-doc @conn index-name task-type task-id (dissoc partial-document :id) :parent deployment-id)
+  (esi/refresh @conn index-name))
 
 (defn write-log
   [log-id deployment-id document]
-  (esd/create index-name log-type (dissoc document :id) :id log-id :parent deployment-id :refresh true)
-  (esi/refresh index-name))
+  (esd/create @conn index-name log-type (dissoc document :id) :id log-id :parent deployment-id :refresh true)
+  (esi/refresh @conn index-name))
 
 (defn deployment-tasks
   [deployment-id]
-  (->> (esd/search index-name task-type :routing deployment-id :query (q/match-all) :filter {:has_parent {:type deployment-type :query {:term {:_id {:value deployment-id}}}}} :sort {:sequence "asc"} :size 10000)
+  (->> (esd/search @conn index-name task-type :routing deployment-id :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
        esrsp/hits-from
        (map (fn [h] (assoc (:_source h) :id (:_id h))))
        (map #(dissoc % :sequence))))
 
-(defn parent-filter
-  [type parent-id]
-  {:has_parent {:type type
-                :query {:term {:_id {:value parent-id}}}}})
-
 (defn deployment-logs
   [deployment-id since]
-  (let [filters (-> [(parent-filter deployment-type deployment-id)]
-                    (add-since-date-filter :date since))]
-    (->> (esd/search index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
+  (let [filters (add-since-date-filter [(parent-filter deployment-type deployment-id)] :date since)]
+    (->> (esd/search @conn index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
          esrsp/hits-from
          (map (fn [h] (assoc (:_source h) :id (:_id h)))))))
 
 (defn deployments-by-user
   []
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})
+  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})
         facets (get-in result [:facets :user :terms])]
     (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
 
 (defn deployments-by-application
   []
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:application (application-facet)})
+  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:application (application-facet)})
         facets (get-in result [:facets :application :terms])]
     (map (fn [f] {:application (:term f) :count (:count f)}) facets)))
 
 (defn deployments-by-month
   []
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet)})
+  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet)})
         facets (get-in result [:facets :date :entries])]
     (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
 
 (defn deployments-in-environment-by-month
   [environment]
-  (let [result (esd/search index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet)})
+  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet)})
         facets (get-in result [:facets :date :entries])]
     (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))

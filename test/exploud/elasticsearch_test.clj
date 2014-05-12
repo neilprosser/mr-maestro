@@ -30,7 +30,7 @@
        (completed-status-filter) => ..completed-status-filter..
        (user-facet) => ..user-facet..
        (q/filtered :query (q/match-all) :filter ..completed-status-filter..) => ..query..
-       (esd/search "exploud" "deployment" :query ..query.. :size 0 :facets {:user ..user-facet..}) => {:facets {:user {:terms [{:term "user1"
+       (esd/search anything "exploud" "deployment" :query ..query.. :size 0 :facets {:user ..user-facet..}) => {:facets {:user {:terms [{:term "user1"
                                                                                                                                                                     :count 1}
                                                                                                                                                                    {:term "user2"
                                                                                                                                                                     :count 2}]}}}))
@@ -44,7 +44,7 @@
        (completed-status-filter) => ..completed-status-filter..
        (application-facet) => ..application-facet..
        (q/filtered :query (q/match-all) :filter ..completed-status-filter..) => ..query..
-       (esd/search "exploud" "deployment" :query ..query.. :size 0 :facets {:application ..application-facet..}) => {:facets {:application {:terms [{:term "app1"
+       (esd/search anything "exploud" "deployment" :query ..query.. :size 0 :facets {:application ..application-facet..}) => {:facets {:application {:terms [{:term "app1"
                                                                                                                                                      :count 1}
                                                                                                                                                     {:term "app2"
                                                                                                                                                      :count 2}]}}}))
@@ -56,7 +56,7 @@
                                   :count 2}]
       (provided
        (start-date-facet) => ..start-date-facet..
-       (esd/search "exploud" "deployment" :query anything :size 0 :facets {:date ..start-date-facet..}) => {:facets {:date {:entries [{:time 1393632000000
+       (esd/search anything "exploud" "deployment" :query anything :size 0 :facets {:date ..start-date-facet..}) => {:facets {:date {:entries [{:time 1393632000000
                                                                                                                                        :count 12}
                                                                                                                                       {:time 1396310400000
                                                                                                                                        :count 2}]}}}))
@@ -71,7 +71,7 @@
        (completed-status-filter) => ..completed-status-filter..
        (environment-filter "poke") => ..environment-filter..
        (q/filtered :query (q/match-all) :filter {:and {:filters [..completed-status-filter.. ..environment-filter..]}}) => ..query..
-       (esd/search "exploud" "deployment" :query ..query.. :size 0 :facets {:date ..start-date-facet..}) => {:facets {:date {:entries [{:time 1393632000000
+       (esd/search anything "exploud" "deployment" :query ..query.. :size 0 :facets {:date ..start-date-facet..}) => {:facets {:date {:entries [{:time 1393632000000
                                                                                                                                         :count 12}
                                                                                                                                        {:time 1396310400000
                                                                                                                                         :count 2}]}}}))
