@@ -90,30 +90,86 @@
       (valid-boolean? "tfaafse")
       => falsey)
 
-(fact "that `valid-healthcheck-type? is happy with `EC2`"
+(fact "that `valid-healthcheck-type?` is happy with `EC2`"
       (valid-healthcheck-type? "EC2")
       => truthy)
 
-(fact "that `valid-healthcheck-type? is happy with `ELB`"
+(fact "that `valid-healthcheck-type?` is happy with `ELB`"
       (valid-healthcheck-type? "ELB")
       => truthy)
 
-(fact "that `valid-healthcheck-type? is happy with `nil`"
+(fact "that `valid-healthcheck-type?` is happy with `nil`"
       (valid-healthcheck-type? nil)
       => truthy)
 
-(fact "that `valid-healthcheck-type? is unhappy with garbage"
+(fact "that `valid-healthcheck-type?` is unhappy with garbage"
       (valid-healthcheck-type? "dsjksdjk")
       => falsey)
 
-(fact "that `valid-instance-type? is happy with a known instance type"
+(fact "that `valid-instance-type?` is happy with a known instance type"
       (valid-instance-type? "m1.small")
       => truthy)
 
-(fact "that `valid-instance-type? is happy with `nil`"
+(fact "that `valid-instance-type?` is happy with `nil`"
       (valid-instance-type? nil)
       => truthy)
 
-(fact "that `valid-instance-type? is unhappy with garbage"
+(fact "that `valid-instance-type?` is unhappy with garbage"
       (valid-instance-type? "adkjlasd")
+      => falsey)
+
+(fact "that `valid-availability-zone?` is happy with a known availability zone"
+      (valid-availability-zone? "a")
+      => truthy)
+
+(fact "that `valid-availability-zone?` is happy with `nil`"
+      (valid-availability-zone? nil)
+      => truthy)
+
+(fact "that `valid-availability-zone?` is unhappy with garbage"
+      (valid-availability-zone? "dasdasds")
+      => falsey)
+
+(fact "that `valid-availability-zones?` is happy with `nil`"
+      (valid-availability-zones? nil)
+      => truthy)
+
+(fact "that `valid-availbility-zones?` is happy with a single valid zone"
+      (valid-availability-zones? ["a"])
+      => truthy)
+
+(fact "that `valid-availability-zones?` is happy with multiple valid zones"
+      (valid-availability-zones? ["a" "b"])
+      => truthy)
+
+(fact "that `valid-availability-zones?` is unhappy with a single invalid zone"
+      (valid-availability-zones? "daskd")
+      => falsey)
+
+(fact "that `valid-availability-zones?` is unhappy with an invalid zone alongside a valid one"
+      (valid-availability-zones? ["a" "fkajdks"])
+      => falsey)
+
+(fact "that `valid-subnet-purpose?` is happy with `nil`"
+      (valid-subnet-purpose? nil)
+      => truthy)
+
+(fact "that `valid-subnet-purpose?` is happy with a valid subnet purpose"
+      (valid-subnet-purpose? "mgmt")
+      => truthy)
+
+(fact "that `valid-subnet-purpose?` is unhappy with garbage"
+      (valid-subnet-purpose? "akdjskdasjdkas")
+      => falsey)
+
+(fact "that `valid-termination-policy?` is happy with `nil`"
+      (valid-termination-policy? nil)
+      => truthy)
+
+(fact "that `valid-termination-policy?` is happy with a valid termination policy"
+      (valid-termination-policy? "ClosestToNextInstanceHour")
+      => truthy)
+
+(fact "that `valid-termination-policy?` is unhappy with garbage"
+      (valid-termination-policy? "askjlkasjdks")
       => falsey)

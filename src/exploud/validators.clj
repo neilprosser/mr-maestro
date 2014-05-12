@@ -47,6 +47,12 @@
 (def availability-zones
   #{"a" "b" "c"})
 
+(def subnet-purposes
+  #{"internal" "mgmt" "publiceip" "publicnat"})
+
+(def termination-policies
+  #{"ClosestToNextInstanceHour" "Default" "NewestInstance" "OldestInstance" "OldestLaunchConfiguration"})
+
 (defn zero-or-more?
   "Whether a given input is zero or more."
   [input]
@@ -104,6 +110,29 @@
     (contains? availability-zones input)
     true))
 
+(defn valid-availability-zones?
+  "Whether the given input is either a single, valid availability zone or a collection of valid availability zones"
+  [input]
+  (if input
+    (if (coll? input)
+      (every? valid-availability-zone? input)
+      (valid-availability-zone? input))
+    true))
+
+(defn valid-subnet-purpose?
+  "Whether the given input is a valid subnet purpose"
+  [input]
+  (if input
+    (contains? subnet-purposes input)
+    true))
+
+(defn valid-termination-policy?
+  "Whether the given input is a valid termination policy"
+  [input]
+  (if input
+    (contains? termination-policies input)
+    true))
+
 (def query-param-validators
   "The validators we should `apply` to validate query parameters."
   [:from [[zero-or-more? :message "from must be zero or more"]]
@@ -129,4 +158,6 @@
    :min [[zero-or-more? :message "minimum number of instances must be zero or more"]]
    :pause-after-instances-healthy [[valid-boolean? :message "pause after instances healthy must be 'true' or 'false'"]]
    :pause-after-load-balancers-healthy [[valid-boolean? :message "pause after load balancers healthy must be 'true' or 'false'"]]
-   :selected-zones [[valid-availability-zone? :message "selected zones must be valid availability zones"]]])
+   :selected-zones [[valid-availability-zones? :message "selected zones must be valid availability zones"]]
+   :subnet-purpose [[valid-subnet-purpose? :message "subnet purpose must be valid"]]
+   :termination-policy [[valid-termination-policy? :message "termination policy must be valid"]]])
