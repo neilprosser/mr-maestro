@@ -18,7 +18,7 @@
                  [com.ovi.common.metrics/metrics-graphite "2.1.23"]
                  [com.taoensso/carmine "2.6.2"]
                  [com.yammer.metrics/metrics-logback "2.2.0"]
-                 [compojure "1.1.6" :exclusions [javax.servlet/servlet-api]]
+                 [compojure "1.1.8" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
                  [environ "0.5.0"]
                  [metrics-clojure "1.0.1"]
