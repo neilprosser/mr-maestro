@@ -61,22 +61,22 @@
    in ks. If ks are not specified, use the keys of the first item in rows."
   ([ks rows]
      (with-out-str
-      (when (seq rows)
-        (let [widths (map
-                      (fn [k]
-                        (apply max (count (str k)) (map #(count (str (get % k))) rows)))
-                      ks)
-              spacers (map #(apply str (repeat % "-")) widths)
-              fmts (map #(str "%" % "s") widths)
-              fmt-row (fn [leader divider trailer row]
-                        (str leader
-                             (apply str (interpose divider
-                                                   (for [[col fmt] (map vector (map #(get row %) ks) fmts)]
-                                                     (format fmt (str col)))))
-                             trailer))]
-          (println (fmt-row "" "\t" "" (zipmap ks (map name ks))))
-          (doseq [row rows]
-            (println (fmt-row "" "\t" "" row)))))))
+       (when (seq rows)
+         (let [widths (map
+                       (fn [k]
+                         (apply max (count (str k)) (map #(count (str (get % k))) rows)))
+                       ks)
+               spacers (map #(str/join (repeat % "-")) widths)
+               fmts (map #(str "%" % "s") widths)
+               fmt-row (fn [leader divider trailer row]
+                         (str leader
+                              (str/join divider
+                                        (for [[col fmt] (map vector (map #(get row %) ks) fmts)]
+                                          (format fmt (str col))))
+                              trailer))]
+           (println (fmt-row "" "\t" "" (zipmap ks (map name ks))))
+           (doseq [row rows]
+             (println (fmt-row "" "\t" "" row)))))))
   ([rows] (as-table (keys (first rows)) rows)))
 
 (defn map-by-property

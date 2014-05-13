@@ -145,10 +145,9 @@
 
 (defn nil-if-no-deployment
   [deployment-id results]
-  (if (or (not (empty? results))
-          (deployment deployment-id))
-    results
-    nil))
+  (when (or (seq results)
+            (deployment deployment-id))
+    results))
 
 (defn deployment-tasks
   [deployment-id]
