@@ -10,7 +10,9 @@
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
-            [exploud.util :as util]))
+            [exploud
+             [numel :as numel]
+             [util :as util]]))
 
 (def autoscale-queue-name
   "The queue name we'll use for sending announcements."
@@ -103,27 +105,38 @@
    :image-id image-id
    :private-ip private-ip-address})
 
+(defn map-by-instance-id
+  [registrations]
+  (apply merge (map (fn [[k v]] {(:instanceid v) (merge v {:numel-id (name k)})}) registrations)))
+
+(defn add-numel-information
+  [registrations v]
+  (let [instance-id (:instance-id v)]
+    (assoc v :numel-id (:numel-id (get registrations instance-id)))))
+
 (defn describe-instances
   "Returns a json object describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
-  (let [name (or (and (clojure.string/blank? name) "*")
-                 (and (.contains name "*") name)
-                 (str name "-*"))
+  (let [pattern-name (or (and (clojure.string/blank? name) "*")
+                         (and (.contains name "*") name)
+                         (str name "-*"))
         state (or state "running")
-        config (config environment region)]
+        config (config environment region)
+        registrations (when name (map-by-instance-id (numel/application-registrations environment name)))]
     (->> (ec2/describe-instances config
-                                 :filters [{:name "tag:Name" :values [name]}
+                                 :filters [{:name "tag:Name" :values [pattern-name]}
                                            {:name "instance-state-name" :values [state]}])
          :reservations
          (mapcat :instances)
-         (map transform-instance-description))))
+         (map transform-instance-description)
+         (map (partial add-numel-information registrations)))))
 
 (defn describe-instances-plain
   "Returns a column formatted string describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
-  (util/as-table (describe-instances environment region name state)))
+  (util/as-table [:name :instance-id :image-id :numel-id :private-ip] (describe-instances environment region name state)))
 
 (def auto-scaling-groups
   (fn [environment region]
