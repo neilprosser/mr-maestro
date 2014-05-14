@@ -2,12 +2,32 @@
   (:require [exploud.responses :refer :all]
             [midje.sweet :refer :all]))
 
+(fact "that creating an error for something retryable turns it into a retry"
+      (def e (doto (com.amazonaws.AmazonServiceException. "Failed")
+                    (.setServiceName "AmazonEC2")
+                    (.setRequestId (str (java.util.UUID/randomUUID)))
+                    (.setErrorCode "RequestLimitExceeded")
+                    (.setStatusCode 503)))
+      (error-with e) => {:status :retry
+                         :backoff-ms 5000})
+
+(fact "that creating an error with an exception which should retry is still an error"
+      (def e (doto (com.amazonaws.AmazonServiceException. "Failed")
+                    (.setServiceName "AmazonEC2")
+                    (.setRequestId (str (java.util.UUID/randomUUID)))
+                    (.setErrorCode "RequestLimitNotExceeded")
+                    (.setStatusCode 503)))
+      (error-with e) => {:status :error
+                         :throwable e})
+
+(fact "that creating an error with an exception which doesn't have the right properties is still an error"
+      (def e (java.lang.Exception. "Failed"))
+      (error-with e) => {:status :error
+                         :throwable e})
+
 (fact "that creating an error response with an exception works"
       (error-with ..exception..) => {:status :error
                                      :throwable ..exception..})
-
-(fact "that creating a retry response works"
-      (retry) => {:status :retry})
 
 (fact "that creating a retry response with timeout works"
       (retry-after 10) => {:status :retry
