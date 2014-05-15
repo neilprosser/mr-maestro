@@ -179,13 +179,6 @@
            (es/delete-deployment deployment-id)
            (response "Deployment deleted" "text/plain" 204))
 
-   (POST "/deployments/old"
-         [deployments]
-         (let [transformed (map tn/transform deployments)]
-           (doseq [d transformed]
-             (es/upsert-deployment (:id d) d))
-           (response transformed)))
-
    (GET "/deployments/:deployment-id/tasks"
         [deployment-id]
         (if-let [tasks (es/deployment-tasks deployment-id)]
