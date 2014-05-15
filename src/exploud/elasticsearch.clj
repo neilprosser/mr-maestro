@@ -57,13 +57,11 @@
 
 (defn upsert-deployment
   [deployment-id document]
-  (esd/create @conn index-name deployment-type (dissoc document :id) :id deployment-id :refresh true)
-  (esi/refresh @conn index-name))
+  (esd/create @conn index-name deployment-type (dissoc document :id) :id deployment-id :refresh true))
 
 (defn update-deployment
   [deployment-id partial-document]
-  (update-doc @conn index-name deployment-type deployment-id (dissoc partial-document :id))
-  (esi/refresh @conn index-name))
+  (update-doc @conn index-name deployment-type deployment-id (dissoc partial-document :id) :refresh true))
 
 (defn deployment
   [deployment-id]
@@ -73,7 +71,8 @@
 (defn delete-deployment
   [deployment-id]
   (esd/delete @conn index-name deployment-type deployment-id)
-  (esd/delete-by-query-across-all-types @conn index-name (q/filtered :query (q/match-all) :filter (parent-filter deployment-type deployment-id))))
+  (esd/delete-by-query-across-all-types @conn index-name (q/filtered :query (q/match-all) :filter (parent-filter deployment-type deployment-id)))
+  (esi/refresh @conn index-name))
 
 (defn- add-filter
   [filters field value]
@@ -130,18 +129,15 @@
 
 (defn create-task
   [task-id deployment-id document]
-  (esd/create @conn index-name task-type (dissoc document :id) :id task-id :parent deployment-id :refresh true)
-  (esi/refresh @conn index-name))
+  (esd/create @conn index-name task-type (dissoc document :id) :id task-id :parent deployment-id :refresh true))
 
 (defn update-task
   [task-id deployment-id partial-document]
-  (update-doc @conn index-name task-type task-id (dissoc partial-document :id) :parent deployment-id)
-  (esi/refresh @conn index-name))
+  (update-doc @conn index-name task-type task-id (dissoc partial-document :id) :parent deployment-id :refresh true))
 
 (defn write-log
   [log-id deployment-id document]
-  (esd/create @conn index-name log-type (dissoc document :id) :id log-id :parent deployment-id :refresh true)
-  (esi/refresh @conn index-name))
+  (esd/create @conn index-name log-type (dissoc document :id) :id log-id :parent deployment-id :refresh true))
 
 (defn nil-if-no-deployment
   [deployment-id results]
