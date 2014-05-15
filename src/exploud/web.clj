@@ -21,7 +21,6 @@
              [pokemon :as pokemon]
              [redis :as redis]
              [stats :as stats]
-             [transform :as tn]
              [util :as util]
              [validators :as v]]
             [metrics.ring
