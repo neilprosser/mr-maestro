@@ -38,7 +38,7 @@
         {:keys [application-properties]} tyranitar]
     (->> application-properties
          (into (sorted-map))
-         (map (fn [[k v]] (format "%s=%s" (name k) v)))
+         (map (fn [[k v]] (format "%s=%s" (name k) (str/replace v "$" "\\$"))))
          (write-to-file (format "/var/encrypted/properties/%s.properties" application)))))
 
 (defn- link-application-properties
