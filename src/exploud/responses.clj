@@ -21,9 +21,15 @@
   (and (= AmazonServiceException (type e))
        (= "RequestLimitExceeded" (.getErrorCode e))))
 
+(defn- aws-throttling?
+  [e]
+  (and (= AmazonServiceException (type e))
+       (= "Throttling" (.getErrorCode e))))
+
 (defn- retryable-error?
   [e]
-  (aws-request-limit-exceeded? e))
+  (or (aws-request-limit-exceeded? e)
+      (aws-throttling? e)))
 
 (defn error-with
   [e]

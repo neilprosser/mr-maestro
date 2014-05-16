@@ -2,12 +2,21 @@
   (:require [exploud.responses :refer :all]
             [midje.sweet :refer :all]))
 
-(fact "that creating an error for something retryable turns it into a retry"
+(fact "that creating an error for request-limit-exceeded turns it into a retry"
       (def e (doto (com.amazonaws.AmazonServiceException. "Failed")
                     (.setServiceName "AmazonEC2")
                     (.setRequestId (str (java.util.UUID/randomUUID)))
                     (.setErrorCode "RequestLimitExceeded")
                     (.setStatusCode 503)))
+      (error-with e) => {:status :retry
+                         :backoff-ms 5000})
+
+(fact "that creating an error for throttling turns it into a retry"
+      (def e (doto (com.amazonaws.AmazonServiceException. "Failed")
+                    (.setServiceName "AmazonAutoScaling")
+                    (.setRequestId (str (java.util.UUID/randomUUID)))
+                    (.setErrorCode "Throttling")
+                    (.setStatusCode 400)))
       (error-with e) => {:status :retry
                          :backoff-ms 5000})
 
