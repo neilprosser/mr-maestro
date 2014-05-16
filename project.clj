@@ -2,7 +2,7 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
-  :dependencies [[amazonica "0.2.13"]
+  :dependencies [[amazonica "0.2.15"]
                  [bouncer "0.3.0"]
                  [camel-snake-kebab "0.1.5"]
                  [ch.qos.logback/logback-classic "1.1.2"]
@@ -21,8 +21,8 @@
                  [compojure "1.1.8" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
                  [environ "0.5.0"]
-                 [metrics-clojure "1.0.1"]
-                 [metrics-clojure-ring "1.0.1"]
+                 [metrics-clojure "1.1.0"]
+                 [metrics-clojure-ring "1.1.0"]
                  [nokia/instrumented-ring-jetty-adapter "0.1.8"]
                  [nokia/ring-utils "1.2.1"]
                  [org.clojure/clojure "1.6.0"]
@@ -49,7 +49,7 @@
                              [lein-rpm "0.0.5"]]}}
 
   :plugins [[lein-cloverage "1.0.2"]
-            [lein-environ "0.4.0"]
+            [lein-environ "0.5.0"]
             [lein-marginalia "0.7.1"]
             [lein-release "1.0.73"]
             [lein-ring "0.8.10"]]
