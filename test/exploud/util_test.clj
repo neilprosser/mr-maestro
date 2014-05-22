@@ -12,6 +12,18 @@
           :iteration "1"
           :bake-date (time/date-time 2013 10 24 18 41 23)})
 
+(fact "that extracting details from an AMI name works if we're doing HVM stuff"
+      (ami-details "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05")
+      => {:image-name "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05"
+          :application "graphite"
+          :version "1.0"
+          :iteration "1"
+          :bake-date (time/date-time 2014 5 22 13 2 5)})
+
+(fact "that extracting details from an AMI name gives nil if we're given garbage"
+      (ami-details "absolutelynothinglikeanimage")
+      => nil)
+
 (fact "given a collection `list-from` gives back the collection"
       (list-from ["hello" "world"])
       => ["hello" "world"])

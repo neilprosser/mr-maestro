@@ -28,7 +28,7 @@
 (defn ami-details
   "Extracts details from the name of an AMI in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
   [name]
-  (let [matches (re-find #"^ent-([^-]+)-([\.0-9]+)-([0-9]+)-([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
+  (when-let [matches (re-find #"ent-([^-]+)-([\.0-9]+)-([0-9]+)-([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
     {:image-name name
      :application (nth matches 1)
      :version (nth matches 2)
