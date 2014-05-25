@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [exploud
              [aws :as aws]
+             [hubot :as hubot]
              [log :as log]
              [onix :as onix]
              [naming :as naming]
@@ -460,8 +461,12 @@
   [{:keys [parameters]}]
   (let [{:keys [application environment undo]} parameters]
     (if-not undo
-      (log/write (format "Starting deployment of '%s' to '%s'." application environment))
-      (log/write (format "Starting undo of '%s' in '%s'." application environment)))
+      (do
+        (hubot/speak-about-deployment-start parameters)
+        (log/write (format "Starting deployment of '%s' to '%s'." application environment)))
+      (do
+        (hubot/speak-about-deployment-start parameters)
+        (log/write (format "Starting undo of '%s' in '%s'." application environment))))
     (success (-> parameters
                  (assoc :phase "deployment")
                  (assoc :status "running")

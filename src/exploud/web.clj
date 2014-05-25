@@ -215,7 +215,7 @@
            (error-response "Illegal application name" 400))))
 
    (POST "/applications/:application/:environment/deploy"
-         [application ami environment hash message user]
+         [application ami environment hash message silent user]
          (guarded
           (let [id (util/generate-id)]
             (deployments/begin {:application application
@@ -225,19 +225,22 @@
                                 :new-state {:hash hash
                                             :image-details {:id ami}}
                                 :region default-region
+                                :silent silent
                                 :user (or user default-user)})
             (response {:id id}))))
 
    (POST "/applications/:application/:environment/undo"
-         [application environment]
+         [application environment message silent]
          (guarded
           (let [id (deployments/undo {:application application
                                       :environment environment
-                                      :region default-region})]
+                                      :message message
+                                      :region default-region
+                                      :silent silent})]
             (response {:id id}))))
 
    (POST "/applications/:application/:environment/rollback"
-         [application environment message user]
+         [application environment message silent user]
          (guarded
           (let [id (util/generate-id)]
             (deployments/rollback {:application application
@@ -245,6 +248,8 @@
                                    :id id
                                    :message message
                                    :region default-region
+                                   :rollback true
+                                   :silent silent
                                    :user user})
             (response {:id id}))))
 

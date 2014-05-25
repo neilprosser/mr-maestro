@@ -81,6 +81,7 @@
 (def undo-params
   {:application "application"
    :environment "environment"
+   :message "message"
    :region "region"})
 
 (fact "that undoing a deployment which isn't already in progress throws an exception"
@@ -108,11 +109,13 @@
                                 :status "failed"}
        (es/upsert-deployment "id" {:id "id"
                                    :status "running"
-                                   :undo true}) => ..es-result..
+                                   :undo true
+                                   :undo-message "message"}) => ..es-result..
        (tasks/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:id "id"
                                     :status "running"
-                                    :undo true}}) => ..enqueue-result..))
+                                    :undo true
+                                    :undo-message "message"}}) => ..enqueue-result..))
 
 (def rollback-params
   {:application "application"
@@ -120,6 +123,7 @@
    :id "id"
    :message "Rollback message"
    :region "region"
+   :rollback true
    :user "user"})
 
 (fact "that rolling back a deployment when a no suitable completed deployment exists throws an exception"
@@ -147,6 +151,7 @@
             :previous-state {:hash "hash"
                              :image-details {:id "image"}}
             :region "region"
+            :rollback true
             :status "completed"
             :user "original-user"}]
        (begin {:application "application"
@@ -156,4 +161,5 @@
                :new-state {:hash "hash"
                            :image-details {:id "image"}}
                :region "region"
+               :rollback true
                :user "user"}) => ..begin-result..))

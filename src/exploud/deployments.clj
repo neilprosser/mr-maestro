@@ -70,11 +70,11 @@
   parameters)
 
 (defn undo
-  [{:keys [application environment region] :as parameters}]
+  [{:keys [application environment message region] :as parameters}]
   (if-let [id (in-progress? parameters)]
     (if-let [deployment (es/deployment id)]
       (if (= "failed" (:status deployment))
-        (let [updated-deployment (assoc deployment :undo true :status "running")]
+        (let [updated-deployment (assoc deployment :status "running" :undo true :undo-message message)]
           (es/upsert-deployment id updated-deployment)
           (tasks/enqueue {:action :exploud.messages.data/start-deployment
                           :parameters updated-deployment})
@@ -103,6 +103,7 @@
             :new-state {:hash (get-in previous [:previous-state :hash])
                         :image-details {:id (get-in previous [:previous-state :image-details :id])}}
             :region region
+            :rollback true
             :user user})
     (throw (ex-info "No previous completed deployment could be found" {:type ::previous-completed-deployment-not-found
                                                                        :application application

@@ -63,6 +63,7 @@
         :environment-entertainment-graphite-host "graphite.brislabs.com"
         :environment-entertainment-graphite-port "8080"
         :environment-name "dev"
+        :hubot-url "http://hubot:8080"
         :redis-host "localhost"
         :redis-port "6379"
         :service-dev-vpc-id "vpc-dev"
