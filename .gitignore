@@ -15,4 +15,3 @@ dc-sdk.log
 docs/
 .lein-env
 .lein-repl-history
-.midje.clj
