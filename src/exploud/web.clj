@@ -324,9 +324,17 @@
         []
         (response {:result (stats/deployments-by-month)}))
 
+   (GET "/stats/deployments/by-day"
+        []
+        (response {:result (stats/deployments-by-day)}))
+
    (GET "/stats/deployments/by-month/environment/:environment"
         [environment]
-        (response {:result (stats/deployments-in-environment-by-month environment)})))
+        (response {:result (stats/deployments-in-environment-by-month environment)}))
+
+   (GET "/stats/deployments/by-day/environment/:environment"
+        [environment]
+        (response {:result (stats/deployments-in-environment-by-day environment)})))
 
   (route/not-found (error-response "Resource not found" 404)))
 

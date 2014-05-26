@@ -5,7 +5,7 @@
             [midje.sweet :refer :all]))
 
 (fact "that our start date facet is correct"
-      (start-date-facet) => {:date_histogram {:field "start" :interval "month"}})
+      (start-date-facet ..interval..) => {:date_histogram {:field "start" :interval ..interval..}})
 
 (fact "that our application facet is correct"
       (application-facet) => {:terms {:field "application"
@@ -49,9 +49,9 @@
        (user-facet) => ..user-facet..
        (q/filtered :query (q/match-all) :filter ..completed-status-filter..) => ..query..
        (esd/search anything "exploud" "deployment" :query ..query.. :size 0 :facets {:user ..user-facet..}) => {:facets {:user {:terms [{:term "user1"
-                                                                                                                                                                    :count 1}
-                                                                                                                                                                   {:term "user2"
-                                                                                                                                                                    :count 2}]}}}))
+                                                                                                                                         :count 1}
+                                                                                                                                        {:term "user2"
+                                                                                                                                         :count 2}]}}}))
 
 (fact "that getting the deployments by application maps results correctly"
       (deployments-by-application) => [{:application "app1"
@@ -63,9 +63,9 @@
        (application-facet) => ..application-facet..
        (q/filtered :query (q/match-all) :filter ..completed-status-filter..) => ..query..
        (esd/search anything "exploud" "deployment" :query ..query.. :size 0 :facets {:application ..application-facet..}) => {:facets {:application {:terms [{:term "app1"
-                                                                                                                                                     :count 1}
-                                                                                                                                                    {:term "app2"
-                                                                                                                                                     :count 2}]}}}))
+                                                                                                                                                              :count 1}
+                                                                                                                                                             {:term "app2"
+                                                                                                                                                              :count 2}]}}}))
 
 (fact "that getting the deployments by month maps results correctly"
       (deployments-by-month) => [{:date "2014-03-01T00:00:00.000Z"
@@ -73,11 +73,11 @@
                                  {:date "2014-04-01T00:00:00.000Z"
                                   :count 2}]
       (provided
-       (start-date-facet) => ..start-date-facet..
+       (start-date-facet "month") => ..start-date-facet..
        (esd/search anything "exploud" "deployment" :query anything :size 0 :facets {:date ..start-date-facet..}) => {:facets {:date {:entries [{:time 1393632000000
-                                                                                                                                       :count 12}
-                                                                                                                                      {:time 1396310400000
-                                                                                                                                       :count 2}]}}}))
+                                                                                                                                                :count 12}
+                                                                                                                                               {:time 1396310400000
+                                                                                                                                                :count 2}]}}}))
 
 (fact "that getting the deployments in an environment by month maps results correctly"
       (deployments-in-environment-by-month "poke") => [{:date "2014-03-01T00:00:00.000Z"
@@ -85,11 +85,11 @@
                                                        {:date "2014-04-01T00:00:00.000Z"
                                                         :count 2}]
       (provided
-       (start-date-facet) => ..start-date-facet..
+       (start-date-facet "month") => ..start-date-facet..
        (completed-status-filter) => ..completed-status-filter..
        (environment-filter "poke") => ..environment-filter..
        (q/filtered :query (q/match-all) :filter {:and {:filters [..completed-status-filter.. ..environment-filter..]}}) => ..query..
        (esd/search anything "exploud" "deployment" :query ..query.. :size 0 :facets {:date ..start-date-facet..}) => {:facets {:date {:entries [{:time 1393632000000
-                                                                                                                                        :count 12}
-                                                                                                                                       {:time 1396310400000
-                                                                                                                                        :count 2}]}}}))
+                                                                                                                                                 :count 12}
+                                                                                                                                                {:time 1396310400000
+                                                                                                                                                 :count 2}]}}}))

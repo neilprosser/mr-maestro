@@ -18,6 +18,14 @@
   []
   (es/deployments-by-month))
 
+(defn deployments-by-day
+  []
+  (es/deployments-by-day))
+
 (defn deployments-in-environment-by-month
   [environment]
   (es/deployments-in-environment-by-month environment))
+
+(defn deployments-in-environment-by-day
+  [environment]
+  (es/deployments-in-environment-by-day environment))
