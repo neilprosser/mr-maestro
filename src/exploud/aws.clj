@@ -99,11 +99,12 @@
 
 (defn transform-instance-description
   "Takes an aws instance description and returns the fields we are interested in flattened"
-  [{:keys [tags instance-id image-id private-ip-address]}]
+  [{:keys [tags instance-id image-id private-ip-address launch-time]}]
   {:name (or (some (fn [{k :key v :value}] (when (= k "Name") v)) tags) "none")
    :instance-id instance-id
    :image-id image-id
-   :private-ip private-ip-address})
+   :private-ip private-ip-address
+   :launch-time launch-time})
 
 (defn map-by-instance-id
   [registrations]
@@ -136,7 +137,7 @@
   "Returns a column formatted string describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
-  (util/as-table [:name :instance-id :image-id :numel-id :private-ip] (describe-instances environment region name state)))
+  (util/as-table [:name :instance-id :image-id :launch-time :numel-id :private-ip] (describe-instances environment region name state)))
 
 (def auto-scaling-groups
   (fn [environment region]

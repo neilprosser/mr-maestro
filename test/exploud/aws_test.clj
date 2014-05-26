@@ -62,16 +62,18 @@
          {:tags [{:key "Name" :value ..name..}]
           :instance-id ..instance..
           :image-id ..image..
-          :private-ip-address ..ip..})
-        => {:name ..name.. :instance-id ..instance.. :image-id ..image.. :private-ip ..ip..})
+          :private-ip-address ..ip..
+          :launch-time ..launch-time..})
+        => {:name ..name.. :instance-id ..instance.. :image-id ..image.. :private-ip ..ip.. :launch-time ..launch-time..})
 
   (fact "transform-instance-description handles missing Name tag"
         (transform-instance-description
          {:tags []
           :instance-id ..instance..
           :image-id ..image..
-          :private-ip-address ..ip..})
-        => {:name "none" :instance-id ..instance.. :image-id ..image.. :private-ip ..ip..})
+          :private-ip-address ..ip..
+          :launch-time ..launch-time..})
+        => {:name "none" :instance-id ..instance.. :image-id ..image.. :private-ip ..ip.. :launch-time ..launch-time..})
 
   (fact "getting the last auto scaling group for an application works"
         (last-application-auto-scaling-group "search" "poke" "eu-west-1") => {:auto-scaling-group-name "search-poke-v023"}
