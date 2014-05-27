@@ -59,34 +59,38 @@
         healthcheck-path (util/strip-first-forward-slash (get application-properties :service.healthcheck.path default-healthcheck-path))
         max-attempts (get deployment-params :instance-healthy-attempts  default-maximum-attempts)
         min (:min deployment-params)]
-    (if skip-healthcheck?
+    (if-not state
       (do
-        (log/write "Skipping healthcheck.")
+        (log/write "No need to check for healthy instances.")
         (success parameters))
-      (if (zero? min)
+      (if skip-healthcheck?
         (do
-          (log/write "Minimum number of instances is 0 so skipping healthcheck.")
+          (log/write "Skipping healthcheck.")
           (success parameters))
-        (try
-          (if-let [basic-instances (seq (aws/auto-scaling-group-instances auto-scaling-group-name environment region))]
-            (let [instance-ids (map :instance-id basic-instances)
-                  instances (aws/instances environment region instance-ids)]
-              (log/write (format "Checking health of %s [%s] using port %s and path /%s." (util/pluralise (count instances) "instance") (str/join ", " instance-ids) service-port healthcheck-path))
-              (let [ip-addresses (map :private-ip-address instances)
-                    check-results (check-instances-health ip-addresses service-port healthcheck-path min)
-                    successful-results (count (filter :successful? check-results))]
-                (if (>= successful-results min)
-                  (do
-                    (log/write (format "Got %d successful %s which is equal to or above the minimum of %d." successful-results (util/pluralise successful-results "response") min))
-                    (success parameters))
-                  (do
-                    (log/write (format "Got %d successful %s but needed at least %d (attempt %d/%d)." successful-results (util/pluralise successful-results "response") min attempt max-attempts))
-                    (capped-retry-after 10000 attempt max-attempts)))))
-            (do
-              (log/write (format "No instances are present yet (attempt %d/%d)." attempt max-attempts))
-              (capped-retry-after 10000 attempt max-attempts)))
-          (catch Exception e
-            (error-with e)))))))
+        (if (zero? min)
+          (do
+            (log/write "Minimum number of instances is 0 so skipping healthcheck.")
+            (success parameters))
+          (try
+            (if-let [basic-instances (seq (aws/auto-scaling-group-instances auto-scaling-group-name environment region))]
+              (let [instance-ids (map :instance-id basic-instances)
+                    instances (aws/instances environment region instance-ids)]
+                (log/write (format "Checking health of %s [%s] using port %s and path /%s." (util/pluralise (count instances) "instance") (str/join ", " instance-ids) service-port healthcheck-path))
+                (let [ip-addresses (map :private-ip-address instances)
+                      check-results (check-instances-health ip-addresses service-port healthcheck-path min)
+                      successful-results (count (filter :successful? check-results))]
+                  (if (>= successful-results min)
+                    (do
+                      (log/write (format "Got %d successful %s which is equal to or above the minimum of %d." successful-results (util/pluralise successful-results "response") min))
+                      (success parameters))
+                    (do
+                      (log/write (format "Got %d successful %s but needed at least %d (attempt %d/%d)." successful-results (util/pluralise successful-results "response") min attempt max-attempts))
+                      (capped-retry-after 10000 attempt max-attempts)))))
+              (do
+                (log/write (format "No instances are present yet (attempt %d/%d)." attempt max-attempts))
+                (capped-retry-after 10000 attempt max-attempts)))
+            (catch Exception e
+              (error-with e))))))))
 
 (defn- load-balancer-healthy?
   [environment region auto-scaling-group-name instance-ids load-balancer-name]
@@ -105,25 +109,29 @@
         {:keys [deployment-params]} tyranitar
         {:keys [selected-load-balancers]} deployment-params
         max-attempts (get deployment-params :load-balancer-healthy-attempts default-maximum-attempts)]
-    (if (seq selected-load-balancers)
-      (try
-        (let [instances (aws/auto-scaling-group-instances auto-scaling-group-name environment region)]
-          (if (seq instances)
-            (do
-              (when (= 1 attempt)
-                (log/write (format "Waiting for health of %s [%s]" (util/pluralise (count selected-load-balancers) "load balancer") (str/join ", " selected-load-balancers))))
-              (let [instance-ids (map :instance-id instances)
-                    all-healthy? (every? true? (map (partial load-balancer-healthy? environment region auto-scaling-group-name instance-ids) selected-load-balancers))]
-                (if all-healthy?
-                  (do
-                    (log/write "All load balancer(s) are healthy.")
-                    (success parameters))
-                  (capped-retry-after 10000 attempt max-attempts))))
-            (do
-              (log/write "No instances are present - skipping healthcheck.")
-              (success parameters))))
-        (catch Exception e
-          (error-with e)))
+    (if-not state
       (do
-        (log/write "No load balancers selected - skipping healthcheck.")
-        (success parameters)))))
+        (log/write "No need to check load balancer health.")
+        (success parameters))
+      (if (seq selected-load-balancers)
+        (try
+          (let [instances (aws/auto-scaling-group-instances auto-scaling-group-name environment region)]
+            (if (seq instances)
+              (do
+                (when (= 1 attempt)
+                  (log/write (format "Waiting for health of %s [%s]" (util/pluralise (count selected-load-balancers) "load balancer") (str/join ", " selected-load-balancers))))
+                (let [instance-ids (map :instance-id instances)
+                      all-healthy? (every? true? (map (partial load-balancer-healthy? environment region auto-scaling-group-name instance-ids) selected-load-balancers))]
+                  (if all-healthy?
+                    (do
+                      (log/write "All load balancer(s) are healthy.")
+                      (success parameters))
+                    (capped-retry-after 10000 attempt max-attempts))))
+              (do
+                (log/write "No instances are present - skipping healthcheck.")
+                (success parameters))))
+          (catch Exception e
+            (error-with e)))
+        (do
+          (log/write "No load balancers selected - skipping healthcheck.")
+          (success parameters))))))

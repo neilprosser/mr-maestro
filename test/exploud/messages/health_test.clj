@@ -92,11 +92,20 @@
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => []))
 
+(fact "that waiting for instances to be healthy when there is no previous-state skips the healthcheck"
+      (wait-for-instances-to-be-healthy {:attempt 1 :parameters (assoc wait-for-instances-to-be-healthy-params :undo true)})
+      => (contains {:status :success}))
+
 (def wait-for-load-balancers-to-be-healthy-params
   {:environment "environment"
    :region "region"
    :new-state {:auto-scaling-group-name "asg"
                :tyranitar {:deployment-params {:selected-load-balancers ["lb-1" "lb-2"]}}}})
+
+(fact "that waiting for load balancer health of an undo with no previous state skips it"
+      (wait-for-load-balancers-to-be-healthy {:attempt 1
+                                              :parameters (assoc wait-for-load-balancers-to-be-healthy-params :undo true)})
+      => (contains {:status :success}))
 
 (fact "that waiting for load balancer health of no load balancers skips it"
       (wait-for-load-balancers-to-be-healthy {:attempt 1
