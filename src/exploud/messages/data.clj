@@ -383,15 +383,25 @@
           (success (assoc-in parameters [:previous-state :tyranitar :deployment-params :selected-load-balancers] (keys (util/remove-nil-values found-load-balancers))))))
       (success parameters))))
 
+(defn populate-availability-zones
+  [{:keys [parameters]}]
+  (let [{:keys [region]} parameters
+        state (:new-state parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [selected-zones]} deployment-params]
+    (log/write "Populating availability zones.")
+    (success (assoc-in parameters [:new-state :availability-zones] (map #(str region %) selected-zones)))))
+
 (defn populate-subnets
   [{:keys [parameters]}]
   (let [{:keys [environment region]} parameters
         state (:new-state parameters)
-        {:keys [tyranitar]} state
+        {:keys [availability-zones tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [subnet-purpose]} deployment-params]
     (log/write (format "Locating subnets with purpose '%s'." subnet-purpose))
-    (if-let [subnets (aws/subnets-by-purpose environment region subnet-purpose)]
+    (if-let [subnets (aws/filter-by-availability-zones availability-zones (aws/subnets-by-purpose environment region subnet-purpose))]
       (success (assoc-in parameters [:new-state :selected-subnets] (map :subnet-id subnets)))
       (error-with (ex-info "No subnets found for purpose." {:type ::no-subnets
                                                             :purpose subnet-purpose})))))
@@ -403,16 +413,6 @@
         {:keys [selected-subnets]} state]
     (log/write "Populating VPC zone identifier.")
     (success (assoc-in parameters [:new-state :vpc-zone-identifier] (str/join "," selected-subnets)))))
-
-(defn populate-availability-zones
-  [{:keys [parameters]}]
-  (let [{:keys [region]} parameters
-        state (:new-state parameters)
-        {:keys [tyranitar]} state
-        {:keys [deployment-params]} tyranitar
-        {:keys [selected-zones]} deployment-params]
-    (log/write "Populating availability zones.")
-    (success (assoc-in parameters [:new-state :availability-zones] (map #(str region %) selected-zones)))))
 
 (defn populate-termination-policies
   [{:keys [parameters]}]

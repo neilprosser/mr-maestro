@@ -297,3 +297,14 @@
       (provided
        (aws/load-balancers-with-names "environment" "region" ["existing" "nonexistent"]) => {"existing" {}
                                                                                             "nonexistent" nil}))
+
+(def populate-subnets-params
+  {:environment "environment"
+   :new-state {:availability-zones ["region-b"]
+               :tyranitar {:deployment-params {:subnet-purpose "internal"}}}
+   :region "region"})
+
+(fact "that populating subnets correctly filters the subnets based on the contents of `availability-zones`"
+      (:selected-subnets (:new-state (:parameters (populate-subnets {:parameters populate-subnets-params})))) => ["2"]
+      (provided
+       (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "region-a"} {:subnet-id "2" :availability-zone "region-b"}]))

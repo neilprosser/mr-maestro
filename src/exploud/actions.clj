@@ -32,9 +32,9 @@
               :exploud.messages.data/map-security-group-ids
               :exploud.messages.data/verify-load-balancers
               :exploud.messages.data/check-for-deleted-load-balancers
+              :exploud.messages.data/populate-availability-zones
               :exploud.messages.data/populate-subnets
               :exploud.messages.data/populate-vpc-zone-identifier
-              :exploud.messages.data/populate-availability-zones
               :exploud.messages.data/populate-termination-policies
               :exploud.messages.data/create-auto-scaling-group-tags
               :exploud.messages.data/generate-user-data

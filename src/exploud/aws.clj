@@ -224,6 +224,16 @@
   [environment region purpose]
   (seq (filter (partial has-purpose? purpose) (:subnets (ec2/describe-subnets (config environment region))))))
 
+(defn- has-zone?
+  [availability-zones subnet]
+  (let [zones (apply hash-set availability-zones)
+        zone (:availability-zone subnet)]
+    (contains? zones zone)))
+
+(defn filter-by-availability-zones
+  [availability-zones subnets]
+  (seq (filter (partial has-zone? availability-zones) subnets)))
+
 (defn instances
   [environment region instance-ids]
   (flatten (map :instances (flatten (:reservations (ec2/describe-instances (config environment region)
