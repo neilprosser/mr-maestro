@@ -264,7 +264,8 @@
 
 (fact "that waiting for instances to exist errors if there is an exception"
       (wait-for-instances-to-exist {:attempt 1
-                                    :parameters wait-for-instances-to-exist-params}) => (contains {:status :error})
+                                    :parameters wait-for-instances-to-exist-params})
+      => (contains {:status :error})
       (provided
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
@@ -272,8 +273,9 @@
 
 (fact "that waiting for instances to exist retries if there aren't enough instances"
       (wait-for-instances-to-exist {:attempt 1
-                                    :parameters wait-for-instances-to-exist-params}) => (contains {:status :retry
-                                                                                                   :backoff-ms 10000})
+                                    :parameters wait-for-instances-to-exist-params})
+      => (contains {:status :retry
+                    :backoff-ms 10000})
       (provided
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
@@ -281,7 +283,8 @@
 
 (fact "that waiting for instances to exist returns the right response if it succeeds"
       (wait-for-instances-to-exist {:attempt 1
-                                    :parameters wait-for-instances-to-exist-params}) => (contains {:status :success})
+                                    :parameters wait-for-instances-to-exist-params})
+      => (contains {:status :success})
       (provided
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
@@ -307,7 +310,8 @@
 
 (fact "that waiting for instances to be in service errors if there is an exception"
       (wait-for-instances-to-be-in-service {:attempt 1
-                                            :parameters wait-for-instances-to-be-in-service-params}) => (contains {:status :error})
+                                            :parameters wait-for-instances-to-be-in-service-params})
+      => (contains {:status :error})
       (provided
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
@@ -315,8 +319,9 @@
 
 (fact "that waiting for instances to be in service retries if there aren't enough instances 'InService'"
       (wait-for-instances-to-be-in-service {:attempt 1
-                                            :parameters wait-for-instances-to-be-in-service-params}) => (contains {:status :retry
-                                                                                                                   :backoff-ms 10000})
+                                            :parameters wait-for-instances-to-be-in-service-params})
+      => (contains {:status :retry
+                    :backoff-ms 10000})
       (provided
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
@@ -693,9 +698,18 @@
 (fact "that attempting to delete an old auto scaling group when not present is successful"
       (delete-old-auto-scaling-group {:parameters {}}) => (contains {:status :success}))
 
+(fact "that attempting to delete an old auto scaling group which has already been deleted is successful"
+      (delete-old-auto-scaling-group {:parameters delete-old-auto-scaling-group-params}) => (contains {:status :success})
+      (provided
+       (aws/auto-scaling-group "old-asg" "environment" "region") => nil
+       (auto/delete-auto-scaling-group anything
+                                       :auto-scaling-group-name "old-asg"
+                                       :force-delete true) => nil :times 0))
+
 (fact "that getting an exception while deleting an old auto scaling group is an error"
       (delete-old-auto-scaling-group {:parameters delete-old-auto-scaling-group-params}) => (contains {:status :error})
       (provided
+       (aws/auto-scaling-group "old-asg" "environment" "region") => {}
        (auto/delete-auto-scaling-group anything
                                        :auto-scaling-group-name "old-asg"
                                        :force-delete true) =throws=> (ex-info "Busted" {})))
@@ -703,6 +717,7 @@
 (fact "that deleting an old auto scaling group successfully gives the right response"
       (delete-old-auto-scaling-group {:parameters delete-old-auto-scaling-group-params}) => (contains {:status :success})
       (provided
+       (aws/auto-scaling-group "old-asg" "environment" "region") => {}
        (auto/delete-auto-scaling-group anything
                                        :auto-scaling-group-name "old-asg"
                                        :force-delete true) => ..delete-result..))
@@ -722,20 +737,23 @@
 
 (fact "that getting an exception while waiting for the deletion of and old auto scaling group is an error"
       (wait-for-old-auto-scaling-group-deletion {:attempt 1
-                                                 :parameters wait-for-old-auto-scaling-group-deletion-params}) => (contains {:status :error})
+                                                 :parameters wait-for-old-auto-scaling-group-deletion-params})
+      => (contains {:status :error})
       (provided
        (aws/auto-scaling-group "old-asg" "environment" "region") =throws=> (ex-info "Busted" {})))
 
 (fact "that waiting for the deletion of a no-longer-present auto scaling group is successful"
       (wait-for-old-auto-scaling-group-deletion {:attempt 1
-                                                 :parameters wait-for-old-auto-scaling-group-deletion-params}) => (contains {:status :success})
+                                                 :parameters wait-for-old-auto-scaling-group-deletion-params})
+      => (contains {:status :success})
       (provided
        (aws/auto-scaling-group "old-asg" "environment" "region") => nil))
 
 (fact "that waiting for the deletion of a still-present auto scaling group retries"
       (wait-for-old-auto-scaling-group-deletion {:attempt 1
-                                                 :parameters wait-for-old-auto-scaling-group-deletion-params}) => {:status :retry
-                                                                                                                   :backoff-ms 10000}
+                                                 :parameters wait-for-old-auto-scaling-group-deletion-params})
+      => {:status :retry
+          :backoff-ms 10000}
       (provided
        (aws/auto-scaling-group "old-asg" "environment" "region") => {}))
 
@@ -759,15 +777,25 @@
 (fact "that attempting to delete an old launch configuration when not present is successful"
       (delete-old-launch-configuration {:parameters {}}) => (contains {:status :success}))
 
+(fact "that attempting to delete an old launch configuration which has already been deleted is successful"
+      (delete-old-launch-configuration {:parameters delete-old-launch-configuration-params})
+      => (contains {:status :success})
+      (provided
+       (aws/launch-configuration "old-lc" "environment" "region") => nil
+       (auto/delete-launch-configuration anything
+                                         :launch-configuration-name "old-lc") => nil :times 0))
+
 (fact "that getting an exception while deleting an old launch configuration is an error"
       (delete-old-launch-configuration {:parameters delete-old-launch-configuration-params}) => (contains {:status :error})
       (provided
+       (aws/launch-configuration "old-lc" "environment" "region") => {}
        (auto/delete-launch-configuration anything
                                          :launch-configuration-name "old-lc") =throws=> (ex-info "Busted" {})))
 
 (fact "that deleting an old launch configuration successfully gives the right response"
       (delete-old-launch-configuration {:parameters delete-old-launch-configuration-params}) => (contains {:status :success})
       (provided
+       (aws/launch-configuration "old-lc" "environment" "region") => {}
        (auto/delete-launch-configuration anything
                                          :launch-configuration-name "old-lc") => ..delete-result..))
 

@@ -450,10 +450,13 @@
         state (state-key parameters)]
     (if-let [old-auto-scaling-group-name (:auto-scaling-group-name state)]
       (try
-        (log/write (format "Deleting auto scaling group '%s'." old-auto-scaling-group-name))
-        (auto/delete-auto-scaling-group (aws/config environment region)
-                                        :auto-scaling-group-name old-auto-scaling-group-name
-                                        :force-delete true)
+        (if (aws/auto-scaling-group old-auto-scaling-group-name environment region)
+          (do
+            (log/write (format "Deleting auto scaling group '%s'." old-auto-scaling-group-name))
+            (auto/delete-auto-scaling-group (aws/config environment region)
+                                            :auto-scaling-group-name old-auto-scaling-group-name
+                                            :force-delete true))
+          (log/write (format "Auto scaling group '%s' has already been deleted." old-auto-scaling-group-name)))
         (success parameters)
         (catch Exception e
           (error-with e)))
@@ -486,9 +489,12 @@
         state (state-key parameters)]
     (if-let [old-launch-configuration-name (:launch-configuration-name state)]
       (try
-        (log/write (format "Deleting launch configuration '%s'." old-launch-configuration-name))
-        (auto/delete-launch-configuration (aws/config environment region)
-                                          :launch-configuration-name old-launch-configuration-name)
+        (if (aws/launch-configuration old-launch-configuration-name environment region)
+          (do
+            (log/write (format "Deleting launch configuration '%s'." old-launch-configuration-name))
+            (auto/delete-launch-configuration (aws/config environment region)
+                                              :launch-configuration-name old-launch-configuration-name))
+          (log/write (format "Launch configuration '%s' has already been deleted." old-launch-configuration-name)))
         (success parameters)
         (catch Exception e
           (error-with e)))
