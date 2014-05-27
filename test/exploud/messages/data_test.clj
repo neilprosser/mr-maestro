@@ -3,6 +3,7 @@
             [exploud
              [aws :as aws]
              [onix :as onix]
+             [shuppet :as shuppet]
              [tyranitar :as tyr]]
             [exploud.messages.data :refer :all]
             [midje.sweet :refer :all]))
@@ -270,6 +271,13 @@
                                              :auto-scaling-group-name "application-environment-v001"}}})
       (provided
        (time/now) => (time/date-time 2014 1 2 3 4 5)))
+
+(fact "that checking Shuppet configuration errors when Shuppet throws up"
+      (check-shuppet-configuration {:parameters {:application "application"
+                                                 :environment "environment"}})
+      => (contains {:status :error})
+      (provided
+       (shuppet/configuration "environment" "application") =throws=> (ex-info "Busted" {})))
 
 (fact "that checking for deleted load balancers removes previously used load balancers which no longer exist"
       (check-for-deleted-load-balancers {:parameters {:environment "environment"
