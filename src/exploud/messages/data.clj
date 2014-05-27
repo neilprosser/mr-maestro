@@ -465,7 +465,7 @@
         (hubot/speak-about-deployment-start parameters)
         (log/write (format "Starting deployment of '%s' to '%s'." application environment)))
       (do
-        (hubot/speak-about-deployment-start parameters)
+        (hubot/speak-about-deployment-undo parameters)
         (log/write (format "Starting undo of '%s' in '%s'." application environment))))
     (success (-> parameters
                  (assoc :phase "deployment")
