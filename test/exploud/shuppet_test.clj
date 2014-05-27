@@ -58,7 +58,7 @@
        => {:status 404}))
 
 (fact "that getting configuration does the right thing for the sad path"
-      (configuration "environment" "application") => (throws ExceptionInfo "Unexpected status while getting configuration for application and environment")
+      (configuration "environment" "application") => (throws ExceptionInfo "Unexpected status while getting configuration for application in environment.")
       (provided
        (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 180000})
        => {:status 500}))

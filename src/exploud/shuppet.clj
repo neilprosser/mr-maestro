@@ -53,7 +53,7 @@
   (let [{:keys [body status] :as response} (http/simple-get (configuration-url environment app-name) {:socket-timeout timeout})]
     (cond (= 200 status) (json/parse-string body true)
           (= 404 status) nil
-          :else (throw (ex-info (str "Unexpected status while getting configuration for " app-name " and " environment) {:type ::unexpected-response :response response})))))
+          :else (throw (ex-info (str "Unexpected status while getting configuration for " app-name " in " environment ".") {:type ::unexpected-response :response response})))))
 
 (defn upsert-application
   "Insert an application into Shuppet if it doesn't exist, or update it if it does."
