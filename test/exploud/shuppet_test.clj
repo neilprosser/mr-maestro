@@ -26,26 +26,26 @@
 (fact "apply fails when shuppet fails to return environment list"
       (apply-config ..name..) => (throws ExceptionInfo)
       (provided
-       (http/simple-get anything {:socket-timeout 180000}) => {:status 500}))
+       (http/simple-get anything {:socket-timeout 15000}) => {:status 500}))
 
 (fact "apply fails when shuppet fails to apply a configuration"
       (apply-config "app") => (throws ExceptionInfo)
       (provided
-       (http/simple-get "http://shuppet:8080/1.x/envs" {:socket-timeout 180000}) => {:status 200
+       (http/simple-get "http://shuppet:8080/1.x/envs" {:socket-timeout 15000}) => {:status 200
                                                                                      :body "{\"environments\":[\"poke\"]}"}
        (http/simple-get "http://shuppet:8080/1.x/envs/poke/apps/app/apply" {:socket-timeout 180000}) => {:status 500}))
 
 (fact "responses are returned when shuppet applies a config"
       (apply-config "app") => [{:status 200}]
       (provided
-       (http/simple-get "http://shuppet:8080/1.x/envs" {:socket-timeout 180000}) => {:status 200
+       (http/simple-get "http://shuppet:8080/1.x/envs" {:socket-timeout 15000}) => {:status 200
                                                                                      :body "{\"environments\":[\"poke\"]}"}
        (http/simple-get "http://shuppet:8080/1.x/envs/poke/apps/app/apply" {:socket-timeout 180000}) => {:status 200}))
 
 (fact "that getting configuration does the right thing for the happy path"
       (configuration "environment" "application") => ..configuration..
       (provided
-       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 180000})
+       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 15000})
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -54,11 +54,11 @@
 (fact "that getting configuration does the right thing for the missing path"
       (configuration "environment" "application") => nil
       (provided
-       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 180000})
+       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 15000})
        => {:status 404}))
 
 (fact "that getting configuration does the right thing for the sad path"
       (configuration "environment" "application") => (throws ExceptionInfo "Unexpected status while getting configuration for application in environment.")
       (provided
-       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 180000})
+       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 15000})
        => {:status 500}))
