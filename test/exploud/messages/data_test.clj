@@ -272,12 +272,19 @@
       (provided
        (time/now) => (time/date-time 2014 1 2 3 4 5)))
 
-(fact "that checking Shuppet configuration errors when Shuppet throws up"
+(fact "that checking Shuppet configuration fails when Shuppet configuration doesn't exist"
       (check-shuppet-configuration {:parameters {:application "application"
                                                  :environment "environment"}})
       => (contains {:status :error})
       (provided
-       (shuppet/configuration "environment" "application") =throws=> (ex-info "Busted" {})))
+       (shuppet/configuration "environment" "application") => nil))
+
+(fact "that checking Shuppet configuration retries when Shuppet throws up"
+      (check-shuppet-configuration {:parameters {:application "application"
+                                                 :environment "environment"}})
+      => (contains {:status :retry})
+      (provided
+       (shuppet/configuration "environment" "application") =throws=> (ex-info "Busted" {:type :exploud.shuppet/unexpected-response})))
 
 (fact "that checking for deleted load balancers removes previously used load balancers which no longer exist"
       (check-for-deleted-load-balancers {:parameters {:environment "environment"

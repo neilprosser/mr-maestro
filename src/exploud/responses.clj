@@ -26,10 +26,15 @@
   (and (= AmazonServiceException (type e))
        (= "Throttling" (.getErrorCode e))))
 
+(defn- unexpected-response?
+  [e]
+  (= :exploud.shuppet/unexpected-response (:type (ex-data e))))
+
 (defn- retryable-error?
   [e]
   (or (aws-request-limit-exceeded? e)
-      (aws-throttling? e)))
+      (aws-throttling? e)
+      (unexpected-response? e)))
 
 (defn error-with
   [e]

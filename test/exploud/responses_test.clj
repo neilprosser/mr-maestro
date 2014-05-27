@@ -29,6 +29,10 @@
       (error-with e) => {:status :error
                          :throwable e})
 
+(fact "that creating an error for an expected Shuppet response turns it into a retry"
+      (error-with (ex-info "Busted" {:type :exploud.shuppet/unexpected-response})) => {:status :retry
+                                                                                       :backoff-ms 5000})
+
 (fact "that creating an error with an exception which doesn't have the right properties is still an error"
       (def e (java.lang.Exception. "Failed"))
       (error-with e) => {:status :error
