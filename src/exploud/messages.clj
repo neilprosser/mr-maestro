@@ -99,8 +99,8 @@
     :retry details))
 
 (defn should-pause-because-told-to?
-  [details]
-  (deployments/pause-registered? details))
+  [{:keys [parameters]}]
+  (deployments/pause-registered? parameters))
 
 (defn should-pause-because-of-deployment-params?
   [{:keys [action parameters]}]

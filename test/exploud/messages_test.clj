@@ -52,7 +52,9 @@
                                 :region "region"}})
       (should-pause-because-told-to? params) => truthy
       (provided
-       (deployments/pause-registered? params) => true))
+       (deployments/pause-registered? {:application "application"
+                                       :environment "environment"
+                                       :region "region"}) => true))
 
 (fact "that we shouldn't pause when the deployment doesn't have a pause registered"
       (def params {:parameters {:application "application"
@@ -60,7 +62,9 @@
                                 :region "region"}})
       (should-pause-because-told-to? params) => falsey
       (provided
-       (deployments/pause-registered? params) => false))
+       (deployments/pause-registered? {:application "application"
+                                       :environment "environment"
+                                       :region "region"}) => false))
 
 (fact "that we shouldn't pause for a random action"
       (def params {:action :exploud.messages.health/something
