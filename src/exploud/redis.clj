@@ -117,6 +117,7 @@
 
 (defn end-deployment
   [{:keys [application environment region]}]
+  (unregister-pause application environment region)
   (pos? (using-redis (car/hdel in-progress-key (field-for application environment region)))))
 
 (defn queue-status

@@ -67,11 +67,13 @@
   (fact "Ending a deployment which exists returns true"
         (end-deployment end-deployment-params) => true
         (provided
+         (car/srem "exploud:deployments:awaiting-pause" "app-env-region") => 0
          (car/hdel "exploud:deployments:in-progress" "app-env-region") => 1))
 
   (fact "Ending a deployment which didn't exist returns false"
         (end-deployment end-deployment-params) => false
         (provided
+         (car/srem "exploud:deployments:awaiting-pause" "app-env-region") => 0
          (car/hdel "exploud:deployments:in-progress" "app-env-region") => 0))
 
   (fact "that obtaining the queue status works"
