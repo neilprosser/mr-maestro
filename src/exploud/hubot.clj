@@ -45,4 +45,7 @@
           new-version (get-in deployment [:new-state :image-details :version])
           old-image-id (get-in deployment [:previous-state :image-details :id])
           old-version (get-in deployment [:previous-state :image-details :version])]
-      (speak general (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" user application new-version new-image-id environment old-version old-image-id undo-message)))))
+      (if (and old-image-id
+               old-version)
+        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" user application new-version new-image-id environment old-version old-image-id undo-message))
+        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s. %s" user application new-version new-image-id environment undo-message))))))
