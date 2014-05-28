@@ -56,6 +56,7 @@
               :exploud.messages.asg/enable-adding-instances
               :exploud.messages.asg/register-instances-with-load-balancers
               :exploud.messages.health/wait-for-load-balancers-to-be-healthy
+              :exploud.messages.asg/add-scheduled-actions
               :exploud.messages.asg/disable-old-instance-launching
               :exploud.messages.asg/disable-old-instance-termination
               :exploud.messages.asg/disable-old-adding-instances

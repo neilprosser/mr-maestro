@@ -154,7 +154,7 @@
                           :start-from start-from
                           :start-to start-to
                           :status status}
-              result (apply b/validate parameters v/query-param-validators)]
+              result (b/validate parameters v/query-param-validators)]
           (if-let [details (first result)]
             (response {:message "Query parameter validation failed"
                        :details details} nil 400)
@@ -187,7 +187,7 @@
    (GET "/deployments/:deployment-id/logs"
         [deployment-id since]
         (let [parameters {:since since}
-              result (apply b/validate parameters v/log-param-validators)]
+              result (b/validate parameters v/log-param-validators)]
           (if-let [details (first result)]
             (response {:message "Query parameter validation failed"
                        :details details} nil 400)

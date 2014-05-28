@@ -173,3 +173,77 @@
 (fact "that `valid-termination-policy?` is unhappy with garbage"
       (valid-termination-policy? "askjlkasjdks")
       => falsey)
+
+(fact "that `valid-scheduled-actions?` is happy with a single good scheduled action"
+      (valid-scheduled-actions? {:action-1 {:cron "hello"
+                                            :desired-capacity 1
+                                            :max 1
+                                            :min 1}})
+      => truthy)
+
+(fact "that `valid-scheduled-actions?` is happy with multiple good scheduled actions"
+      (valid-scheduled-actions? {:action-1 {:cron "1 2 3 4 5"
+                                            :desired-capacity 1
+                                            :max 1
+                                            :min 1}
+                                 :action-2 {:cron "world"
+                                            :desired-capacity 1
+                                            :max 1
+                                            :min 1}})
+      => truthy)
+
+(fact "that `valid-scheduled-actions?` is happy with multiple good scheduled actions"
+      (valid-scheduled-actions? {:action-1 {:cron "30 4 * * *"
+                                            :desired-capacity 1
+                                            :max 1
+                                            :min 1}
+                                 :action-2 {:cron "world"
+                                            :desired-capacity 1
+                                            :max 1
+                                            :min 1}})
+      => truthy)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action is missing cron"
+      (valid-scheduled-actions? {:action-1 {:desired-capacity 1
+                                            :max 1
+                                            :min 1}})
+      => falsey)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action is missing desired-capacity"
+      (valid-scheduled-actions? {:action-1 {:cron "* * * * *"
+                                            :max 1
+                                            :min 1}})
+      => falsey)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action has a non-numeric desired-capacity"
+      (valid-scheduled-actions? {:action-1 {:cron "* * * * *"
+                                            :desired-capacity "a"
+                                            :max 1
+                                            :min 1}})
+      => falsey)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action is missing max"
+      (valid-scheduled-actions? {:action-1 {:cron "* * * * *"
+                                            :desired-capacity 1
+                                            :min 1}})
+      => falsey)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action has a non-numeric max"
+      (valid-scheduled-actions? {:action-1 {:cron "* * * * *"
+                                            :desired-capacity 1
+                                            :max "dasd"
+                                            :min 1}})
+      => falsey)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action is missing min"
+      (valid-scheduled-actions? {:action-1 {:cron "* * * * *"
+                                            :desired-capacity 1
+                                            :max 1}})
+      => falsey)
+
+(fact "that `valid-scheduled-actions?` is unhappy when a scheduled action has a non-numeric min"
+      (valid-scheduled-actions? {:action-1 {:cron "* * * * *"
+                                            :desired-capacity 1
+                                            :max 1
+                                            :min "asdasda"}})
+      => falsey)

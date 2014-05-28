@@ -3,6 +3,7 @@
              [core :as b]
              [validators :as v]]
             [clj-time.format :as fmt]
+            [clojure.string :as str]
             [exploud.util :as util]))
 
 (def healthcheck-types
@@ -53,8 +54,8 @@
 (def termination-policies
   #{"ClosestToNextInstanceHour" "Default" "NewestInstance" "OldestInstance" "OldestLaunchConfiguration"})
 
-(defn zero-or-more?
-  "Whether a given input is zero or more."
+(v/defvalidator zero-or-more?
+  {:default-message-format "%s must be zero or more"}
   [input]
   (if input
     (if-let [number (util/string->int input)]
@@ -62,8 +63,8 @@
       false)
     true))
 
-(defn positive?
-  "Whether a given input is a positive number."
+(v/defvalidator positive?
+  {:default-message-format "%s must be positive"}
   [input]
   (if input
     (if-let [number (util/string->int input)]
@@ -71,8 +72,8 @@
       false)
     true))
 
-(defn valid-date?
-  "Whether the given input is a valid date."
+(v/defvalidator valid-date?
+  {:default-message-format "%s must be a valid date"}
   [input]
   (if input
     (try
@@ -81,37 +82,36 @@
         false))
     true))
 
-(defn valid-boolean?
-  "Whether the given input is a valid boolean."
+(v/defvalidator valid-boolean?
+  {:default-message-format "%s must be 'true' or 'false'"}
   [input]
   (if input
     (or (= (str input) "true")
         (= (str input) "false"))
     true))
 
-(defn valid-healthcheck-type?
-  "Whether the given input is a valid healthcheck type"
+(v/defvalidator valid-healthcheck-type?
+  {:default-message-format "%s must be either 'EC2' or 'ELB'"}
   [input]
   (if input
     (contains? healthcheck-types input)
     true))
 
-(defn valid-instance-type?
-  "Whether the given input is a valid instance type"
+(v/defvalidator valid-instance-type?
+  {:default-message-format "%s must be a known instance type"}
   [input]
   (if input
     (contains? instance-types input)
     true))
 
 (defn valid-availability-zone?
-  "Whether the given input is a valid availability zone"
   [input]
   (if input
     (contains? availability-zones input)
     true))
 
-(defn valid-availability-zones?
-  "Whether the given input is either a single, valid availability zone or a collection of valid availability zones"
+(v/defvalidator valid-availability-zones?
+  {:default-message-format "%s must be valid availability zones"}
   [input]
   (if input
     (if (coll? input)
@@ -119,45 +119,57 @@
       (valid-availability-zone? input))
     true))
 
-(defn valid-subnet-purpose?
-  "Whether the given input is a valid subnet purpose"
+(v/defvalidator valid-subnet-purpose?
+  {:default-message-format "%s must be a known purpose"}
   [input]
   (if input
     (contains? subnet-purposes input)
     true))
 
-(defn valid-termination-policy?
-  "Whether the given input is a valid termination policy"
+(v/defvalidator valid-termination-policy?
+  {:default-message-format "%s must be a valid termination policy"}
   [input]
   (if input
     (contains? termination-policies input)
     true))
 
+(def scheduled-action-validators
+  {:cron v/required
+   :desired-capacity [v/required positive?]
+   :max [v/required positive?]
+   :min [v/required zero-or-more?]})
+
+(v/defvalidator valid-scheduled-actions?
+  {:default-message-format "%s must all be valid scheduled actions"}
+  [input]
+  (nil? (seq (remove nil? (map (fn [[name description]] (first (b/validate description scheduled-action-validators))) input)))))
+
 (def query-param-validators
   "The validators we should `apply` to validate query parameters."
-  [:from [[zero-or-more? :message "from must be zero or more"]]
-   :full [[valid-boolean? :message "full must be 'true' or 'false'"]]
-   :size [[positive? :message "size must be positive"]]
-   :start-from [[valid-date? :message "start-from must be a valid date"]]
-   :start-to [[valid-date? :message "start-to must be a valid date"]]])
+  {:from zero-or-more?
+   :full valid-boolean?
+   :size positive?
+   :start-from valid-date?
+   :start-to valid-date?})
 
 (def log-param-validators
   "The validators we should `apply` to validate deployment log parameters."
-  [:since [[valid-date? :message "since must be a valid date"]]])
+  {:since valid-date?})
 
 (def deployment-param-validators
   "The validators we should `apply` to deployment parameters."
-  [:default-cooldown [[positive? :message "default cooldown must be positive"]]
-   :desired-capacity [[positive? :message "desired capacity must be positive"]]
-   :health-check-grace-period [[positive? :message "healthcheck grace period must be positive"]]
-   :health-check-type [[valid-healthcheck-type? :message "healthcheck type must be either 'EC2' or 'ELB'"]]
-   :instance-healthy-attempts [[positive? :message "number of instance healthcheck attempts must be positive"]]
-   :instance-type [[valid-instance-type? :message "instance type must be a known instance type"]]
-   :load-balancer-healthy-attempts [[positive? :message "number of load balancer healthcheck attempts must be positive"]]
-   :max [[positive? :message "maximum number of instances must be positive"]]
-   :min [[zero-or-more? :message "minimum number of instances must be zero or more"]]
-   :pause-after-instances-healthy [[valid-boolean? :message "pause after instances healthy must be 'true' or 'false'"]]
-   :pause-after-load-balancers-healthy [[valid-boolean? :message "pause after load balancers healthy must be 'true' or 'false'"]]
-   :selected-zones [[valid-availability-zones? :message "selected zones must be valid availability zones"]]
-   :subnet-purpose [[valid-subnet-purpose? :message "subnet purpose must be valid"]]
-   :termination-policy [[valid-termination-policy? :message "termination policy must be valid"]]])
+  {:default-cooldown positive?
+   :desired-capacity positive?
+   :health-check-grace-period positive?
+   :health-check-type valid-healthcheck-type?
+   :instance-healthy-attempts positive?
+   :instance-type valid-instance-type?
+   :load-balancer-healthy-attempts positive?
+   :max positive?
+   :min zero-or-more?
+   :pause-after-instances-healthy valid-boolean?
+   :pause-after-load-balancers-healthy valid-boolean?
+   :scheduled-actions valid-scheduled-actions?
+   :selected-zones valid-availability-zones?
+   :subnet-purpose valid-subnet-purpose?
+   :termination-policy valid-termination-policy?})

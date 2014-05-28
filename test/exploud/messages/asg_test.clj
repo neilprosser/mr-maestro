@@ -499,6 +499,44 @@
 (fact "that attempting to register instances with load balancers for a deployment with no previous state is successful and does nothing"
       (register-instances-with-load-balancers {:parameters (assoc register-instances-with-load-balancers-params :undo true :previous-state nil)}) => (contains {:status :success}))
 
+(def add-scheduled-actions-params
+  {:environment "environment"
+   :region "region"
+   :new-state {:auto-scaling-group-name "asg"
+               :tyranitar {:deployment-params {:scheduled-actions {:scale-up {:cron "30 4 * * *"
+                                                                              :desired-capacity 1
+                                                                              :max 1
+                                                                              :min 1}}}}}
+   :previous-state {:auto-scaling-group-name "old-asg"}})
+
+(fact "that getting an error while adding scheduled actions is an error"
+      (add-scheduled-actions {:parameters add-scheduled-actions-params}) => (contains {:status :error})
+      (provided
+       (auto/put-scheduled-update-group-action anything
+                                               :auto-scaling-group-name "asg"
+                                               :desired-capacity 1
+                                               :max-size 1
+                                               :min-size 1
+                                               :recurrence "30 4 * * *"
+                                               :scheduled-action-name "asg-scale-up") =throws=> (ex-info "Busted" {})))
+
+(fact "that we don't do anything if there is no auto scaling group name"
+      (add-scheduled-actions {:parameters (assoc (assoc add-scheduled-actions-params :previous-state nil) :undo true)}) => (contains {:status :success}))
+
+(fact "that we don't do anything if there are no scheduled actions"
+      (add-scheduled-actions {:parameters (assoc-in add-scheduled-actions-params [:new-state :tyranitar :deployment-params :scheduled-actions] nil)}) => (contains {:status :success}))
+
+(fact "that adding scheduled actions calls what we expect"
+      (add-scheduled-actions {:parameters add-scheduled-actions-params}) => (contains {:status :success})
+      (provided
+       (auto/put-scheduled-update-group-action anything
+                                               :auto-scaling-group-name "asg"
+                                               :desired-capacity 1
+                                               :max-size 1
+                                               :min-size 1
+                                               :recurrence "30 4 * * *"
+                                               :scheduled-action-name "asg-scale-up") => nil))
+
 (def disable-old-instance-launching-params
   {:environment "environment"
    :region "region"

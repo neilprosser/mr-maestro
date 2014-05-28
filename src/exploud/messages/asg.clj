@@ -348,6 +348,40 @@
           (catch Exception e
             (error-with e)))))))
 
+(defn add-scheduled-actions
+  [{:keys [parameters] :as message}]
+  (let [{:keys [environment region]} parameters
+        state-key (util/new-state-key parameters)
+        state (state-key parameters)
+        {:keys [auto-scaling-group-name tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [scheduled-actions]} deployment-params]
+    (if-not state
+      (do
+        (log/write "No need to add scheduled actions.")
+        (success parameters))
+      (try
+        (if-not (seq scheduled-actions)
+          (do
+            (log/write "No scheduled actions to add.")
+            (success parameters))
+          (do
+            (doseq [scheduled-action scheduled-actions]
+              (let [[action-name description] scheduled-action
+                    {:keys [cron desired-capacity max min]} description
+                    full-name (str/join "-" [auto-scaling-group-name (name action-name)])]
+                (log/write (format "Adding scheduled action '%s'." action-name))
+                (auto/put-scheduled-update-group-action (aws/config environment region)
+                                                        :auto-scaling-group-name auto-scaling-group-name
+                                                        :desired-capacity desired-capacity
+                                                        :max-size max
+                                                        :min-size min
+                                                        :recurrence cron
+                                                        :scheduled-action-name full-name)))
+            (success parameters)))
+        (catch Exception e
+          (error-with e))))))
+
 (defn disable-old-instance-launching
   [{:keys [parameters] :as message}]
   (let [{:keys [environment region]} parameters
