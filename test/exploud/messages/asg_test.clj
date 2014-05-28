@@ -603,7 +603,8 @@
                     :tyranitar {:deployment-params {:selected-load-balancers ["lb-1" "lb-2"]}}}})
 
 (fact "that attempting to deregister instances from no load balancers is successful"
-      (deregister-old-instances-from-load-balancers {:parameters {:previous-state {:tyranitar {:deployment-params {:selected-load-balancers []}}}}}) => (contains {:status :success}))
+      (deregister-old-instances-from-load-balancers {:parameters {:previous-state {:auto-scaling-group-name "old-asg"
+                                                                                   :tyranitar {:deployment-params {:selected-load-balancers []}}}}}) => (contains {:status :success}))
 
 (fact "that attempting to deregister when there are no instances is successful"
       (deregister-old-instances-from-load-balancers {:parameters deregister-old-instances-from-load-balancers-params}) => (contains {:status :success})
