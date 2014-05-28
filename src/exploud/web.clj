@@ -264,7 +264,7 @@
                (response "Pause registered and will take effect after the next task finishes" "text/plain" 200))
              (response "No deployment is in progress" "text/plain" 409))))
 
-   (DELETE "/application/:application/:environment/pause"
+   (DELETE "/applications/:application/:environment/pause"
            [application environment]
            (let [parameters {:application application
                              :environment environment
