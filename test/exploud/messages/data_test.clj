@@ -326,3 +326,9 @@
       => (contains {:status :error})
       (provided
        (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regiona"} {:subnet-id "2" :availability-zone "regionb"}]))
+
+(fact "that populating subnets gives an error when no subnets are found"
+      (populate-subnets {:parameters (assoc-in populate-subnets-params [:new-state :tyranitar :deployment-params :selected-zones] ["c"])})
+      => (contains {:status :error})
+      (provided
+       (aws/subnets-by-purpose "environment" "region" "internal") => []))
