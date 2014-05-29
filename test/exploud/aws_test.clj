@@ -90,6 +90,14 @@
                                                     {:auto-scaling-group-name "search-poke"}
                                                     {:auto-scaling-group-name "app2-poke-v000"}]))
 
-(fact "that filtering subnets by availability zone works"
+(fact "that filtering subnets by availability zone works when something is specified"
       (filter-by-availability-zones ["eu-west-1b"] [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
       => [{:subnet-id "2" :availability-zone "eu-west-1b"}])
+
+(fact "that filtering subnets by availability zone gives back everything when nothing is specified"
+      (filter-by-availability-zones [] [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
+      => [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
+
+(fact "that filtering subnets by availability zone gives back everything when nil is specified"
+      (filter-by-availability-zones nil [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
+      => [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])

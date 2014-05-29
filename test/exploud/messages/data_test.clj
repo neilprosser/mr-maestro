@@ -79,17 +79,19 @@
 (fact "that ensuring the Tyranitar hash goes to Tyranitar if the hash isn't present"
       (ensure-tyranitar-hash {:parameters {:application "application"
                                            :environment "environment"
-                                           :new-state {}}}) => {:status :success
-                                                                :parameters {:application "application"
-                                                                             :environment "environment"
-                                                                             :new-state {:hash "last-hash"}}}
+                                           :new-state {}}})
+      => {:status :success
+          :parameters {:application "application"
+                       :environment "environment"
+                       :new-state {:hash "last-hash"}}}
       (provided
        (tyr/last-commit-hash "environment" "application") => "last-hash"))
 
 (fact "that ensuring the Tyranitar hash is an error if there's an exception"
       (ensure-tyranitar-hash {:parameters {:application "application"
                                            :environment "environment"
-                                           :new-state {}}}) => (contains {:status :error})
+                                           :new-state {}}})
+      => (contains {:status :error})
       (provided
        (tyr/last-commit-hash "environment" "application") =throws=> (ex-info "Busted" {})))
 
@@ -201,7 +203,8 @@
 (fact "that a missing security group by ID is an error"
       (map-security-group-ids {:parameters {:environment "environment"
                                             :region "region"
-                                            :new-state {:tyranitar {:deployment-params {:selected-security-groups ["group-1" "sg-group-2-id"]}}}}}) => (contains {:status :error})
+                                            :new-state {:tyranitar {:deployment-params {:selected-security-groups ["group-1" "sg-group-2-id"]}}}}})
+      => (contains {:status :error})
       (provided
        (aws/security-groups "environment" "region") => [{:group-id "sg-group-1-id"
                                                          :group-name "group-1"}]))
@@ -209,7 +212,8 @@
 (fact "that a missing security group by name is an error"
       (map-security-group-ids {:parameters {:environment "environment"
                                             :region "region"
-                                            :new-state {:tyranitar {:deployment-params {:selected-security-groups ["group-1" "group-2"]}}}}}) => (contains {:status :error})
+                                            :new-state {:tyranitar {:deployment-params {:selected-security-groups ["group-1" "group-2"]}}}}})
+      => (contains {:status :error})
       (provided
        (aws/security-groups "environment" "region") => [{:group-id "sg-group-1-id"
                                                          :group-name "group-1"}]))
@@ -296,15 +300,29 @@
           :status :success}
       (provided
        (aws/load-balancers-with-names "environment" "region" ["existing" "nonexistent"]) => {"existing" {}
-                                                                                            "nonexistent" nil}))
+                                                                                             "nonexistent" nil}))
 
 (def populate-subnets-params
   {:environment "environment"
-   :new-state {:availability-zones ["region-b"]
-               :tyranitar {:deployment-params {:subnet-purpose "internal"}}}
+   :new-state {:tyranitar {:deployment-params {:subnet-purpose "internal"}}}
    :region "region"})
 
-(fact "that populating subnets correctly filters the subnets based on the contents of `availability-zones`"
-      (:selected-subnets (:new-state (:parameters (populate-subnets {:parameters populate-subnets-params})))) => ["2"]
+(fact "that populating subnets uses all subnets found when `selected-zones` has not been given"
+      (:new-state (:parameters (populate-subnets {:parameters populate-subnets-params})))
+      => (contains {:availability-zones ["regiona" "regionb"]
+                    :selected-subnets ["1" "2"]})
       (provided
-       (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "region-a"} {:subnet-id "2" :availability-zone "region-b"}]))
+       (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regiona"} {:subnet-id "2" :availability-zone "regionb"}]))
+
+(fact "that populating subnets correctly filters the subnets based on the contents of `availability-zones` when `selected-zones` has been given"
+      (:new-state (:parameters (populate-subnets {:parameters (assoc-in populate-subnets-params [:new-state :tyranitar :deployment-params :selected-zones] ["b"])})))
+      => (contains {:availability-zones ["regionb"]
+                    :selected-subnets ["2"]})
+      (provided
+       (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regiona"} {:subnet-id "2" :availability-zone "regionb"}]))
+
+(fact "that populating subnets gives an error when the subnets cannot match the provided demands of `selected-zones`"
+      (populate-subnets {:parameters (assoc-in populate-subnets-params [:new-state :tyranitar :deployment-params :selected-zones] ["a" "c"])})
+      => (contains {:status :error})
+      (provided
+       (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regiona"} {:subnet-id "2" :availability-zone "regionb"}]))
