@@ -1,6 +1,8 @@
 (ns exploud.messages.data
   (:require [clj-time.core :as time]
-            [clojure.string :as str]
+            [clojure
+             [set :as set]
+             [string :as str]]
             [exploud
              [aws :as aws]
              [hubot :as hubot]
@@ -135,7 +137,6 @@
    :min 1
    :pause-after-instances-healthy false
    :pause-after-load-balancers-healthy false
-   :selected-zones ["a" "b"]
    :subnet-purpose "internal"
    :termination-policy "Default"})
 
@@ -148,7 +149,7 @@
       (log/write "Retrieving deployment-params.")
       (if-let [actual-deployment-params (util/clojurize-keys (tyr/deployment-params environment application hash))]
         (success (assoc-in parameters [:new-state :tyranitar :deployment-params] (merge default-deployment-params
-                                                                             (update-in actual-deployment-params [:selected-load-balancers] (comp seq util/list-from)))))
+                                                                                        (update-in actual-deployment-params [:selected-load-balancers] (comp seq util/list-from)))))
         (error-with (ex-info "No deployment params found." {:type ::no-deployment-params
                                                             :application application
                                                             :environment environment})))
@@ -383,15 +384,10 @@
           (success (assoc-in parameters [:previous-state :tyranitar :deployment-params :selected-load-balancers] (keys (util/remove-nil-values found-load-balancers))))))
       (success parameters))))
 
-(defn populate-availability-zones
-  [{:keys [parameters]}]
-  (let [{:keys [region]} parameters
-        state (:new-state parameters)
-        {:keys [tyranitar]} state
-        {:keys [deployment-params]} tyranitar
-        {:keys [selected-zones]} deployment-params]
-    (log/write "Populating availability zones.")
-    (success (assoc-in parameters [:new-state :availability-zones] (map #(str region %) selected-zones)))))
+(defn- has-required-zones?
+  [subnets availability-zones]
+  (let [subnet-zones (apply hash-set (map :availability-zone subnets))]
+    (set/subset? (apply hash-set availability-zones) subnet-zones)))
 
 (defn populate-subnets
   [{:keys [parameters]}]
@@ -399,10 +395,17 @@
         state (:new-state parameters)
         {:keys [availability-zones tyranitar]} state
         {:keys [deployment-params]} tyranitar
-        {:keys [subnet-purpose]} deployment-params]
+        {:keys [selected-zones subnet-purpose]} deployment-params
+        availability-zones (map #(str region %) selected-zones)]
     (log/write (format "Locating subnets with purpose '%s'." subnet-purpose))
     (if-let [subnets (aws/filter-by-availability-zones availability-zones (aws/subnets-by-purpose environment region subnet-purpose))]
-      (success (assoc-in parameters [:new-state :selected-subnets] (map :subnet-id subnets)))
+      (if (has-required-zones? subnets availability-zones)
+        (success (-> parameters
+                     (assoc-in [:new-state :selected-subnets] (map :subnet-id subnets))
+                     (assoc-in [:new-state :availability-zones] (map :availability-zone subnets))))
+        (error-with (ex-info (format "Availability zone requirement of %s cannot be satisfied by subnets with purpose '%s'." selected-zones subnet-purpose) {:type ::zone-to-subnet-mismatch
+                                                                                                                                                             :purpose subnet-purpose
+                                                                                                                                                             :selected-zones selected-zones})))
       (error-with (ex-info "No subnets found for purpose." {:type ::no-subnets
                                                             :purpose subnet-purpose})))))
 

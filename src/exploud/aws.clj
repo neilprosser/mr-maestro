@@ -232,7 +232,9 @@
 
 (defn filter-by-availability-zones
   [availability-zones subnets]
-  (seq (filter (partial has-zone? availability-zones) subnets)))
+  (if-not (seq availability-zones)
+    subnets
+    (seq (filter (partial has-zone? availability-zones) subnets))))
 
 (defn instances
   [environment region instance-ids]

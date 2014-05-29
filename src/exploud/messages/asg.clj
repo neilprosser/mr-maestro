@@ -507,7 +507,7 @@
         (if (aws/auto-scaling-group old-auto-scaling-group-name environment region)
           (do
             (when (= 1 attempt)
-              (log/write (format "Waiting for auto scaling group '%s' to be deleted (%d/%d)." old-auto-scaling-group-name attempt max-attempts)))
+              (log/write (format "Waiting for auto scaling group '%s' to be deleted." old-auto-scaling-group-name)))
             (capped-retry-after 10000 attempt max-attempts))
           (do
             (log/write (format "Finished deletion of auto scaling group '%s'." old-auto-scaling-group-name))
