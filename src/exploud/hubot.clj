@@ -39,7 +39,7 @@
                                user application version image-id environment message))))))
 
 (defn speak-about-deployment-undo
-  [{:keys [application environment silent undo-message user] :as deployment}]
+  [{:keys [application environment silent undo-message undo-user] :as deployment}]
   (when-not silent
     (let [new-image-id (get-in deployment [:new-state :image-details :id])
           new-version (get-in deployment [:new-state :image-details :version])
@@ -47,5 +47,5 @@
           old-version (get-in deployment [:previous-state :image-details :version])]
       (if (and old-image-id
                old-version)
-        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" user application new-version new-image-id environment old-version old-image-id undo-message))
-        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s. %s" user application new-version new-image-id environment undo-message))))))
+        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" undo-user application new-version new-image-id environment old-version old-image-id undo-message))
+        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s. %s" undo-user application new-version new-image-id environment undo-message))))))

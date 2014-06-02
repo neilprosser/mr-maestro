@@ -75,10 +75,11 @@
                                     :previous-state {:image-details {:id "old-image-id"
                                                                      :version "2.51"}}
                                     :undo-message "Some undo message."
+                                    :undo-user "otheruser"
                                     :user "user"})
       => nil
       (provided
-       (speak "503594" "user is undoing deployment of application v2.52 (new-image-id) in environment and replacing it with v2.51 (old-image-id). Some undo message.") => nil))
+       (speak "503594" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment and replacing it with v2.51 (old-image-id). Some undo message.") => nil))
 
 (fact "that making Hubot speak about a deployment being undone with no previous state has the right message"
       (speak-about-deployment-undo {:application "application"
@@ -86,10 +87,11 @@
                                     :new-state {:image-details {:id "new-image-id"
                                                                 :version "2.52"}}
                                     :undo-message "Some undo message."
+                                    :undo-user "otheruser"
                                     :user "user"})
       => nil
       (provided
-       (speak "503594" "user is undoing deployment of application v2.52 (new-image-id) in environment. Some undo message.") => nil))
+       (speak "503594" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment. Some undo message.") => nil))
 
 (fact "that making Hubot speak about a silent deployment being undone has the right message"
       (speak-about-deployment-undo {:application "application"
@@ -100,6 +102,7 @@
                                                                      :version "2.51"}}
                                     :silent true
                                     :undo-message "Some undo message."
+                                    :undo-user "otheruser"
                                     :user "user"})
       => nil
       (provided

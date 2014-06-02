@@ -70,11 +70,11 @@
   parameters)
 
 (defn undo
-  [{:keys [application environment message region] :as parameters}]
+  [{:keys [application environment message region user] :as parameters}]
   (if-let [id (in-progress? parameters)]
     (if-let [deployment (es/deployment id)]
       (if (= "failed" (:status deployment))
-        (let [updated-deployment (assoc deployment :status "running" :undo true :undo-message message)]
+        (let [updated-deployment (assoc deployment :status "running" :undo true :undo-message message :undo-user user)]
           (es/upsert-deployment id updated-deployment)
           (tasks/enqueue {:action :exploud.messages.data/start-deployment
                           :parameters updated-deployment})

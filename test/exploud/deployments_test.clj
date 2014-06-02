@@ -82,7 +82,8 @@
   {:application "application"
    :environment "environment"
    :message "message"
-   :region "region"})
+   :region "region"
+   :user "user"})
 
 (fact "that undoing a deployment which isn't already in progress throws an exception"
       (undo undo-params) => (throws ExceptionInfo "Deployment is not in progress")
@@ -110,12 +111,14 @@
        (es/upsert-deployment "id" {:id "id"
                                    :status "running"
                                    :undo true
-                                   :undo-message "message"}) => ..es-result..
+                                   :undo-message "message"
+                                   :undo-user "user"}) => ..es-result..
        (tasks/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:id "id"
                                     :status "running"
                                     :undo true
-                                    :undo-message "message"}}) => ..enqueue-result..))
+                                    :undo-message "message"
+                                    :undo-user "user"}}) => ..enqueue-result..))
 
 (def rollback-params
   {:application "application"

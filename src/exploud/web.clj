@@ -230,13 +230,14 @@
             (response {:id id}))))
 
    (POST "/applications/:application/:environment/undo"
-         [application environment message silent]
+         [application environment message silent user]
          (guarded
           (let [id (deployments/undo {:application application
                                       :environment environment
                                       :message message
                                       :region default-region
-                                      :silent silent})]
+                                      :silent silent
+                                      :user user})]
             (response {:id id}))))
 
    (POST "/applications/:application/:environment/rollback"
