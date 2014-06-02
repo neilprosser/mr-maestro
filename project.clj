@@ -7,7 +7,7 @@
                  [camel-snake-kebab "0.1.5"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
-                 [clj-http "0.9.1"]
+                 [clj-http "0.9.2"]
                  [clj-time "0.7.0"]
                  [clojurewerkz/elastisch "2.0.0-rc1"]
                  [com.cemerick/url "0.1.1"]
