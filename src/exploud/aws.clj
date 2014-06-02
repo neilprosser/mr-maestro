@@ -7,6 +7,7 @@
              [securitytoken :as sts]
              [sqs :as sqs]]
             [cheshire.core :as json]
+            [io.clj.logging :refer [with-logging-context]]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
@@ -213,7 +214,12 @@
 
 (defn- metadata-from-tag
   [subnet]
-  (json/decode (:value (get (util/map-by-property :key (:tags subnet)) "immutable_metadata")) true))
+  (try
+    (json/decode (:value (get (util/map-by-property :key (:tags subnet)) "immutable_metadata")) true)
+    (catch Exception e
+      (with-logging-context {:subnet-id (:subnet-id subnet)}
+       (log/warn e "Failed to parse immutable_metadata for subnet"))
+      nil)))
 
 (defn- has-purpose?
   [purpose subnet]
