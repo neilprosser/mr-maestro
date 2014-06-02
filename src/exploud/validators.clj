@@ -135,8 +135,8 @@
 
 (def scheduled-action-validators
   {:cron v/required
-   :desired-capacity [v/required positive?]
-   :max [v/required positive?]
+   :desired-capacity [v/required zero-or-more?]
+   :max [v/required zero-or-more?]
    :min [v/required zero-or-more?]})
 
 (v/defvalidator valid-scheduled-actions?
