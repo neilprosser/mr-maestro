@@ -90,6 +90,24 @@
                                                     {:auto-scaling-group-name "search-poke"}
                                                     {:auto-scaling-group-name "app2-poke-v000"}]))
 
+(fact "that getting the subnets for a specific purpose handles no subnets coming back"
+      (subnets-by-purpose "environment" "region" "purpose")
+      => nil
+      (provided
+       (ec2/describe-subnets anything) => {:subnets []}))
+
+(fact "that getting the subnets for a specific purpose gracefully handles a subnet missing the `immutable_metadata` tag"
+      (subnets-by-purpose "environment" "region" "purpose")
+      => nil
+      (provided
+       (ec2/describe-subnets anything) => {:subnets [{:tags [{:key "something" :value "whatever"}]}]}))
+
+(fact "that getting the subnets for a specific purpose gracefully handles a subnet with invalid JSON in the `immutable_metadata` tag"
+      (subnets-by-purpose "environment" "region" "purpose")
+      => nil
+      (provided
+       (ec2/describe-subnets anything) => {:subnets [{:tags [{:key "immutable_metadata" :value "garbage"}]}]}))
+
 (fact "that filtering subnets by availability zone works when something is specified"
       (filter-by-availability-zones ["eu-west-1b"] [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
       => [{:subnet-id "2" :availability-zone "eu-west-1b"}])
