@@ -19,6 +19,7 @@
               :exploud.messages.data/verify-tyranitar-hash
               :exploud.messages.data/get-tyranitar-application-properties
               :exploud.messages.data/get-tyranitar-deployment-params
+              :exploud.messages.data/validate-deployment-params
               :exploud.messages.data/get-tyranitar-launch-data
               :exploud.messages.data/populate-previous-state
               :exploud.messages.data/populate-previous-tyranitar-application-properties
@@ -64,6 +65,7 @@
               :exploud.messages.asg/delete-old-auto-scaling-group
               :exploud.messages.asg/wait-for-old-auto-scaling-group-deletion
               :exploud.messages.asg/delete-old-launch-configuration
+              :exploud.messages.asg/scale-down-after-deployment
               :exploud.messages.notification/send-completion-notification
               :exploud.messages.data/complete-deployment))
 

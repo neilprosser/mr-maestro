@@ -1,5 +1,6 @@
 (ns exploud.messages.data
-  (:require [clj-time.core :as time]
+  (:require [bouncer.core :as b]
+            [clj-time.core :as time]
             [clojure
              [set :as set]
              [string :as str]]
@@ -13,7 +14,8 @@
              [shuppet :as shuppet]
              [tyranitar :as tyr]
              [userdata :as ud]
-             [util :as util]]
+             [util :as util]
+             [validators :as v]]
             [ring.util.codec :refer [base64-decode]]))
 
 (def ^:private required-security-group-names
@@ -155,6 +157,27 @@
                                                             :environment environment})))
       (catch Exception e
         (error-with e)))))
+
+(defn generate-validation-message
+  [result]
+  (str/trim (str "Validation result:\n"
+                 (with-out-str
+                   (doseq [[key value] result
+                           message value]
+                     (println (str "* " message)))))))
+
+(defn validate-deployment-params
+  [{:keys [parameters]}]
+  (let [state (:new-state parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        validation-result (b/validate deployment-params v/deployment-params-validators)]
+    (log/write "Validating deployment params.")
+    (if-let [details (first validation-result)]
+      (do
+        (log/write (generate-validation-message details))
+        (error-with (ex-info "Deployment params are invalid." {:type ::invalid-deployment-params})))
+      (success parameters))))
 
 (defn get-tyranitar-launch-data
   [{:keys [parameters]}]

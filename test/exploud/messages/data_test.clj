@@ -172,6 +172,15 @@
       (provided
        (tyr/deployment-params "environment" "application" "hash") => {:desiredCapacity 23}))
 
+(fact "that generating a validation message does what is required"
+      (generate-validation-message {:something '("something has one problem" "something has another problem")
+                                    :other ["other is broken"]})
+      => "Validation result:\n* other is broken\n* something has one problem\n* something has another problem")
+
+(fact "that validating Tyranitar deployment params is an error if the validation fails"
+      (validate-deployment-params {:parameters {:new-state {:tyranitar {:deployment-params {:max "a"}}}}})
+      => (contains {:status :error}))
+
 (fact "that getting no Tyranitar launch data is an error"
       (get-tyranitar-launch-data {:parameters {:application "application"
                                                :environment "environment"
@@ -179,6 +188,10 @@
       => (contains {:status :error})
       (provided
        (tyr/launch-data "environment" "application" "hash") => nil))
+
+(fact "that validating Tyranitar deployment params is successful if the validation succeeds"
+      (validate-deployment-params {:parameters {:new-state {:tyranitar {:deployment-params {}}}}})
+      => (contains {:status :success}))
 
 (fact "that an error while getting Tyranitar launch data is an error"
       (get-tyranitar-launch-data {:parameters {:application "application"

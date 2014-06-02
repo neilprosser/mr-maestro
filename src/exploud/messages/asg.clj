@@ -533,3 +533,24 @@
         (catch Exception e
           (error-with e)))
       (success parameters))))
+
+(defn scale-down-after-deployment
+  [{:keys [parameters]}]
+  (let [{:keys [environment region]} parameters
+        state-key (util/new-state-key parameters)
+        state (state-key parameters)
+        {:keys [auto-scaling-group-name created tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [scale-down-after-deployment]} deployment-params]
+    (if-not scale-down-after-deployment
+      (success parameters)
+      (try
+        (log/write (format "Resizing auto scaling group '%s' to min 0, max 0." auto-scaling-group-name))
+        (auto/update-auto-scaling-group (aws/config environment region)
+                                        :auto-scaling-group-name auto-scaling-group-name
+                                        :desired-capacity 0
+                                        :max-size 0
+                                        :min-size 0)
+        (success parameters)
+        (catch Exception e
+          (error-with e))))))

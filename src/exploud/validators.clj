@@ -156,7 +156,7 @@
   "The validators we should `apply` to validate deployment log parameters."
   {:since valid-date?})
 
-(def deployment-param-validators
+(def deployment-params-validators
   "The validators we should `apply` to deployment parameters."
   {:default-cooldown positive?
    :desired-capacity positive?
@@ -169,6 +169,7 @@
    :min zero-or-more?
    :pause-after-instances-healthy valid-boolean?
    :pause-after-load-balancers-healthy valid-boolean?
+   :scale-down-after-deployment valid-boolean?
    :scheduled-actions valid-scheduled-actions?
    :selected-zones valid-availability-zones?
    :subnet-purpose valid-subnet-purpose?

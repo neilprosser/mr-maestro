@@ -840,3 +840,61 @@
 
 (fact "that attempting to delete an old launch configuration for a deployment with no previous state is successful and does nothing"
       (delete-old-launch-configuration {:parameters (assoc delete-old-launch-configuration-params :previous-state nil)}) => (contains {:status :success}))
+
+(fact "that attempting to scale down after deployment happens even if we haven't created anything"
+      (scale-down-after-deployment {:parameters {:new-state {:tyranitar {:deployment-params {}}}}})
+      => (contains {:status :success})
+      (provided
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name "asg"
+                                       :desired-capacity 0
+                                       :max-size 0
+                                       :min-size 0) => nil :times 0))
+
+(fact "that attempting to scale down after deployment doesn't happen if we've not been told to"
+      (scale-down-after-deployment {:parameters {:new-state {:auto-scaling-group-name "asg"
+                                                             :created true
+                                                             :tyranitar {:deployment-params {}}}}})
+      => (contains {:status :success})
+      (provided
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name "asg"
+                                       :desired-capacity 0
+                                       :max-size 0
+                                       :min-size 0) => nil :times 0))
+
+(fact "that attempting to scale down after deployment doesn't happen if we've not been told to"
+      (scale-down-after-deployment {:parameters {:new-state {:auto-scaling-group-name "asg"
+                                                             :created true
+                                                             :tyranitar {:deployment-params {:scale-down-after-deployment false}}}}})
+      => (contains {:status :success})
+      (provided
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name "asg"
+                                       :desired-capacity 0
+                                       :max-size 0
+                                       :min-size 0) => nil :times 0))
+
+(fact "that attempting to scale down after deployment happens if we've been told to"
+      (scale-down-after-deployment {:parameters {:new-state {:auto-scaling-group-name "asg"
+                                                             :created true
+                                                             :tyranitar {:deployment-params {:scale-down-after-deployment true}}}}})
+      => (contains {:status :success})
+      (provided
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name "asg"
+                                       :desired-capacity 0
+                                       :max-size 0
+                                       :min-size 0) => nil))
+
+(fact "that an exception happening while attempting to scale down after deployment is an error"
+      (scale-down-after-deployment {:parameters {:new-state {:auto-scaling-group-name "asg"
+                                                             :created true
+                                                             :tyranitar {:deployment-params {:scale-down-after-deployment true}}}}})
+      => (contains {:status :error})
+      (provided
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name "asg"
+                                       :desired-capacity 0
+                                       :max-size 0
+                                       :min-size 0) =throws=> (ex-info "Busted" {})))
