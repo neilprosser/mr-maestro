@@ -57,7 +57,7 @@
 
 (defn upsert-deployment
   [deployment-id document]
-  (esd/create @conn index-name deployment-type (dissoc document :id) :id deployment-id :refresh true))
+  (esd/put @conn index-name deployment-type deployment-id (dissoc document :id) :refresh true))
 
 (defn update-deployment
   [deployment-id partial-document]
@@ -65,7 +65,7 @@
 
 (defn deployment
   [deployment-id]
-  (when-let [document (:_source (esd/get @conn index-name deployment-type deployment-id :routing deployment-id))]
+  (when-let [document (:_source (esd/get @conn index-name deployment-type deployment-id))]
     (assoc document :id deployment-id)))
 
 (defn delete-deployment
@@ -129,7 +129,7 @@
 
 (defn create-task
   [task-id deployment-id document]
-  (esd/create @conn index-name task-type (dissoc document :id) :id task-id :parent deployment-id :refresh true))
+  (esd/put @conn index-name task-type task-id (dissoc document :id) :parent deployment-id :refresh true))
 
 (defn update-task
   [task-id deployment-id partial-document]
@@ -137,7 +137,7 @@
 
 (defn write-log
   [log-id deployment-id document]
-  (esd/create @conn index-name log-type (dissoc document :id) :id log-id :parent deployment-id :refresh true))
+  (esd/put @conn index-name log-type log-id (dissoc document :id) :parent deployment-id :refresh true))
 
 (defn nil-if-no-deployment
   [deployment-id results]
@@ -147,7 +147,7 @@
 
 (defn deployment-tasks
   [deployment-id]
-  (nil-if-no-deployment deployment-id (->> (esd/search @conn index-name task-type :routing deployment-id :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
+  (nil-if-no-deployment deployment-id (->> (esd/search @conn index-name task-type :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
                                            esrsp/hits-from
                                            (map (fn [h] (assoc (:_source h) :id (:_id h))))
                                            (map #(dissoc % :sequence)))))
@@ -155,7 +155,7 @@
 (defn deployment-logs
   [deployment-id since]
   (nil-if-no-deployment deployment-id (let [filters (add-since-date-filter [(parent-filter deployment-type deployment-id)] :date since)]
-                                        (->> (esd/search @conn index-name log-type :routing deployment-id :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
+                                        (->> (esd/search @conn index-name log-type :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
                                              esrsp/hits-from
                                              (map (fn [h] (assoc (:_source h) :id (:_id h))))))))
 

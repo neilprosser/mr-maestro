@@ -1,4 +1,4 @@
-(defproject exploud "0.56-SNAPSHOT"
+(defproject exploud "0.61-SNAPSHOT"
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
@@ -7,7 +7,7 @@
                  [camel-snake-kebab "0.1.5"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
-                 [clj-http "0.9.1"]
+                 [clj-http "0.9.2"]
                  [clj-time "0.7.0"]
                  [clojurewerkz/elastisch "2.0.0-rc1"]
                  [com.cemerick/url "0.1.1"]
@@ -21,6 +21,7 @@
                  [compojure "1.1.8" :exclusions [javax.servlet/servlet-api]]
                  [dire "0.5.2"]
                  [environ "0.5.0"]
+                 [io.clj/logging "0.7.1"]
                  [metrics-clojure "1.1.0"]
                  [metrics-clojure-ring "1.1.0"]
                  [nokia/instrumented-ring-jetty-adapter "0.1.8"]
