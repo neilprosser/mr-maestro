@@ -24,6 +24,10 @@
       (ami-details "absolutelynothinglikeanimage")
       => nil)
 
+(fact "that extracting details from an AMI name gives nil if we're given nil"
+      (ami-details nil)
+      => nil)
+
 (fact "given a collection `list-from` gives back the collection"
       (list-from ["hello" "world"])
       => ["hello" "world"])
