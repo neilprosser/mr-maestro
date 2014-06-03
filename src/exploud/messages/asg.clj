@@ -369,8 +369,9 @@
             (doseq [scheduled-action scheduled-actions]
               (let [[action-name description] scheduled-action
                     {:keys [cron desired-capacity max min]} description
-                    full-name (str/join "-" [auto-scaling-group-name (name action-name)])]
-                (log/write (format "Adding scheduled action '%s'." action-name))
+                    nice-action-name (name action-name)
+                    full-name (str/join "-" [auto-scaling-group-name nice-action-name])]
+                (log/write (format "Adding scheduled action '%s'." nice-action-name))
                 (auto/put-scheduled-update-group-action (aws/config environment region)
                                                         :auto-scaling-group-name auto-scaling-group-name
                                                         :desired-capacity desired-capacity
