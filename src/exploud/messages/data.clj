@@ -271,7 +271,7 @@
       (try
         (log/write (format "Retrieving previous image details for '%s'." image))
         (let [{:keys [name]} (aws/image image environment region)]
-          (success (update-in parameters [:previous-state :image-details] merge (util/ami-details name))))
+          (success (update-in parameters [:previous-state :image-details] merge (util/image-details name))))
         (catch Exception e
           (error-with e)))
       (success parameters))))
@@ -294,7 +294,7 @@
     (try
       (log/write (format "Retrieving image details for '%s'." image))
       (let [{:keys [name]} (aws/image image environment region)]
-        (success (update-in parameters [:new-state :image-details] merge (util/ami-details name))))
+        (success (update-in parameters [:new-state :image-details] merge (util/image-details name))))
       (catch Exception e
         (error-with e)))))
 

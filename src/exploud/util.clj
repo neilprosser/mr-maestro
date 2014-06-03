@@ -25,8 +25,8 @@
       (catch Exception e
         nil))))
 
-(defn ami-details
-  "Extracts details from the name of an AMI in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
+(defn image-details
+  "Extracts details from the name of an image in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
   [name]
   (when name
     (when-let [matches (re-find #"ent-([^-]+)-([\.0-9]+)-([0-9]+)-([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
