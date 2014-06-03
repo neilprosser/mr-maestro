@@ -1,4 +1,4 @@
-(defproject exploud "0.64"
+(defproject exploud "0.65-SNAPSHOT"
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
