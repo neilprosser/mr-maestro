@@ -83,6 +83,7 @@
    :environment "environment"
    :message "message"
    :region "region"
+   :silent true
    :user "user"})
 
 (fact "that undoing a deployment which isn't already in progress throws an exception"
@@ -112,12 +113,14 @@
                                    :status "running"
                                    :undo true
                                    :undo-message "message"
+                                   :undo-silent true
                                    :undo-user "user"}) => ..es-result..
        (tasks/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:id "id"
                                     :status "running"
                                     :undo true
                                     :undo-message "message"
+                                    :undo-silent true
                                     :undo-user "user"}}) => ..enqueue-result..))
 
 (def rollback-params

@@ -74,7 +74,9 @@
                                                                 :version "2.52"}}
                                     :previous-state {:image-details {:id "old-image-id"
                                                                      :version "2.51"}}
+                                    :silent true
                                     :undo-message "Some undo message."
+                                    :undo-silent false
                                     :undo-user "otheruser"
                                     :user "user"})
       => nil
@@ -86,22 +88,25 @@
                                     :environment "environment"
                                     :new-state {:image-details {:id "new-image-id"
                                                                 :version "2.52"}}
+                                    :silent true
                                     :undo-message "Some undo message."
+                                    :undo-silent false
                                     :undo-user "otheruser"
                                     :user "user"})
       => nil
       (provided
        (speak "503594" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment. Some undo message.") => nil))
 
-(fact "that making Hubot speak about a silent deployment being undone has the right message"
+(fact "that making Hubot speak about a silent undo has the right message"
       (speak-about-deployment-undo {:application "application"
                                     :environment "environment"
                                     :new-state {:image-details {:id "new-image-id"
                                                                 :version "2.52"}}
                                     :previous-state {:image-details {:id "old-image-id"
                                                                      :version "2.51"}}
-                                    :silent true
+                                    :silent false
                                     :undo-message "Some undo message."
+                                    :undo-silent true
                                     :undo-user "otheruser"
                                     :user "user"})
       => nil
