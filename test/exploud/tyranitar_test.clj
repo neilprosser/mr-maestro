@@ -105,6 +105,12 @@
       (provided
        (commits "environment" "application") => [{:hash "not the hash"}]))
 
+(fact "that verifying a hash and getting an error throws an exception"
+      (verify-commit-hash "environment" "application" "hash")
+      => (throws ExceptionInfo "Unexpected response")
+      (provided
+       (http/simple-get "http://tyranitar:8080/1.x/applications/environment/application" {:socket-timeout 30000}) => {:status 500}))
+
 (fact "that creating an application does the right thing"
       (create-application "application")
       => ..application..
@@ -144,6 +150,14 @@
            :body ..body..}
        (json/parse-string ..body.. true)
        => {:applications {:application ..application..}}))
+
+(fact "that getting an unexpected response when getting an application is an error"
+      (application "application")
+      => (throws ExceptionInfo "Unexpected response")
+      (provided
+       (http/simple-get "http://tyranitar:8080/1.x/applications"
+                        {:socket-timeout 30000})
+       => {:status 500}))
 
 (fact "that upserting an application creates the application if it doesn't exist"
       (upsert-application "application")

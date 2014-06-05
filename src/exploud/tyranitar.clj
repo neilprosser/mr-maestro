@@ -54,7 +54,8 @@
         {:keys [body status] :as response} (http/simple-get url {:socket-timeout get-timeout})]
     (if (= status 200)
       (json/parse-string body true)
-      (throw (ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
+      (throw (ex-info "Unexpected response" {:type ::unexpected-response
+                                             :response response})))))
 
 (defn application-properties
   "Gets the application properties for an application and environment with a
@@ -78,9 +79,11 @@
   "Gets the list of commits for an application and environment."
   [environment application-name]
   (let [url (commits-url environment application-name)
-        {:keys [body status]} (http/simple-get url {:socket-timeout get-timeout})]
+        {:keys [body status] :as response} (http/simple-get url {:socket-timeout get-timeout})]
     (if (= status 200)
-      (:commits (json/parse-string body true)))))
+      (:commits (json/parse-string body true))
+      (throw (ex-info "Unexpected response" {:type ::unexpected-response
+                                             :response response})))))
 
 (defn last-commit-hash
   "Gets the last commit for an application and environment."
@@ -102,16 +105,19 @@
         {:keys [body status] :as response} raw-response]
     (if (= status 201)
       (json/parse-string body true)
-      (throw ( ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
+      (throw ( ex-info "Unexpected response" {:type ::unexpected-response
+                                              :response response})))))
 
 (defn application
   "Gets the information about the environments for which we have the properties
    of an application. Returns `nil` if we don't know about the application in
    any environment."
   [application-name]
-  (let [{:keys [body status]} (http/simple-get (applications-url) {:socket-timeout get-timeout})]
+  (let [{:keys [body status] :as response} (http/simple-get (applications-url) {:socket-timeout get-timeout})]
     (if (= status 200)
-      ((keyword application-name) (:applications (json/parse-string body true))))))
+      ((keyword application-name) (:applications (json/parse-string body true)))
+      (throw ( ex-info "Unexpected response" {:type ::unexpected-response
+                                              :response response})))))
 
 (defn upsert-application
   "Checks whether an application exists and creates it if it doesn't exist.
