@@ -15,8 +15,6 @@
   (:import (java.lang Integer Throwable)
            (java.util.concurrent TimeUnit)
            (java.util.logging LogManager)
-           (com.yammer.metrics Metrics)
-           (com.yammer.metrics.core MetricName)
            (com.ovi.common.metrics HostnameFactory)
            (com.ovi.common.metrics.graphite GraphiteName
                                             GraphiteReporterFactory
