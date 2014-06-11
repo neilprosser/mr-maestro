@@ -23,19 +23,19 @@
        (http/simple-post anything {:socket-timeout 180000}) =>  {:status 500
                                                                  :body ..body..}))
 
-(fact "apply fails when shuppet fails to return environment list"
+(fact "that apply fails when shuppet fails to return environment list"
       (apply-config ..name..) => (throws ExceptionInfo)
       (provided
        (http/simple-get anything {:socket-timeout 15000}) => {:status 500}))
 
-(fact "apply fails when shuppet fails to apply a configuration"
+(fact "that apply fails when shuppet fails to apply a configuration"
       (apply-config "app") => (throws ExceptionInfo)
       (provided
        (http/simple-get "http://shuppet:8080/1.x/envs" {:socket-timeout 15000}) => {:status 200
                                                                                      :body "{\"environments\":[\"poke\"]}"}
        (http/simple-get "http://shuppet:8080/1.x/envs/poke/apps/app/apply" {:socket-timeout 180000}) => {:status 500}))
 
-(fact "responses are returned when shuppet applies a config"
+(fact "that responses are returned when shuppet applies a config"
       (apply-config "app") => [{:status 200}]
       (provided
        (http/simple-get "http://shuppet:8080/1.x/envs" {:socket-timeout 15000}) => {:status 200

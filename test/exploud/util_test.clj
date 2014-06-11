@@ -28,15 +28,15 @@
       (image-details nil)
       => nil)
 
-(fact "given a collection `list-from` gives back the collection"
+(fact "that given a collection `list-from` gives back the collection"
       (list-from ["hello" "world"])
       => ["hello" "world"])
 
-(fact "given a non-collection `list-from` gives back the thing as a collection"
+(fact "that given a non-collection `list-from` gives back the thing as a collection"
       (list-from "hello")
       => ["hello"])
 
-(fact "given a single nil `list-from` gives back an empty list"
+(fact "that given a single nil `list-from` gives back an empty list"
       (list-from nil)
       => [])
 

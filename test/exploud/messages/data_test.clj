@@ -253,7 +253,7 @@
       (provided
        (aws/security-groups "environment" "region") =throws=> (ex-info "Busted" {})))
 
-(fact "populating previous state when a previous one doesn't exist succeeds"
+(fact "that populating previous state when a previous one doesn't exist succeeds"
       (populate-previous-state {:parameters {:application "application"
                                              :environment "environment"
                                              :region "region"}})
@@ -264,14 +264,14 @@
       (provided
        (aws/last-application-auto-scaling-group "application" "environment" "region") => nil))
 
-(fact "populating previous tyranitar application properties when no previous state exists succeeds"
+(fact "that populating previous tyranitar application properties when no previous state exists succeeds"
       (populate-previous-tyranitar-application-properties {:parameters {:application "application"
                                                                         :environment "environment"}})
       => {:parameters {:application "application"
                        :environment "environment"}
           :status :success})
 
-(fact "getting previous image details when no previous state exists succeeds"
+(fact "that getting previous image details when no previous state exists succeeds"
       (get-previous-image-details {:parameters {:environment "environment"
                                                 :region "region"}})
       => {:parameters {:environment "environment"

@@ -202,13 +202,13 @@
        (info/upsert-application anything "myapplication" anything) => {}))
 
 (fact-group :unit :describe-instances
-            (fact "describe instances returns 200 text/plain when text/plain requested"
+            (fact "that describe instances returns 200 text/plain when text/plain requested"
                   (request :get "/1.x/describe-instances/ditto/poke" {:headers {"accept" "text/plain"}})
                   => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
                   (provided
                    (aws/describe-instances "poke" anything "ditto" nil) => ""))
 
-            (fact "optional state param is passed to describe instances, response is json when not requested"
+            (fact "that optional state param is passed to describe instances, response is json when not requested"
                   (request :get "/1.x/describe-instances/ditto/poke" {:params {:state "stopped"}})
                   => (contains {:status 200 :headers (contains {"Content-Type" "application/json; charset=utf-8"})})
                   (provided
