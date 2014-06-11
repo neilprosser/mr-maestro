@@ -55,8 +55,8 @@
             [lein-release "1.0.73"]
             [lein-ring "0.8.10"]]
 
-  :env {:aws-poke-account-id "poke-account-id"
-        :aws-poke-autoscaling-topic-arn "poke-autoscaling-topic-arn"
+  :env {:aws-dev-account-id "dev-account-id"
+        :aws-dev-autoscaling-topic-arn "dev-autoscaling-topic-arn"
         :aws-prod-account-id "prod-account-id"
         :aws-prod-autoscaling-topic-arn "prod-autoscaling-topic-arn"
         :aws-prod-role-arn "prod-role-arn"
