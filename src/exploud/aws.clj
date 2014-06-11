@@ -15,38 +15,38 @@
              [numel :as numel]
              [util :as util]]))
 
-(def autoscale-queue-name
+(def ^:private autoscale-queue-name
   "The queue name we'll use for sending announcements."
   "autoscale-announcements")
 
-(def poke-account-id
-  "The `poke` account ID."
-  (env :aws-poke-account-id))
+(def ^:private dev-account-id
+  "The `dev` account ID."
+  (env :aws-dev-account-id))
 
-(def prod-account-id
+(def ^:private prod-account-id
   "The `prod` account ID."
   (env :aws-prod-account-id))
 
-(def account-ids
+(def ^:private account-ids
   "Our map of account IDs by environment."
-  {:poke poke-account-id
+  {:poke dev-account-id
    :prod prod-account-id})
 
-(def poke-autoscaling-topic-arn
-  "The `poke` autoscaling topic ARN"
-  (env :aws-poke-autoscaling-topic-arn))
+(def ^:private dev-autoscaling-topic-arn
+  "The `dev` autoscaling topic ARN"
+  (env :aws-dev-autoscaling-topic-arn))
 
-(def prod-autoscaling-topic-arn
+(def ^:private prod-autoscaling-topic-arn
   "The `prod` autoscaling topic ARN"
   (env :aws-prod-autoscaling-topic-arn))
 
-(def autoscaling-topics
+(def ^:private autoscaling-topics
   "Our map of autoscaling topics by environment."
-  {:poke poke-autoscaling-topic-arn
+  {:poke dev-autoscaling-topic-arn
    :prod prod-autoscaling-topic-arn})
 
-(def role-arn
-  "The ARN of the role we want to assume."
+(def ^:private prod-role-arn
+  "The ARN of the `prod` role we want to assume."
   (env :aws-prod-role-arn))
 
 (defn use-current-role?
@@ -58,7 +58,7 @@
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."
   [environment]
   (if-not (use-current-role? environment)
-    (:credentials (sts/assume-role {:role-arn role-arn :role-session-name "exploud"}))))
+    (:credentials (sts/assume-role {:role-arn prod-role-arn :role-session-name "exploud"}))))
 
 (def ^:private proxy-details
   (let [proxy-host (env :aws-proxy-host)

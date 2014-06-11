@@ -1,11 +1,79 @@
 (ns exploud.aws-test
-  (:require [amazonica.aws.ec2 :as ec2]
+  (:require [amazonica.aws
+             [ec2 :as ec2]
+             [securitytoken :as sts]]
             [cheshire.core :as json]
             [environ.core :refer :all]
             [exploud
              [aws :refer :all]
              [numel :as numel]]
             [midje.sweet :refer :all]))
+
+(fact "that we should use the current role for `poke`"
+      (use-current-role? :poke) => truthy)
+
+(fact "that we shouldn't use the current role for `prod`"
+      (use-current-role? :prod) => falsey)
+
+(fact "that we handle the environment as a string when checking whether we should use the current role"
+      (use-current-role? "prod") => falsey)
+
+(fact "that we don't provide alternative credentials when using `poke`"
+      (alternative-credentials-if-necessary :poke) => nil
+      (provided
+       (sts/assume-role {:role-arn "prod-role-arn"
+                         :role-session-name "exploud"}) => nil :times 0))
+
+(fact "that we provide alternative credentials when using `prod`"
+      (alternative-credentials-if-necessary :prod) => ..credentials..
+      (provided
+       (sts/assume-role {:role-arn "prod-role-arn"
+                         :role-session-name "exploud"}) => {:credentials ..credentials..}))
+
+(fact "that config is generated correctly for `poke`"
+      (config :poke "region") => {:potential :alternative
+                                  :endpoint "region"}
+      (provided
+       (alternative-credentials-if-necessary :poke) => {:potential :alternative}))
+
+(fact "that getting the account ID works for `poke`"
+      (account-id :poke) => "dev-account-id")
+
+(fact "that getting the account ID works for `prod`"
+      (account-id :prod) => "prod-account-id")
+
+(fact "that getting the account ID for something unknown gives the same as `poke`"
+      (account-id :whatever) => "dev-account-id")
+
+(fact "that getting the autoscaling topic works for `poke`"
+      (autoscaling-topic :poke) => "dev-autoscaling-topic-arn")
+
+(fact "that getting the autoscaling topic works for `prod`"
+      (autoscaling-topic :prod) => "prod-autoscaling-topic-arn")
+
+(fact "that getting the autoscaling topic for something unknown gives the same as `poke`"
+      (autoscaling-topic :whatever) => "dev-autoscaling-topic-arn")
+
+(fact "that getting the announcement queue URL works for `poke`"
+      (announcement-queue-url "region" :poke) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements")
+
+(fact "that getting the announcement queue URL works for `prod`"
+      (announcement-queue-url "region" :prod) => "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements")
+
+(fact "that getting the announcement queue URL for something unknown gives the same as `poke`"
+      (announcement-queue-url "region" :whatever) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements")
+
+(fact "that the auto scaling group creation message is correct"
+      (asg-created-message "asg") => ..whole-message..
+      (provided
+       (json/generate-string {:Event "autoscaling:ASG_LAUNCH" :AutoScalingGroupName "asg"}) => ..message..
+       (json/generate-string {:Message ..message..}) => ..whole-message..))
+
+(fact "that the auto scaling group deletion message is correct"
+      (asg-deleted-message "asg") => ..whole-message..
+      (provided
+       (json/generate-string {:Event "autoscaling:ASG_TERMINATE" :AutoScalingGroupName "asg"}) => ..message..
+       (json/generate-string {:Message ..message..}) => ..whole-message..))
 
 (fact "ec2/describe-instances is called with name and state"
       (describe-instances "env" "region" "name" "state") => truthy
