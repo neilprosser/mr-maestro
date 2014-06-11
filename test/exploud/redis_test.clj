@@ -7,7 +7,7 @@
 
 (binding [*dummy-connection* true]
 
-  (fact "Enqueuing something does the right thing"
+  (fact "that enqueuing something does the right thing"
         (enqueue ..task..) => ..id..
         (provided
          (car-mq/enqueue "scheduled-tasks" ..task..) => ..id..))
@@ -27,12 +27,94 @@
         (provided
          (car/del "exploud:lock") => ..result..))
 
-  (fact "Application/environment combination is not in-progress when not present"
+  (fact "that determining whether something is not paused when not present"
+        (paused? "app" "env" "region") => falsey
+        (provided
+         (car/hget "exploud:deployments:paused" "app-env-region") => nil))
+
+  (fact "that determining whether something is paused when present"
+        (paused? "app" "env" "region") => truthy
+        (provided
+         (car/hget "exploud:deployments:paused" "app-env-region") => "id"))
+
+  (fact "that getting paused deployments works"
+        (paused) => [{:application "app1" :environment "env1" :id "id1" :region "region1"}
+                     {:application "app2" :environment "env2" :id "id2" :region "region2"}]
+        (provided
+         (car/hgetall "exploud:deployments:paused") => ["app1-env1-region1" "id1" "app2-env2-region2" "id2"]))
+
+  (fact "that getting paused deployments works when nothing is paused"
+        (paused) => []
+        (provided
+         (car/hgetall "exploud:deployments:paused") => []))
+
+  (fact "that pausing a deployment is truthy when it wasn't already paused"
+        (pause "app" "env" "id" "region") => truthy
+        (provided
+         (car/hsetnx "exploud:deployments:paused" "app-env-region" "id") => 1))
+
+  (fact "that pausing a deployment is falsey when it wasn't already paused"
+        (pause "app" "env" "id" "region") => falsey
+        (provided
+         (car/hsetnx "exploud:deployments:paused" "app-env-region" "id") => 0))
+
+  (fact "that unpausing a deployment is truthy when it was already paused"
+        (resume "app" "env" "region") => truthy
+        (provided
+         (car/hdel "exploud:deployments:paused" "app-env-region") => 1))
+
+  (fact "that unpausing a deployment is falsey when it wasn't already paused"
+        (resume "app" "env" "region") => falsey
+        (provided
+         (car/hdel "exploud:deployments:paused" "app-env-region") => 0))
+
+  (fact "that determining whether a pause is registered is truthy when present"
+        (pause-registered? "app" "env" "region") => truthy
+        (provided
+         (car/sismember "exploud:deployments:awaiting-pause" "app-env-region") => 1))
+
+  (fact "that determining whether a pause is registered is falsey when not present"
+        (pause-registered? "app" "env" "region") => falsey
+        (provided
+         (car/sismember "exploud:deployments:awaiting-pause" "app-env-region") => 0))
+
+  (fact "that getting all deployments awaiting a pause works"
+        (awaiting-pause) => [{:application "app1" :environment "env1" :region "region1"}
+                             {:application "app2" :environment "env2" :region "region2"}]
+        (provided
+         (car/smembers "exploud:deployments:awaiting-pause") => ["app1-env1-region1" "app2-env2-region2"]))
+
+  (fact "that getting all deployments awaiting a pause works when there aren't any"
+        (awaiting-pause) => []
+        (provided
+         (car/smembers "exploud:deployments:awaiting-pause") => []))
+
+  (fact "that registering a pause is truthy when one wasn't already present"
+        (register-pause "app" "env" "region") => truthy
+        (provided
+         (car/sadd "exploud:deployments:awaiting-pause" "app-env-region") => 1))
+
+  (fact "that registering a pause is falsey when one was already present"
+        (register-pause "app" "env" "region") => falsey
+        (provided
+         (car/sadd "exploud:deployments:awaiting-pause" "app-env-region") => 0))
+
+  (fact "that unregistering a pause is truthy when one was present"
+        (unregister-pause "app" "env" "region") => truthy
+        (provided
+         (car/srem "exploud:deployments:awaiting-pause" "app-env-region") => 1))
+
+  (fact "that unregistering a pause is truthy when one was present"
+        (unregister-pause "app" "env" "region") => falsey
+        (provided
+         (car/srem "exploud:deployments:awaiting-pause" "app-env-region") => 0))
+
+  (fact "that a deployment is not in-progress when not present"
         (in-progress? "app" "env" "region") => falsey
         (provided
          (car/hget "exploud:deployments:in-progress" "app-env-region") => nil))
 
-  (fact "Application/environment combination is in-progress when present"
+  (fact "that a deployment is in-progress when present"
         (in-progress? "app" "env" "region") => truthy
         (provided
          (car/hget "exploud:deployments:in-progress" "app-env-region") => "id"))
@@ -49,12 +131,12 @@
      :id "id"
      :region "region"})
 
-  (fact "Beginning a deployment when one doesn't exist gives true"
+  (fact "that beginning a deployment when one doesn't exist gives true"
         (begin-deployment begin-deployment-params) => true
         (provided
          (car/hsetnx "exploud:deployments:in-progress" "app-env-region" "id") => 1))
 
-  (fact "Beginning a deployment when one already exists give false"
+  (fact "that beginning a deployment when one already exists give false"
         (begin-deployment begin-deployment-params) => false
         (provided
          (car/hsetnx "exploud:deployments:in-progress" "app-env-region" "id") => 0))
@@ -64,13 +146,13 @@
      :environment "env"
      :region "region"})
 
-  (fact "Ending a deployment which exists returns true"
+  (fact "that ending a deployment which exists returns true"
         (end-deployment end-deployment-params) => true
         (provided
          (car/srem "exploud:deployments:awaiting-pause" "app-env-region") => 0
          (car/hdel "exploud:deployments:in-progress" "app-env-region") => 1))
 
-  (fact "Ending a deployment which didn't exist returns false"
+  (fact "that ending a deployment which didn't exist returns false"
         (end-deployment end-deployment-params) => false
         (provided
          (car/srem "exploud:deployments:awaiting-pause" "app-env-region") => 0
