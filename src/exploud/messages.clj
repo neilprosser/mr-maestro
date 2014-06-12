@@ -6,8 +6,8 @@
              [deployments :as deployments]
              [elasticsearch :as es]
              [log :as log]
+             [redis :as redis]
              [responses :refer :all]
-             [tasks :as tasks]
              [util :as util]]))
 
 (defn rewrap
@@ -121,7 +121,7 @@
              next-action)
     (let [{:keys [parameters]} message]
       (if-not (should-pause? message)
-        (tasks/enqueue {:action next-action
+        (redis/enqueue {:action next-action
                         :parameters parameters})
         (do
           (log/write "Pausing deployment")

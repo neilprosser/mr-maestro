@@ -4,7 +4,7 @@
              [deployments :as deployments]
              [elasticsearch :as es]
              [messages :refer :all]
-             [tasks :as tasks]]
+             [redis :as redis]]
             [midje.sweet :refer :all]))
 
 (fact "that rewrapping the message does what we want"
@@ -126,7 +126,7 @@
       (provided
        (successful? ..result..) => true
        (should-pause? anything) => false
-       (tasks/enqueue {:action :some-action
+       (redis/enqueue {:action :some-action
                        :parameters ..parameters..}) => ..enqueue..))
 
 (fact "that we don't enqueue the next task if there isn't one"
@@ -135,7 +135,7 @@
       (enqueue-next-task params) => params
       (provided
        (successful? ..result..) => true
-       (tasks/enqueue anything) => ..enqueue.. :times 0))
+       (redis/enqueue anything) => ..enqueue.. :times 0))
 
 (fact "that we don't enqueue the next task if we've been unsuccessful"
       (def params {:message {:parameters ..parameters..}
@@ -144,7 +144,7 @@
       (enqueue-next-task params) => params
       (provided
        (successful? ..result..) => false
-       (tasks/enqueue anything) => ..enqueue.. :times 0))
+       (redis/enqueue anything) => ..enqueue.. :times 0))
 
 (fact "that we don't enqueue the next task if we should pause"
       (def params {:message {:parameters ..parameters..}
@@ -155,7 +155,7 @@
        (successful? ..result..) => true
        (should-pause? {:parameters ..parameters..}) => true
        (deployments/pause ..parameters..) => ..pause..
-       (tasks/enqueue anything) => ..enqueue.. :times 0))
+       (redis/enqueue anything) => ..enqueue.. :times 0))
 
 (fact "that we're finishing if there's no next action"
       (finishing? {}) => true)

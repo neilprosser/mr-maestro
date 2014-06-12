@@ -3,8 +3,7 @@
             [exploud
              [deployments :refer :all]
              [elasticsearch :as es]
-             [redis :as redis]
-             [tasks :as tasks]]
+             [redis :as redis]]
             [midje.sweet :refer :all])
   (:import clojure.lang.ExceptionInfo))
 
@@ -55,7 +54,7 @@
                                    :start ..start..
                                    :status "running"
                                    :region "region"}) => ..es-result..
-       (tasks/enqueue {:action :exploud.messages.data/start-deployment-preparation
+       (redis/enqueue {:action :exploud.messages.data/start-deployment-preparation
                        :parameters {:application "application"
                                     :environment "environment"
                                     :id "id"
@@ -115,7 +114,7 @@
                                    :undo-message "message"
                                    :undo-silent true
                                    :undo-user "user"}) => ..es-result..
-       (tasks/enqueue {:action :exploud.messages.data/start-deployment
+       (redis/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:id "id"
                                     :status "running"
                                     :undo true
