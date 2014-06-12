@@ -4,8 +4,7 @@
              [actions :as actions]
              [elasticsearch :as es]
              [log :as log]
-             [redis :as redis]
-             [tasks :as tasks]]))
+             [redis :as redis]]))
 
 (defn locked?
   []
@@ -56,7 +55,7 @@
   (if (redis/begin-deployment deployment)
     (let [updated-deployment (assoc deployment :start (time/now) :status "running")]
       (es/upsert-deployment id updated-deployment)
-      (tasks/enqueue {:action :exploud.messages.data/start-deployment-preparation
+      (redis/enqueue {:action :exploud.messages.data/start-deployment-preparation
                       :parameters updated-deployment})
       deployment)
     (throw (ex-info "Deployment already in progress" {:type ::deployment-in-progress
@@ -76,7 +75,7 @@
       (if (= "failed" (:status deployment))
         (let [updated-deployment (assoc deployment :status "running" :undo true :undo-message message :undo-silent silent :undo-user user)]
           (es/upsert-deployment id updated-deployment)
-          (tasks/enqueue {:action :exploud.messages.data/start-deployment
+          (redis/enqueue {:action :exploud.messages.data/start-deployment
                           :parameters updated-deployment})
           (:id updated-deployment))
         (throw (ex-info "Deployment has not failed" {:type ::deployment-not-failed
@@ -120,6 +119,6 @@
         deployment (es/deployment id)
         action (actions/resume-action (es/deployment-tasks id))]
     (log/write* id "Resuming deployment")
-    (tasks/enqueue {:action action
+    (redis/enqueue {:action action
                     :parameters deployment})
     (redis/resume application environment region)))
