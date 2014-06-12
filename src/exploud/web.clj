@@ -20,7 +20,6 @@
              [jsonp :refer [wrap-json-with-padding]]
              [pokemon :as pokemon]
              [redis :as redis]
-             [stats :as stats]
              [util :as util]
              [validators :as v]]
             [metrics.ring
@@ -315,27 +314,27 @@
 
    (GET "/stats/deployments/by-user"
         []
-        (response {:result (stats/deployments-by-user)}))
+        (response {:result (es/deployments-by-user)}))
 
    (GET "/stats/deployments/by-application"
         []
-        (response {:result (stats/deployments-by-application)}))
+        (response {:result (es/deployments-by-application)}))
 
    (GET "/stats/deployments/by-month"
         []
-        (response {:result (stats/deployments-by-month)}))
+        (response {:result (es/deployments-by-month)}))
 
    (GET "/stats/deployments/by-day"
         []
-        (response {:result (stats/deployments-by-day)}))
+        (response {:result (es/deployments-by-day)}))
 
    (GET "/stats/deployments/by-month/environment/:environment"
         [environment]
-        (response {:result (stats/deployments-in-environment-by-month environment)}))
+        (response {:result (es/deployments-in-environment-by-month environment)}))
 
    (GET "/stats/deployments/by-day/environment/:environment"
         [environment]
-        (response {:result (stats/deployments-in-environment-by-day environment)})))
+        (response {:result (es/deployments-in-environment-by-day environment)})))
 
   (route/not-found (error-response "Resource not found" 404)))
 
