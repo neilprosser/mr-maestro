@@ -36,7 +36,6 @@
                  [org.slf4j/jul-to-slf4j "1.7.7"]
                  [org.slf4j/log4j-over-slf4j "1.7.7"]
                  [org.slf4j/slf4j-api "1.7.7"]
-                 [overtone/at-at "1.2.0"]
                  [ring-json-params "0.1.3"]
                  [ring-middleware-format "0.3.2"]
                  [slingshot "0.10.3"]]
