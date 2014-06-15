@@ -30,10 +30,9 @@
              [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
             [overtone.at-at :as at-at]
             [ring.middleware
+             [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
-             [json-params :refer [wrap-json-params]]
-             [params :refer [wrap-params]]
-             [keyword-params :refer [wrap-keyword-params]]]
+             [params :refer [wrap-params]]]
             [ring.util.response :refer [header]]))
 
 (def ^:dynamic *version*
@@ -74,16 +73,6 @@
     (if status
       {:status status}
       {:status 404})))
-
-(defn- date-string-to-date
-  "If the value is a string and a valid ISO8601 date then turn it into a date. Otherwise leave it alone."
-  [v]
-  (if (string? v)
-    (try (if-let [vd (fmt/parse (fmt/formatters :date-time) v)]
-           vd
-           v)
-         (catch Exception e v))
-    v))
 
 (defmacro guarded
   "Replace the given body with a Conflict response if Exploud has been locked."
@@ -214,7 +203,7 @@
            (error-response "Illegal application name" 400))))
 
    (POST "/applications/:application/:environment/deploy"
-         [application ami environment hash message silent user]
+         [ami application environment hash message silent user]
          (guarded
           (let [id (util/generate-id)]
             (deployments/begin {:application application
@@ -304,7 +293,11 @@
         (response {:deployments (deployments/awaiting-pause)}))
 
    (DELETE "/in-progress/:application/:environment"
-           [application environment])
+           [application environment]
+           (redis/end-deployment {:application application
+                                  :environment environment
+                                  :region default-region})
+           (response "In-progress deployment removed" "text/plain" 204))
 
    (GET  "/describe-instances/:name/:environment"
          [name environment state :as req]
@@ -356,7 +349,6 @@
       (wrap-ignore-trailing-slash)
       (wrap-json-response)
       (wrap-json-with-padding)
-      (wrap-json-params)
-      (wrap-keyword-params)
+      (wrap-json-kw-params)
       (wrap-params)
       (expose-metrics-as-json)))

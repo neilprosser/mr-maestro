@@ -6,26 +6,90 @@
              [deployments :as deployments]
              [elasticsearch :as es]
              [info :as info]
+             [redis :as redis]
+             [util :as util]
              [web :refer :all]]
-            [midje.sweet :refer :all]))
+            [midje.sweet :refer :all]
+            [ring.util.io :refer [string-input-stream]]))
+
+(defn- json-body
+  [raw-body]
+  {:body (string-input-stream (json/encode raw-body))
+   :headers {"content-type" "application/json"}})
+
+(defn- streamed-body?
+  [{:keys [body]}]
+  (instance? java.io.InputStream body))
+
+(defn- json-response?
+  [{:keys [headers]}]
+  (when-let [content-type (get headers "Content-Type")]
+    (re-find #"^application/(vnd.+)?json" content-type)))
 
 (defn request
   "Creates a compojure request map and applies it to our application.
    Accepts method, resource and optionally an extended map"
-  [method resource & [{:keys [params headers]
-                       :or {:params {}
-                            :headers {}}}]]
-  (let [{:keys [body] :as res} (app {:request-method method
-                                     :uri resource
-                                     :params params
-                                     :headers headers})]
-    (cond-> res
-            (instance? java.io.InputStream body)
-            (assoc :body (json/parse-string (slurp body) true)))))
+  [method resource & [{:keys [body headers params]
+                       :or {:body nil
+                            :headers {}
+                            :params {}}}]]
+  (let [{:keys [body headers] :as response} (app {:body body
+                                                   :headers headers
+                                                   :params params
+                                                   :request-method method
+                                                   :uri resource})]
+    (cond-> response
+            (streamed-body? response) (update-in [:body] slurp)
+            (json-response? response) (update-in [:body] (fn [b] (json/parse-string b true))))))
+
+(fact "that we can set the version"
+      (set-version! "0.1") => anything
+      *version* => "0.1"
+      (set-version! "something") => anything
+      *version* => "something")
 
 (fact "that ping pongs"
-      (:body (request :get "/1.x/ping"))
-      => "pong")
+      (request :get "/ping") => (contains {:body "pong"
+                                           :status 200}))
+
+(fact "that our healthcheck works"
+      (request :get "/healthcheck") => (contains {:status 200}))
+
+(fact "that our legacy ping pongs"
+      (request :get "/1.x/ping") => (contains {:body "pong"
+                                               :status 200}))
+
+(fact "that we've got a pokémon resource"
+      (request :get "/1.x/pokemon") => (contains {:status 200}))
+
+(fact "that we've got an icon resource"
+      (request :get "/1.x/icon") => (contains {:status 200}))
+
+(fact "that we can retrieve the queue status"
+      (request :get "/1.x/queue-status") => (contains {:body {:queue "status"}
+                                                       :status 200})
+      (provided
+       (redis/queue-status) => {:queue "status"}))
+
+(fact "that getting the status of the lock when Exploud is unlocked gives 404"
+      (request :get "/1.x/lock") => (contains {:status 404})
+      (provided
+       (deployments/locked?) => false))
+
+(fact "that getting the status of the lock when Exploud is locked gives 200"
+      (request :get "/1.x/lock") => (contains {:status 200})
+      (provided
+       (deployments/locked?) => true))
+
+(fact "that attempting to lock Exploud works"
+      (request :post "/1.x/lock") => (contains {:status 204})
+      (provided
+       (deployments/lock) => anything))
+
+(fact "that attempting to unlock Exploud works"
+      (request :delete "/1.x/lock") => (contains {:status 204})
+      (provided
+       (deployments/unlock) => anything))
 
 (fact "that getting deployments with no parameters works"
       (request :get "/1.x/deployments")
@@ -171,9 +235,58 @@
       (request :get "/1.x/deployments" {:params {:full "fdasdsdas"}})
       => (contains {:status 400}))
 
+(fact "that getting an individual deployment gives a 404 if it doesn't exist"
+      (request :get "/1.x/deployments/id")
+      => (contains {:status 404})
+      (provided
+       (es/deployment "id") => nil))
+
+(fact "that getting an individual deployment gives it back when it exists"
+      (request :get "/1.x/deployments/id")
+      => (contains {:body {:id "id"
+                           :something "deployment-like"}
+                    :status 200})
+      (provided
+       (es/deployment "id") => {:id "id"
+                                :something "deployment-like"}))
+
+(fact "that deleting a deployment gives the right response"
+      (request :delete "/1.x/deployments/id")
+      => (contains {:status 204})
+      (provided
+       (es/delete-deployment "id") => anything))
+
+(fact "that getting deployment tasks for a deployment which doesn't exist gives a 404"
+      (request :get "/1.x/deployments/id/tasks")
+      => (contains {:status 404})
+      (provided
+       (es/deployment-tasks "id") => nil))
+
+(fact "that getting deployment tasks for a deployment with no tasks gives a 200"
+      (request :get "/1.x/deployments/id/tasks")
+      => (contains {:body {:tasks []}
+                    :status 200})
+      (provided
+       (es/deployment-tasks "id") => []))
+
+(fact "that getting deployment tasks for a deployment with some tasks gives a 200"
+      (request :get "/1.x/deployments/id/tasks")
+      => (contains {:body {:tasks [{:some "task"}
+                                   {:some "other-task"}]}
+                    :status 200})
+      (provided
+       (es/deployment-tasks "id") => [{:some "task"}
+                                      {:some "other-task"}]))
+
+(fact "that getting deployment logs for a deployment which doesn't exist gives a 404"
+      (request :get "/1.x/deployments/id/logs")
+      => (contains {:status 404})
+      (provided
+       (es/deployment-logs "id" nil) => nil))
+
 (fact "that getting deployment logs without a since date passes nil to the underlying function"
-      (:body (request :get "/1.x/deployments/id/logs" {:params {}}))
-      => {:logs [{:a "log"}]}
+      (request :get "/1.x/deployments/id/logs" {:params {}})
+      => (contains {:body {:logs [{:a "log"}]}})
       (provided
        (es/deployment-logs "id" nil) => [{:a "log"}]))
 
@@ -182,34 +295,232 @@
       => (contains {:status 400}))
 
 (fact "that getting deployment logs with a valid since date does the right thing"
-      (:body (request :get "/1.x/deployments/id/logs" {:params {:since "2003-01-04T00:02:01Z"}}))
-      => {:logs [{:a "log"}]}
+      (request :get "/1.x/deployments/id/logs" {:params {:since "2003-01-04T00:02:01Z"}})
+      => (contains {:body {:logs [{:a "log"}]}})
       (provided
        (fmt/parse "2003-01-04T00:02:01Z") => ..date..
        (es/deployment-logs "id" ..date..) => [{:a "log"}]))
 
-(fact "that creating an application with an illegal name returns 400."
+(fact "that getting the list of applications does the right thing"
+      (request :get "/1.x/applications")
+      => (contains {:body {:applications ["applications"]}
+                    :status 200})
+      (provided
+       (info/applications) => {:applications ["applications"]}))
+
+(fact "that getting an application gives a 404 if the application doesn't exist"
+      (request :get "/1.x/applications/application")
+      => (contains {:status 404})
+      (provided
+       (info/application "application") => nil))
+
+(fact "that getting an application gives the details of the application"
+      (request :get "/1.x/applications/application")
+      => (contains {:body {:application "details"}
+                    :status 200})
+      (provided
+       (info/application "application") => {:application "details"}))
+
+(fact "that creating an application with an illegal name returns 400"
       (request :put "/1.x/applications/my-application")
       => (contains {:status 400})
       (provided
        (deployments/locked?) => false))
 
-(fact "that creating an application with a legal name returns 201."
+(fact "that creating an application with a legal name returns 201"
       (request :put "/1.x/applications/myapplication")
       => (contains {:status 201})
       (provided
        (deployments/locked?) => false
        (info/upsert-application anything "myapplication" anything) => {}))
 
-(fact-group :unit :describe-instances
-            (fact "that describe instances returns 200 text/plain when text/plain requested"
-                  (request :get "/1.x/describe-instances/ditto/poke" {:headers {"accept" "text/plain"}})
-                  => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
-                  (provided
-                   (aws/describe-instances "poke" anything "ditto" nil) => ""))
+(fact "that starting a deployment calls through to deployments"
+      (request :post "/1.x/applications/application/environment/deploy" (json-body {:ami "ami"
+                                                                                    :hash "hash"
+                                                                                    :message "message"
+                                                                                    :silent false
+                                                                                    :user "user"}))
+      => (contains {:status 200})
+      (provided
+       (util/generate-id) => "id"
+       (deployments/begin {:application "application"
+                           :environment "environment"
+                           :id "id"
+                           :message "message"
+                           :new-state {:hash "hash"
+                                       :image-details {:id "ami"}}
+                           :region "eu-west-1"
+                           :silent false
+                           :user "user"}) => ..begin-result..))
 
-            (fact "that optional state param is passed to describe instances, response is json when not requested"
-                  (request :get "/1.x/describe-instances/ditto/poke" {:params {:state "stopped"}})
-                  => (contains {:status 200 :headers (contains {"Content-Type" "application/json; charset=utf-8"})})
-                  (provided
-                   (aws/describe-instances "poke" anything "ditto" "stopped") => "")))
+(fact "that starting a deployment without a user substitutes the default user"
+      (request :post "/1.x/applications/application/environment/deploy" (json-body {:ami "ami"
+                                                                                    :hash "hash"
+                                                                                    :message "message"
+                                                                                    :silent false
+                                                                                    :user nil}))
+      => (contains {:status 200})
+      (provided
+       (util/generate-id) => "id"
+       (deployments/begin {:application "application"
+                           :environment "environment"
+                           :id "id"
+                           :message "message"
+                           :new-state {:hash "hash"
+                                       :image-details {:id "ami"}}
+                           :region "eu-west-1"
+                           :silent false
+                           :user default-user}) => ..begin-result..))
+
+(fact "that undoing a deployment calls through to deployments"
+      (request :post "/1.x/applications/application/environment/undo" (json-body {:message "message"
+                                                                                  :silent false
+                                                                                  :user "user"}))
+      => (contains {:status 200})
+      (provided
+       (deployments/undo {:application "application"
+                          :environment "environment"
+                          :message "message"
+                          :region "eu-west-1"
+                          :silent false
+                          :user "user"}) => ..undo-result..))
+
+(fact "that rolling-back a deployment calls through to deployments"
+      (request :post "/1.x/applications/application/environment/rollback" (json-body {:message "message"
+                                                                                      :silent false
+                                                                                      :user "user"}))
+      => (contains {:status 200})
+      (provided
+       (util/generate-id) => "id"
+       (deployments/rollback {:application "application"
+                              :environment "environment"
+                              :id "id"
+                              :message "message"
+                              :region "eu-west-1"
+                              :rollback true
+                              :silent false
+                              :user "user"}) => ..rollback-result..))
+
+(fact "that attempting to pause a deployment for something which isn't deploying gives a 409"
+      (request :post "/1.x/applications/application/environment/pause")
+      => (contains {:status 409})
+      (provided
+       (deployments/in-progress? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
+
+(fact "that attempting to pause a deployment which is in-progress works"
+      (request :post "/1.x/applications/application/environment/pause")
+      => (contains {:status 200})
+      (provided
+       (deployments/in-progress? {:application "application" :environment "environment" :region "eu-west-1"}) => true
+       (deployments/register-pause {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that attempting to unregister a pause for something which isn't paused gives a 409"
+      (request :delete "/1.x/applications/application/environment/pause")
+      => (contains {:status 409})
+      (provided
+       (deployments/pause-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
+
+(fact "that attempting to unregister a pause for something which is paused gives a 200"
+      (request :delete "/1.x/applications/application/environment/pause")
+      => (contains {:status 200})
+      (provided
+       (deployments/pause-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => true
+       (deployments/unregister-pause {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that attempting to resume a deployment which isn't paused gives a 409"
+      (request :post "/1.x/applications/application/environment/resume")
+      => (contains {:status 409})
+      (provided
+       (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
+
+(fact "that attempting to resume a deployment which is paused gives a 200"
+      (request :post "/1.x/applications/application/environment/resume")
+      => (contains {:status 200})
+      (provided
+       (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => true
+       (deployments/resume {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that getting the list of environments works"
+      (request :get "/1.x/environments")
+      => (contains {:body {:environments ["env1" "env2"]}
+                    :status 200})
+      (provided
+       (info/environments "eu-west-1") => ["env1" "env2"]))
+
+(fact "that getting a list of in-progress deployments works"
+      (request :get "/1.x/in-progress")
+      => (contains {:body {:deployments ["deployment1" "deployment2"]}})
+      (provided
+       (deployments/in-progress) => ["deployment1" "deployment2"]))
+
+(fact "that getting a list of paused deployments works"
+      (request :get "/1.x/paused")
+      => (contains {:body {:deployments ["deployment1" "deployment2"]}})
+      (provided
+       (deployments/paused) => ["deployment1" "deployment2"]))
+
+(fact "that getting a list of deployments which are awaiting pause works"
+      (request :get "/1.x/awaiting-pause")
+      => (contains {:body {:deployments ["deployment1" "deployment2"]}})
+      (provided
+       (deployments/awaiting-pause) => ["deployment1" "deployment2"]))
+
+(fact "that we can remove an in-progress deployment"
+      (request :delete "/1.x/in-progress/application/environment")
+      => (contains {:status 204})
+      (provided
+       (redis/end-deployment {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that describe instances returns 200 text/plain when text/plain requested"
+      (request :get "/1.x/describe-instances/ditto/poke" {:headers {"accept" "text/plain"}})
+      => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
+      (provided
+       (aws/describe-instances "poke" anything "ditto" nil) => ""))
+
+(fact "that optional state param is passed to describe instances, response is json when not requested"
+      (request :get "/1.x/describe-instances/ditto/poke" {:params {:state "stopped"}})
+      => (contains {:status 200 :headers (contains {"Content-Type" "application/json; charset=utf-8"})})
+      (provided
+       (aws/describe-instances "poke" anything "ditto" "stopped") => ""))
+
+(fact "that getting our by-user deployment stats works"
+      (request :get "/1.x/stats/deployments/by-user")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-by-user) => {:stats "business"}))
+
+(fact "that getting our by-application deployment stats works"
+      (request :get "/1.x/stats/deployments/by-application")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-by-application) => {:stats "business"}))
+
+(fact "that getting our by-month deployment stats works"
+      (request :get "/1.x/stats/deployments/by-month")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-by-month) => {:stats "business"}))
+
+(fact "that getting our by-day deployment stats works"
+      (request :get "/1.x/stats/deployments/by-day")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-by-day) => {:stats "business"}))
+
+(fact "that getting our by-month and environment deployment stats works"
+      (request :get "/1.x/stats/deployments/by-month/environment/something")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-in-environment-by-month "something") => {:stats "business"}))
+
+(fact "that getting our by-day and environment deployment stats works"
+      (request :get "/1.x/stats/deployments/by-day/environment/something")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-in-environment-by-day "something") => {:stats "business"}))
