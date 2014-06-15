@@ -1,8 +1,10 @@
 (ns exploud.deployments-test
   (:require [clj-time.core :as time]
             [exploud
+             [actions :as actions]
              [deployments :refer :all]
              [elasticsearch :as es]
+             [log :as log]
              [redis :as redis]]
             [midje.sweet :refer :all])
   (:import clojure.lang.ExceptionInfo))
@@ -21,6 +23,36 @@
       (unlock) => ..unlock..
       (provided
        (redis/unlock) => ..unlock..))
+
+(fact "that asking whether a deployment is paused works"
+      (paused? {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/paused? "application" "environment" "region") => ..result..))
+
+(fact "that getting the list of paused deployments works"
+      (paused) => ..result..
+      (provided
+       (redis/paused) => ..result..))
+
+(fact "that registering a pause works"
+      (register-pause {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/register-pause "application" "environment" "region") => ..result..))
+
+(fact "that unregistering a pause works"
+      (unregister-pause {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/unregister-pause "application" "environment" "region") => ..result..))
+
+(fact "that asking whether a pause is registered works"
+      (pause-registered? {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/pause-registered? "application" "environment" "region") => ..result..))
+
+(fact "that getting the list of deployments awaiting a pause works"
+      (awaiting-pause) => ..result..
+      (provided
+       (redis/awaiting-pause) => ..result..))
 
 (def in-progress-params
   {:application "application"
@@ -168,3 +200,25 @@
                :region "region"
                :rollback true
                :user "user"}) => ..begin-result..))
+
+(fact "that pausing a deployment works"
+      (pause {:application "application" :environment "environment" :id "id" :region "region"}) => ..pause-result..
+      (provided
+       (redis/unregister-pause "application" "environment" "region") => ..unregister-pause-result..
+       (redis/pause "application" "environment" "id" "region") => ..pause-result..))
+
+(fact "that resuming a deployment which isn't paused does nothing"
+      (resume {:application "application" :environment "environment" :region "region"}) => nil
+      (provided
+       (redis/in-progress? "application" "environment" "region") => nil))
+
+(fact "that resuming a deployment which is paused does all the right things"
+      (resume {:application "application" :environment "environment" :region "region"}) => ..resume-result..
+      (provided
+       (redis/in-progress? "application" "environment" "region") => "id"
+       (es/deployment "id") => ..deployment..
+       (es/deployment-tasks "id") => ..tasks..
+       (actions/resume-action ..tasks..) => ..action..
+       (log/write* "id" "Resuming deployment") => anything
+       (redis/enqueue {:action ..action.. :parameters ..deployment..}) => ..enqueue-result..
+       (redis/resume "application" "environment" "region") => ..resume-result..))

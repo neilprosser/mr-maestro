@@ -115,10 +115,10 @@
 
 (defn resume
   [{:keys [application environment region]}]
-  (let [id (redis/in-progress? application environment region)
-        deployment (es/deployment id)
-        action (actions/resume-action (es/deployment-tasks id))]
-    (log/write* id "Resuming deployment")
-    (redis/enqueue {:action action
-                    :parameters deployment})
-    (redis/resume application environment region)))
+  (when-let [id (redis/in-progress? application environment region)]
+    (let [deployment (es/deployment id)
+          action (actions/resume-action (es/deployment-tasks id))]
+      (log/write* id "Resuming deployment")
+      (redis/enqueue {:action action
+                      :parameters deployment})
+      (redis/resume application environment region))))
