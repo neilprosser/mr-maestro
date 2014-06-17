@@ -342,6 +342,7 @@
                                                                                     :user "user"}))
       => (contains {:status 200})
       (provided
+       (deployments/locked?) => false
        (util/generate-id) => "id"
        (deployments/begin {:application "application"
                            :environment "environment"
@@ -361,6 +362,7 @@
                                                                                     :user nil}))
       => (contains {:status 200})
       (provided
+       (deployments/locked?) => false
        (util/generate-id) => "id"
        (deployments/begin {:application "application"
                            :environment "environment"
@@ -378,6 +380,7 @@
                                                                                   :user "user"}))
       => (contains {:status 200})
       (provided
+       (deployments/locked?) => false
        (deployments/undo {:application "application"
                           :environment "environment"
                           :message "message"
@@ -391,6 +394,7 @@
                                                                                       :user "user"}))
       => (contains {:status 200})
       (provided
+       (deployments/locked?) => false
        (util/generate-id) => "id"
        (deployments/rollback {:application "application"
                               :environment "environment"
@@ -431,12 +435,14 @@
       (request :post "/1.x/applications/application/environment/resume")
       => (contains {:status 409})
       (provided
+       (deployments/locked?) => false
        (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
 
 (fact "that attempting to resume a deployment which is paused gives a 200"
       (request :post "/1.x/applications/application/environment/resume")
       => (contains {:status 200})
       (provided
+       (deployments/locked?) => false
        (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/resume {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
 
