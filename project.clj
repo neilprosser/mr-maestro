@@ -56,6 +56,7 @@
         :aws-prod-account-id "prod-account-id"
         :aws-prod-autoscaling-topic-arn "prod-autoscaling-topic-arn"
         :aws-prod-role-arn "prod-role-arn"
+        :disable-caching true
         :elasticsearch-url "http://localhost:9200"
         :environment-entertainment-graphite-host "graphite.brislabs.com"
         :environment-entertainment-graphite-port "8080"

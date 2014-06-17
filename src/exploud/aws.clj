@@ -7,12 +7,14 @@
              [securitytoken :as sts]
              [sqs :as sqs]]
             [cheshire.core :as json]
+            [clojure.core.memoize :as memo]
             [io.clj.logging :refer [with-logging-context]]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
             [exploud
              [numel :as numel]
+             [onix :as onix]
              [util :as util]]))
 
 (def ^:private autoscale-queue-name
@@ -28,8 +30,8 @@
   (env :aws-prod-account-id))
 
 (def ^:private account-ids
-  "Our map of account IDs by environment."
-  {:poke dev-account-id
+  "Our map of account IDs by account name keyword."
+  {:dev dev-account-id
    :prod prod-account-id})
 
 (def ^:private dev-autoscaling-topic-arn
@@ -41,13 +43,23 @@
   (env :aws-prod-autoscaling-topic-arn))
 
 (def ^:private autoscaling-topics
-  "Our map of autoscaling topics by environment."
-  {:poke dev-autoscaling-topic-arn
+  "Our map of autoscaling topics by account name keyword."
+  {:dev dev-autoscaling-topic-arn
    :prod prod-autoscaling-topic-arn})
 
 (def ^:private prod-role-arn
   "The ARN of the `prod` role we want to assume."
   (env :aws-prod-role-arn))
+
+(defn- environment-to-account*
+  "Get the account name keyword we should use for an environment. We'll default to `:dev` in the event of not knowing."
+  [environment]
+  (keyword (:account (onix/environment environment) "dev")))
+
+(def environment-to-account
+  (if (env :disable-caching)
+    environment-to-account*
+    (memo/ttl environment-to-account* :ttl/threshold (* 1000 60 15))))
 
 (defn use-current-role?
   "Whether we should use the current IAM role or should assume a role in another account."
@@ -74,14 +86,14 @@
          proxy-details))
 
 (defn account-id
-  "Get the account ID we should use for an environment. We'll default to whatever `:poke` uses in the event of not knowing."
+  "Get the account ID we should use for an environment."
   [environment]
-  ((keyword environment) account-ids (:poke account-ids)))
+  (get account-ids (environment-to-account environment)))
 
 (defn autoscaling-topic
   "Get the autoscaling topic ARN we should use for an environment. We'll default ot whatever `:poke` uses in the event of not knowing."
   [environment]
-  ((keyword environment) autoscaling-topics (:poke autoscaling-topics)))
+  (get autoscaling-topics (environment-to-account environment)))
 
 (defn announcement-queue-url
   "Create the URL for an announcement queue in a region and for an environment."

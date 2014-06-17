@@ -20,6 +20,16 @@
   [application-name]
   (str (url onix-url "1.x" "applications" application-name)))
 
+(defn environments-url
+  "The URL where we can get information about the environments Onix knows about."
+  []
+  (str (url onix-url "1.x" "environments")))
+
+(defn environment-url
+  "The URL where we can get information about a specific environment."
+  [environment-name]
+  (str (url onix-url "1.x" "environments" environment-name)))
+
 (defn property-url
   "The URL where we can get information about the property of an application."
   [application-name property-name]
@@ -65,3 +75,17 @@
   (if-let [application (application application-name)]
     application
     (create-application application-name)))
+
+(defn environment
+  "Gets a particular environment. Returns `nil` if the environment doesn't exist"
+  [environment-name]
+  (let [{:keys [body status]} (http/simple-get (environment-url environment-name))]
+    (when (= status 200)
+      (:metadata (json/parse-string body true)))))
+
+(defn environments
+  "Gets all environments Onix knows about."
+  []
+  (let [{:keys [body status]} (http/simple-get (environments-url))]
+    (when (= status 200)
+      (:environments (json/parse-string body true)))))

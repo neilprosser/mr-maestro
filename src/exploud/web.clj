@@ -278,7 +278,7 @@
 
    (GET "/environments"
         []
-        (response {:environments (info/environments default-region)}))
+        (response {:environments (info/environments)}))
 
    (GET "/in-progress"
         []

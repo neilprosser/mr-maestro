@@ -29,5 +29,10 @@
 
 (defn environments
   "Retrieves a list of all the environments we know about."
-  [region]
-  ["poke" "prod"])
+  []
+  (onix/environments))
+
+(defn environment
+  "The information about a particular environment."
+  [environment-name]
+  (onix/environment environment-name))

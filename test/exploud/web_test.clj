@@ -445,7 +445,7 @@
       => (contains {:body {:environments ["env1" "env2"]}
                     :status 200})
       (provided
-       (info/environments "eu-west-1") => ["env1" "env2"]))
+       (info/environments) => ["env1" "env2"]))
 
 (fact "that getting a list of in-progress deployments works"
       (request :get "/1.x/in-progress")

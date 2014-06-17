@@ -100,3 +100,22 @@
         "http://onix:8080/1.x/applications")
        => {:status 200
            :body "{\"applications\":[\"name1\",\"name2\"]}"}))
+
+(fact "that getting an environment works properly when the environment exists"
+      (environment "env") => ..env..
+      (provided
+       (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 200
+                                                                     :body ..body..}
+       (json/parse-string ..body.. true) => {:metadata ..env..}))
+
+(fact "that getting an environment which doesn't exist gives nil"
+      (environment "env") => nil
+      (provided
+       (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 404}))
+
+(fact "that getting environments works properly"
+      (environments) => ..envs..
+      (provided
+       (http/simple-get "http://onix:8080/1.x/environments") => {:status 200
+                                                                 :body ..body..}
+       (json/parse-string ..body.. true) => {:environments ..envs..}))

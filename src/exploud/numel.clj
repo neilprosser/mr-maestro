@@ -13,7 +13,7 @@
   (url (env :service-numel-poke-url)))
 
 (def prod-numel-url
-  "The base URL for Numel in poke"
+  "The base URL for Numel in prod"
   (url (env :service-numel-prod-url)))
 
 (defn application-registrations-url

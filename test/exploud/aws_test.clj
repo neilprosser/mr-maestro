@@ -6,7 +6,8 @@
             [environ.core :refer :all]
             [exploud
              [aws :refer :all]
-             [numel :as numel]]
+             [numel :as numel]
+             [onix :as onix]]
             [midje.sweet :refer :all]))
 
 (fact "that we should use the current role for `poke`"
@@ -37,31 +38,49 @@
        (alternative-credentials-if-necessary :poke) => {:potential :alternative}))
 
 (fact "that getting the account ID works for `poke`"
-      (account-id :poke) => "dev-account-id")
+      (account-id :poke) => "dev-account-id"
+      (provided
+       (onix/environment :poke) => {:account "dev"}))
 
 (fact "that getting the account ID works for `prod`"
-      (account-id :prod) => "prod-account-id")
+      (account-id :prod) => "prod-account-id"
+      (provided
+       (onix/environment :prod) => {:account "prod"}))
 
 (fact "that getting the account ID for something unknown gives the same as `poke`"
-      (account-id :whatever) => "dev-account-id")
+      (account-id :whatever) => "dev-account-id"
+      (provided
+       (onix/environment :whatever) => nil))
 
 (fact "that getting the autoscaling topic works for `poke`"
-      (autoscaling-topic :poke) => "dev-autoscaling-topic-arn")
+      (autoscaling-topic :poke) => "dev-autoscaling-topic-arn"
+      (provided
+       (onix/environment :poke) => {:account "dev"}))
 
 (fact "that getting the autoscaling topic works for `prod`"
-      (autoscaling-topic :prod) => "prod-autoscaling-topic-arn")
+      (autoscaling-topic :prod) => "prod-autoscaling-topic-arn"
+      (provided
+       (onix/environment :prod) => {:account "prod"}))
 
 (fact "that getting the autoscaling topic for something unknown gives the same as `poke`"
-      (autoscaling-topic :whatever) => "dev-autoscaling-topic-arn")
+      (autoscaling-topic :whatever) => "dev-autoscaling-topic-arn"
+      (provided
+       (onix/environment :whatever) => nil))
 
 (fact "that getting the announcement queue URL works for `poke`"
-      (announcement-queue-url "region" :poke) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements")
+      (announcement-queue-url "region" :poke) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements"
+      (provided
+       (onix/environment :poke) => {:account "dev"}))
 
 (fact "that getting the announcement queue URL works for `prod`"
-      (announcement-queue-url "region" :prod) => "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements")
+      (announcement-queue-url "region" :prod) => "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements"
+      (provided
+       (onix/environment :prod) => {:account "prod"}))
 
 (fact "that getting the announcement queue URL for something unknown gives the same as `poke`"
-      (announcement-queue-url "region" :whatever) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements")
+      (announcement-queue-url "region" :whatever) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements"
+      (provided
+       (onix/environment :whatever) => nil))
 
 (fact "that the auto scaling group creation message is correct"
       (asg-created-message "asg") => ..whole-message..

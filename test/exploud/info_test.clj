@@ -38,5 +38,11 @@
        => {:onix "business"}))
 
 (fact "that we can get environments"
-      (environments "region")
-      => ["poke" "prod"])
+      (environments) => ["poke" "prod"]
+      (provided
+       (onix/environments) => ["poke" "prod"]))
+
+(fact "that we can get an environment"
+      (environment "env") => ..env..
+      (provided
+       (onix/environment "env") => ..env..))
