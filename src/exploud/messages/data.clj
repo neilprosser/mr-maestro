@@ -452,7 +452,7 @@
     (log/write "Populating termination policies.")
     (success (assoc-in parameters [:new-state :termination-policies] (util/list-from termination-policy)))))
 
-(defn- to-auto-scaling-group-tag
+(defn to-auto-scaling-group-tag
   [auto-scaling-group-name [k v]]
   {:key (name k)
    :value v
@@ -462,16 +462,18 @@
 
 (defn create-auto-scaling-group-tags
   [{:keys [parameters]}]
-  (let [{:keys [application user]} parameters
+  (let [{:keys [application environment user]} parameters
         state (:new-state parameters)
         {:keys [auto-scaling-group-name image-details onix]} state
-        {:keys [version]} image-details]
+        {:keys [version]} image-details
+        name (format "%s-%s-%s" application environment version)]
     (log/write "Creating auto scaling group tags.")
     (success (assoc-in parameters [:new-state :auto-scaling-group-tags] (map (partial to-auto-scaling-group-tag auto-scaling-group-name) {:Application application
                                                                                                                                           :Contact (:contact onix)
                                                                                                                                           :DeployedBy user
                                                                                                                                           :DeployedOn (str (time/now))
-                                                                                                                                          :Name (format "%s-%s" application version)
+                                                                                                                                          :Environment environment
+                                                                                                                                          :Name name
                                                                                                                                           :Version version})))))
 
 (defn generate-user-data
