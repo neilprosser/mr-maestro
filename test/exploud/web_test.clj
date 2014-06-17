@@ -34,10 +34,10 @@
                             :headers {}
                             :params {}}}]]
   (let [{:keys [body headers] :as response} (app {:body body
-                                                   :headers headers
-                                                   :params params
-                                                   :request-method method
-                                                   :uri resource})]
+                                                  :headers headers
+                                                  :params params
+                                                  :request-method method
+                                                  :uri resource})]
     (cond-> response
             (streamed-body? response) (update-in [:body] slurp)
             (json-response? response) (update-in [:body] (fn [b] (json/parse-string b true))))))
