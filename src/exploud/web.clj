@@ -28,7 +28,6 @@
             [nokia.ring-utils
              [error :refer [wrap-error-handling error-response]]
              [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
-            [overtone.at-at :as at-at]
             [ring.middleware
              [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
