@@ -88,4 +88,4 @@
   []
   (let [{:keys [body status]} (http/simple-get (environments-url))]
     (when (= status 200)
-      (:environments (json/parse-string body true)))))
+      (apply sorted-set (:environments (json/parse-string body true))))))

@@ -38,8 +38,10 @@
   [{:keys [parameters]}]
   (log/write "Validating environment.")
   (if-let [environment (:environment parameters)]
-    (success parameters)
-    (error-with (ex-info "Environment has not been provided." {:type ::application-missing}))))
+    (if (contains? (onix/environments) environment)
+      (success parameters)
+      (error-with (ex-info "Unknown environment provided." {:type ::unknown-environment})))
+    (error-with (ex-info "Environment has not been provided." {:type ::environment-missing}))))
 
 (defn validate-application
   [{:keys [parameters]}]

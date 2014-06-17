@@ -114,8 +114,8 @@
        (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 404}))
 
 (fact "that getting environments works properly"
-      (environments) => ..envs..
+      (environments) => #{"one" "two"}
       (provided
        (http/simple-get "http://onix:8080/1.x/environments") => {:status 200
                                                                  :body ..body..}
-       (json/parse-string ..body.. true) => {:environments ..envs..}))
+       (json/parse-string ..body.. true) => {:environments ["one" "two"]}))

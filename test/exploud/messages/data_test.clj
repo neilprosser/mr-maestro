@@ -24,8 +24,15 @@
 (fact "that validating the environment fails when it is nil"
       (validate-environment {:parameters {:environment nil}}) => (contains {:status :error}))
 
+(fact "that validating the environment fails when it is unknown"
+      (validate-environment {:parameters {:environment "unknown"}}) => (contains {:status :error})
+      (provided
+       (onix/environments) => #{"other" "environment"}))
+
 (fact "that validating the environment works when environment is present"
-      (validate-environment {:parameters {:environment "environment"}}) => (contains {:status :success}))
+      (validate-environment {:parameters {:environment "environment"}}) => (contains {:status :success})
+      (provided
+       (onix/environments) => #{"other" "environment"}))
 
 (fact "that validating the application fails when it is nil"
       (validate-application {:parameters {:application nil}}) => (contains {:status :error}))
