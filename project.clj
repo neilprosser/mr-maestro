@@ -81,7 +81,7 @@
         :service-smtp-host ""
         :service-tyranitar-url "http://tyranitar:8080"}
 
-  :clean-targets [:target-path "docs"]
+  :clean-targets ^{:protect false} [:target-path "docs"]
 
   :lein-release {:release-tasks [:clean :uberjar :pom :rpm]
                  :clojars-url "clojars@clojars.brislabs.com:"}
