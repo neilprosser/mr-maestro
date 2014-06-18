@@ -8,6 +8,7 @@
              [sqs :as sqs]]
             [cheshire.core :as json]
             [clojure.core.memoize :as memo]
+            [clojure.string :as str]
             [io.clj.logging :refer [with-logging-context]]
             [clojure.tools.logging :as log]
             [dire.core :refer [with-pre-hook!]]
@@ -132,7 +133,7 @@
   "Returns a json object describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
-  (let [pattern-name (or (and (clojure.string/blank? name) "*")
+  (let [pattern-name (or (and (str/blank? name) "*")
                          (and (.contains name "*") name)
                          (str name "-*"))
         state (or state "running")
