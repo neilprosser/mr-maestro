@@ -369,14 +369,14 @@
    :user "user"})
 
 (fact "that creating auto scaling group tags creates the right data"
-      (:auto-scaling-group-tags (:new-state (:parameters (create-auto-scaling-group-tags {:parameters create-auto-scaling-group-tags-params}))))
-      => [..application-tag.. ..contact-tag.. ..deployed-by-tag.. ..deployed-on-tag.. ..environment-tag.. ..name-tag.. ..version-tag..]
+      (sort (:auto-scaling-group-tags (:new-state (:parameters (create-auto-scaling-group-tags {:parameters create-auto-scaling-group-tags-params})))))
+      => ["application-tag" "contact-tag" "deployed-by-tag" "deployed-on-tag" "environment-tag" "name-tag" "version-tag"]
       (provided
        (time/now) => "time"
-       (to-auto-scaling-group-tag "new-asg" [:Application "application"]) => ..application-tag..
-       (to-auto-scaling-group-tag "new-asg" [:Contact "new-contact"]) => ..contact-tag..
-       (to-auto-scaling-group-tag "new-asg" [:DeployedBy "user"]) => ..deployed-by-tag..
-       (to-auto-scaling-group-tag "new-asg" [:DeployedOn "time"]) => ..deployed-on-tag..
-       (to-auto-scaling-group-tag "new-asg" [:Environment "environment"]) => ..environment-tag..
-       (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => ..name-tag..
-       (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => ..version-tag..))
+       (to-auto-scaling-group-tag "new-asg" [:Application "application"]) => "application-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Contact "new-contact"]) => "contact-tag"
+       (to-auto-scaling-group-tag "new-asg" [:DeployedBy "user"]) => "deployed-by-tag"
+       (to-auto-scaling-group-tag "new-asg" [:DeployedOn "time"]) => "deployed-on-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Environment "environment"]) => "environment-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => "name-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
