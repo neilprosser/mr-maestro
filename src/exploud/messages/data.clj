@@ -19,7 +19,7 @@
             [ring.util.codec :refer [base64-decode]]))
 
 (def ^:private required-security-group-names
-  ["exploud-healthcheck" "nrpe"])
+  ["exploud-healthcheck" "mgmt-mon-scan"])
 
 (defn start-deployment-preparation
   [{:keys [parameters]}]
