@@ -33,7 +33,6 @@
                  [org.slf4j/jul-to-slf4j "1.7.7"]
                  [org.slf4j/log4j-over-slf4j "1.7.7"]
                  [org.slf4j/slf4j-api "1.7.7"]
-                 [ring-json-params "0.1.3"]
                  [ring-middleware-format "0.3.2"]
                  [slingshot "0.10.3"]]
 
@@ -49,7 +48,7 @@
             [lein-environ "0.5.0"]
             [lein-marginalia "0.7.1"]
             [lein-release "1.0.73"]
-            [lein-ring "0.8.10"]]
+            [lein-ring "0.8.11"]]
 
   :env {:aws-dev-account-id "dev-account-id"
         :aws-dev-autoscaling-topic-arn "dev-autoscaling-topic-arn"
