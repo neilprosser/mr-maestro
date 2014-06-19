@@ -502,7 +502,9 @@
   (let [{:keys [environment region]} parameters
         state-key (util/previous-state-key parameters)
         state (state-key parameters)
-        max-attempts default-max-attempts]
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        max-attempts (get deployment-params :auto-scaling-group-deletion-attempts default-max-attempts)]
     (if-let [old-auto-scaling-group-name (:auto-scaling-group-name state)]
       (try
         (if (aws/auto-scaling-group old-auto-scaling-group-name environment region)

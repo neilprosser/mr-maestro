@@ -807,6 +807,13 @@
       (wait-for-old-auto-scaling-group-deletion {:attempt 1
                                                  :parameters (assoc wait-for-old-auto-scaling-group-deletion-params :previous-state nil)}) => (contains {:status :success}))
 
+(fact "that waiting for the deletion of an old auto scaling group uses given maximum attempts"
+      (wait-for-old-auto-scaling-group-deletion {:attempt 12
+                                                 :parameters (assoc-in wait-for-old-auto-scaling-group-deletion-params [:previous-state :tyranitar :deployment-params :auto-scaling-group-deletion-attempts] 12)})
+      => (contains {:status :error})
+      (provided
+       (aws/auto-scaling-group "old-asg" "environment" "region") => {}))
+
 (def delete-old-launch-configuration-params
   {:environment "environment"
    :region "region"
