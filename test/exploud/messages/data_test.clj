@@ -1,10 +1,12 @@
 (ns exploud.messages.data-test
-  (:require [clj-time.core :as time]
+  (:require [bouncer.core :as b]
+            [clj-time.core :as time]
             [exploud
              [aws :as aws]
              [onix :as onix]
              [shuppet :as shuppet]
-             [tyranitar :as tyr]]
+             [tyranitar :as tyr]
+             [validators :as v]]
             [exploud.messages.data :refer :all]
             [midje.sweet :refer :all]))
 
@@ -15,48 +17,15 @@
                                  :environment "environment"
                                  :phase "preparation"}}))
 
-(fact "that validating the region fails when it is nil"
-      (validate-region {:parameters {:region nil}}) => (contains {:status :error}))
-
-(fact "that validating the region works when region is present"
-      (validate-region {:parameters {:region "region"}}) => (contains {:status :success}))
-
-(fact "that validating the environment fails when it is nil"
-      (validate-environment {:parameters {:environment nil}}) => (contains {:status :error}))
-
-(fact "that validating the environment fails when it is unknown"
-      (validate-environment {:parameters {:environment "unknown"}}) => (contains {:status :error})
+(fact "that validating our deployment succeeds when there's nothing wrong with it"
+      (validate-deployment {:parameters ..deployment..}) => (contains {:status :success})
       (provided
-       (onix/environments) => #{"other" "environment"}))
+       (b/validate ..deployment.. v/deployment-validators) => []))
 
-(fact "that validating the environment works when environment is present"
-      (validate-environment {:parameters {:environment "environment"}}) => (contains {:status :success})
+(fact "that validating our deployment fails when there's something wrong with it"
+      (validate-deployment {:parameters ..deployment..}) => (contains {:status :error})
       (provided
-       (onix/environments) => #{"other" "environment"}))
-
-(fact "that validating the application fails when it is nil"
-      (validate-application {:parameters {:application nil}}) => (contains {:status :error}))
-
-(fact "that validating the application works when application is present"
-      (validate-application {:parameters {:application "application"}}) => (contains {:status :success}))
-
-(fact "that validating the user fails when it is nil"
-      (validate-user {:parameters {:user nil}}) => (contains {:status :error}))
-
-(fact "that validating the user works when user is present"
-      (validate-user {:parameters {:user "user"}}) => (contains {:status :success}))
-
-(fact "that validating the image fails when it is nil"
-      (validate-image {:parameters {:new-state {:image-details {:id nil}}}}) => (contains {:status :error}))
-
-(fact "that validating the image works when image is present"
-      (validate-image {:parameters {:new-state {:image-details {:id "image"}}}}) => (contains {:status :success}))
-
-(fact "that validating the message fails when it is nil"
-      (validate-message {:parameters {:message nil}}) => (contains {:status :error}))
-
-(fact "that validating the message works when message is present"
-      (validate-message {:parameters {:message "message"}}) => (contains {:status :success}))
+       (b/validate ..deployment.. v/deployment-validators) => ["busted"]))
 
 (fact "that getting the Onix metadata fails when there is an error"
       (get-onix-metadata {:parameters {:application "application"}}) => (contains {:status :error})

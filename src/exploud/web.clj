@@ -204,17 +204,29 @@
    (POST "/applications/:application/:environment/deploy"
          [ami application environment hash message silent user]
          (guarded
-          (let [id (util/generate-id)]
-            (deployments/begin {:application application
-                                :environment environment
-                                :id id
-                                :message message
-                                :new-state {:hash hash
-                                            :image-details {:id ami}}
-                                :region default-region
-                                :silent silent
-                                :user (or user default-user)})
-            (response {:id id}))))
+          (let [result (b/validate
+                        {:ami ami
+                         :application application
+                         :environment environment
+                         :hash hash
+                         :message message
+                         :silent silent
+                         :user user}
+                        v/deployment-request-validators)]
+            (if-let [details (first result)]
+              (response {:message "Deployment validation failed"
+                         :details details} nil 400)
+              (let [id (util/generate-id)]
+                (deployments/begin {:application application
+                                    :environment environment
+                                    :id id
+                                    :message message
+                                    :new-state {:hash hash
+                                                :image-details {:id ami}}
+                                    :region default-region
+                                    :silent (true? silent)
+                                    :user (or user default-user)})
+                (response {:id id}))))))
 
    (POST "/applications/:application/:environment/undo"
          [application environment message silent user]

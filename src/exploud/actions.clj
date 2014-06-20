@@ -8,12 +8,7 @@
 
 (def ^:private action-ordering
   (linked-set :exploud.messages.data/start-deployment-preparation
-              :exploud.messages.data/validate-region
-              :exploud.messages.data/validate-environment
-              :exploud.messages.data/validate-application
-              :exploud.messages.data/validate-user
-              :exploud.messages.data/validate-image
-              :exploud.messages.data/validate-message
+              :exploud.messages.data/validate-deployment
               :exploud.messages.data/get-onix-metadata
               :exploud.messages.data/ensure-tyranitar-hash
               :exploud.messages.data/verify-tyranitar-hash

@@ -4,7 +4,9 @@
              [validators :as v]]
             [clj-time.format :as fmt]
             [clojure.string :as str]
-            [exploud.util :as util]))
+            [exploud
+             [onix :as onix]
+             [util :as util]]))
 
 (def healthcheck-types
   #{"EC2" "ELB"})
@@ -133,6 +135,11 @@
     (contains? termination-policies input)
     true))
 
+(v/defvalidator known-environment?
+  {:default-message-format "environment %s is not known"}
+  [input]
+  (contains? (onix/environments) input))
+
 (def scheduled-action-validators
   {:cron v/required
    :desired-capacity [v/required zero-or-more?]
@@ -145,7 +152,7 @@
   (nil? (seq (remove nil? (map (fn [[name description]] (first (b/validate description scheduled-action-validators))) input)))))
 
 (def query-param-validators
-  "The validators we should `apply` to validate query parameters."
+  "The validators we should use to validate query parameters."
   {:from zero-or-more?
    :full valid-boolean?
    :size positive?
@@ -153,11 +160,11 @@
    :start-to valid-date?})
 
 (def log-param-validators
-  "The validators we should `apply` to validate deployment log parameters."
+  "The validators we should use to validate deployment log parameters."
   {:since valid-date?})
 
 (def deployment-params-validators
-  "The validators we should `apply` to deployment parameters."
+  "The validators we should use to validate Tyranitar deployment parameters."
   {:default-cooldown positive?
    :desired-capacity positive?
    :health-check-grace-period positive?
@@ -174,3 +181,20 @@
    :selected-zones valid-availability-zones?
    :subnet-purpose valid-subnet-purpose?
    :termination-policy valid-termination-policy?})
+
+(def deployment-request-validators
+  "The validators we should use to validate deployment requests."
+  {:ami [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
+   :application v/required
+   :environment [v/required known-environment?]
+   :message v/required})
+
+(def deployment-validators
+  "The validators we should use to validate deployment parameters."
+  {:application v/required
+   :environment [v/required known-environment?]
+   :id v/required
+   :message v/required
+   [:new-state :image-details :id] [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
+   :region v/required
+   :user v/required})

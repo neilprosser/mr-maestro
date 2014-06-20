@@ -27,50 +27,13 @@
     (log/write (format "Preparing deployment of '%s' to '%s'." application environment))
     (success (assoc parameters :phase "preparation"))))
 
-(defn validate-region
+(defn validate-deployment
   [{:keys [parameters]}]
-  (log/write "Validating region.")
-  (if-let [region (:region parameters)]
-    (success parameters)
-    (error-with (ex-info "Region has not been provided." {:type ::region-missing}))))
-
-(defn validate-environment
-  [{:keys [parameters]}]
-  (log/write "Validating environment.")
-  (if-let [environment (:environment parameters)]
-    (if (contains? (onix/environments) environment)
-      (success parameters)
-      (error-with (ex-info "Unknown environment provided." {:type ::unknown-environment})))
-    (error-with (ex-info "Environment has not been provided." {:type ::environment-missing}))))
-
-(defn validate-application
-  [{:keys [parameters]}]
-  (log/write "Validating application.")
-  (if-let [application (:application parameters)]
-    (success parameters)
-    (error-with (ex-info "Application has not been provided." {:type ::application-missing}))))
-
-(defn validate-user
-  [{:keys [parameters]}]
-  (log/write "Validating user.")
-  (if-let [user (:user parameters)]
-    (success parameters)
-    (error-with (ex-info "User has not been provided." {:type ::user-missing}))))
-
-(defn validate-image
-  [{:keys [parameters]}]
-  (log/write "Validating image.")
-  (let [state (:new-state parameters)]
-    (if-let [image (get-in state [:image-details :id])]
-      (success parameters)
-      (error-with (ex-info "Image has not been provided." {:type ::image-missing})))))
-
-(defn validate-message
-  [{:keys [parameters]}]
-  (log/write "Validating message.")
-  (if-let [message (:message parameters)]
-    (success parameters)
-    (error-with (ex-info "Message has not been provided." {:type ::message-missing}))))
+  (log/write "Validating deployment.")
+  (let [result (b/validate parameters v/deployment-validators)]
+    (if-let [details (first result)]
+      (error-with (ex-info "Deployment validation failed." (merge {:type ::deployment-validation-failed} {:details details})))
+      (success parameters))))
 
 (defn get-onix-metadata
   [{:keys [parameters]}]

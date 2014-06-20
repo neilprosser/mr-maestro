@@ -1,5 +1,6 @@
 (ns exploud.web-test
-  (:require [cheshire.core :as json]
+  (:require [bouncer.core :as b]
+            [cheshire.core :as json]
             [clj-time.format :as fmt]
             [exploud
              [aws :as aws]
@@ -8,6 +9,7 @@
              [info :as info]
              [redis :as redis]
              [util :as util]
+             [validators :as v]
              [web :refer :all]]
             [midje.sweet :refer :all]
             [ring.util.io :refer [string-input-stream]]))
@@ -334,25 +336,23 @@
        (deployments/locked?) => false
        (info/upsert-application anything "myapplication" anything) => {}))
 
-(fact "that starting a deployment calls through to deployments"
+(fact "that starting a deployment which is invalid gives a 400"
       (request :post "/1.x/applications/application/environment/deploy" (json-body {:ami "ami"
                                                                                     :hash "hash"
                                                                                     :message "message"
                                                                                     :silent false
                                                                                     :user "user"}))
-      => (contains {:status 200})
+      => (contains {:status 400})
       (provided
        (deployments/locked?) => false
-       (util/generate-id) => "id"
-       (deployments/begin {:application "application"
-                           :environment "environment"
-                           :id "id"
-                           :message "message"
-                           :new-state {:hash "hash"
-                                       :image-details {:id "ami"}}
-                           :region "eu-west-1"
-                           :silent false
-                           :user "user"}) => ..begin-result..))
+       (b/validate {:ami "ami"
+                    :application "application"
+                    :environment "environment"
+                    :hash "hash"
+                    :message "message"
+                    :silent false
+                    :user "user"}
+                   v/deployment-request-validators) => ["busted"]))
 
 (fact "that starting a deployment without a user substitutes the default user"
       (request :post "/1.x/applications/application/environment/deploy" (json-body {:ami "ami"
@@ -363,6 +363,7 @@
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
+       (b/validate anything v/deployment-request-validators) => []
        (util/generate-id) => "id"
        (deployments/begin {:application "application"
                            :environment "environment"
