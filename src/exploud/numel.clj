@@ -26,6 +26,6 @@
   [environment application]
   (let [url (application-registrations-url environment application)
         {:keys [body status] :as response} (http/simple-get url {:socket-timeout timeout})]
-    (if (= 200 status)
-      (json/parse-string body true)
-      (throw (ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
+    (cond (= 200 status) (json/parse-string body true)
+          (= 404 status) nil
+          :else (throw (ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
