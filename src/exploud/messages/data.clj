@@ -32,7 +32,8 @@
   (log/write "Validating deployment.")
   (let [result (b/validate parameters v/deployment-validators)]
     (if-let [details (first result)]
-      (error-with (ex-info "Deployment validation failed." (merge {:type ::deployment-validation-failed} {:details details})))
+      (error-with (ex-info "Deployment validation failed." {:type ::deployment-validation-failed
+                                                            :details details}))
       (success parameters))))
 
 (defn get-onix-metadata
@@ -258,10 +259,14 @@
         image (get-in state [:image-details :id])]
     (try
       (log/write (format "Retrieving image details for '%s'." image))
-      (let [{:keys [name]} (aws/image image environment region)]
-        (success (update-in parameters [:new-state :image-details] merge (util/image-details name))))
+      (if-let [{:keys [name]} (aws/image image environment region)]
+        (success (update-in parameters [:new-state :image-details] merge (util/image-details name)))
+        (do
+          (log/write (format "No image found with ID '%s'. Is the ID correct, or is the image not shared with the relevant account?" image))
+          (error-with (ex-info "Image not found." {:type ::missing-image
+                                                   :image-id image}))))
       (catch Exception e
-        (error-with e)))))
+          (error-with e)))))
 
 (defn verify-image
   [{:keys [parameters]}]

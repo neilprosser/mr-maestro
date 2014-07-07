@@ -6,6 +6,7 @@
              [onix :as onix]
              [shuppet :as shuppet]
              [tyranitar :as tyr]
+             [util :as util]
              [validators :as v]]
             [exploud.messages.data :refer :all]
             [midje.sweet :refer :all]))
@@ -264,6 +265,35 @@
                                              :auto-scaling-group-name "application-environment-v001"}}})
       (provided
        (time/now) => (time/date-time 2014 1 2 3 4 5)))
+
+(fact "that getting image details fills in the correct values"
+      (get-image-details {:parameters {:environment "environment"
+                                       :region "region"
+                                       :new-state {:image-details {:id "image-id"}}}})
+      => (contains {:status :success
+                    :parameters {:environment "environment"
+                                 :region "region"
+                                 :new-state {:image-details {:id "image-id"
+                                                             :details "details"}}}})
+      (provided
+       (aws/image "image-id" "environment" "region") => {:name "image-name"}
+       (util/image-details "image-name") => {:details "details"}))
+
+(fact "that getting an exception while getting image details is an error"
+      (get-image-details {:parameters {:environment "environment"
+                                       :region "region"
+                                       :new-state {:image-details {:id "image-id"}}}})
+      => (contains {:status :error})
+      (provided
+       (aws/image "image-id" "environment" "region") =throws=> (ex-info "Busted" {})))
+
+(fact "that getting the details of a missing image is an error"
+      (get-image-details {:parameters {:environment "environment"
+                                       :region "region"
+                                       :new-state {:image-details {:id "image-id"}}}})
+      => (contains {:status :error})
+      (provided
+       (aws/image "image-id" "environment" "region") => nil))
 
 (fact "that checking Shuppet configuration fails when Shuppet configuration doesn't exist"
       (check-shuppet-configuration {:parameters {:application "application"
