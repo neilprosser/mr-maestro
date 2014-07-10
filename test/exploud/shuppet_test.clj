@@ -51,6 +51,12 @@
        (json/parse-string ..body.. true)
        => ..configuration..))
 
+(fact "that getting configuration does the right thing for the forbidden path"
+      (configuration "environment" "application") => nil
+      (provided
+       (http/simple-get "http://shuppet:8080/1.x/envs/environment/apps/application" {:socket-timeout 15000})
+       => {:status 403}))
+
 (fact "that getting configuration does the right thing for the missing path"
       (configuration "environment" "application") => nil
       (provided

@@ -56,6 +56,7 @@
   [environment app-name]
   (let [{:keys [body status] :as response} (http/simple-get (configuration-url environment app-name) {:socket-timeout get-timeout})]
     (cond (= 200 status) (json/parse-string body true)
+          (= 403 status) nil
           (= 404 status) nil
           :else (throw (ex-info (str "Unexpected status while getting configuration for " app-name " in " environment ".") {:type ::unexpected-response :response response})))))
 
