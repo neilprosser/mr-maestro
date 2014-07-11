@@ -45,7 +45,10 @@
     "r3.8xlarge"
     "r3.large"
     "r3.xlarge"
-    "t1.micro"})
+    "t1.micro"
+    "t2.micro"
+    "t2.small"
+    "t2.medium"})
 
 (def availability-zones
   #{"a" "b" "c"})
