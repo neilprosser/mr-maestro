@@ -295,19 +295,33 @@
       (provided
        (aws/image "image-id" "environment" "region") => nil))
 
+(fact "that checking Shuppet configuration succeeds when Shuppet configuration exists"
+      (check-shuppet-configuration {:parameters {:application "application"
+                                                 :environment "poke"}})
+      => (contains {:status :success})
+      (provided
+       (shuppet/configuration "poke" "application") => {}))
+
 (fact "that checking Shuppet configuration fails when Shuppet configuration doesn't exist"
       (check-shuppet-configuration {:parameters {:application "application"
-                                                 :environment "environment"}})
+                                                 :environment "poke"}})
       => (contains {:status :error})
       (provided
-       (shuppet/configuration "environment" "application") => nil))
+       (shuppet/configuration "poke" "application") => nil))
 
 (fact "that checking Shuppet configuration retries when Shuppet throws up"
       (check-shuppet-configuration {:parameters {:application "application"
-                                                 :environment "environment"}})
+                                                 :environment "prod"}})
       => (contains {:status :retry})
       (provided
-       (shuppet/configuration "environment" "application") =throws=> (ex-info "Busted" {:type :exploud.shuppet/unexpected-response})))
+       (shuppet/configuration "prod" "application") =throws=> (ex-info "Busted" {:type :exploud.shuppet/unexpected-response})))
+
+(fact "that checking Shuppet configuration ignores environments other than 'poke' or 'prod'"
+      (check-shuppet-configuration {:parameters {:application "application"
+                                                 :environment "environment"}})
+      => (contains {:status :success})
+      (provided
+       (shuppet/configuration "environment" "application") => {} :times 0))
 
 (fact "that checking for deleted load balancers removes previously used load balancers which no longer exist"
       (check-for-deleted-load-balancers {:parameters {:environment "environment"

@@ -300,14 +300,16 @@
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters]
     (log/write (format "Checking that Shuppet configuration exists for application '%s' in environment '%s'." application environment))
-    (try
-      (if (shuppet/configuration environment application)
-        (success parameters)
-        (error-with (ex-info "Shuppet configuration missing for the application." {:type ::missing-shuppet
-                                                                                   :application application
-                                                                                   :environment environment})))
-      (catch Exception e
-        (error-with e)))))
+    (if (or (= environment "poke") (= environment "prod"))
+      (try
+        (if (shuppet/configuration environment application)
+          (success parameters)
+          (error-with (ex-info "Shuppet configuration missing for the application." {:type ::missing-shuppet
+                                                                                     :application application
+                                                                                     :environment environment})))
+        (catch Exception e
+          (error-with e)))
+      (success parameters))))
 
 (defn add-required-security-groups
   [{:keys [parameters]}]
