@@ -25,8 +25,6 @@
       (catch Exception e
         nil))))
 
-;ent-indexdaemon-3.0.15-1-para-2014-07-11_10-53-25
-
 (defn image-details
   "Extracts details from the name of an image in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
   [name]
