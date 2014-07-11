@@ -295,6 +295,16 @@
       (provided
        (aws/image "image-id" "environment" "region") => nil))
 
+(fact "that checking whether the image and instance type are compatible results in success when they are"
+      (check-instance-type-compatibility {:parameters {:new-state {:image-details {:virt-type "hvm"}
+                                                                   :tyranitar {:deployment-params {:instance-type "i2.8xlarge"}}}}})
+      => (contains {:status :success}))
+
+(fact "that checking whether the image and instance type are compatible results in an error when they aren't"
+      (check-instance-type-compatibility {:parameters {:new-state {:image-details {:virt-type "para"}
+                                                                   :tyranitar {:deployment-params {:instance-type "t2.micro"}}}}})
+      => (contains {:status :error}))
+
 (fact "that checking Shuppet configuration succeeds when Shuppet configuration exists"
       (check-shuppet-configuration {:parameters {:application "application"
                                                  :environment "poke"}})

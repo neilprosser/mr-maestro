@@ -266,7 +266,7 @@
           (error-with (ex-info "Image not found." {:type ::missing-image
                                                    :image-id image}))))
       (catch Exception e
-          (error-with e)))))
+        (error-with e)))))
 
 (defn verify-image
   [{:keys [parameters]}]
@@ -284,6 +284,18 @@
                                                                                         :image-name image-name}))))
       (catch Exception e
         (error-with e)))))
+
+(defn check-instance-type-compatibility
+  [{:keys [parameters]}]
+  (let [state (:new-state parameters)
+        {:keys [image-details tyranitar]} state
+        {:keys [virt-type]} image-details
+        {:keys [deployment-params]} tyranitar
+        {:keys [instance-type]} deployment-params
+        allowed-instances (v/allowed-instances virt-type)]
+    (if (contains? allowed-instances instance-type)
+      (success parameters)
+      (error-with (ex-info (format "Instance type %s is incompatible with virtualisation type %s" instance-type virt-type) {:type ::unknown-virtualisation-type})))))
 
 (defn check-contact-property
   [{:keys [parameters]}]

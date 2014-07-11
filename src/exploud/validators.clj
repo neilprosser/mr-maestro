@@ -3,7 +3,9 @@
              [core :as b]
              [validators :as v]]
             [clj-time.format :as fmt]
-            [clojure.string :as str]
+            [clojure
+             [set :as set]
+             [string :as str]]
             [exploud
              [onix :as onix]
              [util :as util]]))
@@ -11,10 +13,31 @@
 (def healthcheck-types
   #{"EC2" "ELB"})
 
-(def instance-types
+(def para-instance-types
   #{"c1.medium"
     "c1.xlarge"
     "c3.2xlarge"
+    "c3.4xlarge"
+    "c3.8xlarge"
+    "c3.large"
+    "c3.xlarge"
+    "hi1.4xlarge"
+    "hs1.8xlarge"
+    "m1.large"
+    "m1.medium"
+    "m1.small"
+    "m1.xlarge"
+    "m2.2xlarge"
+    "m2.4xlarge"
+    "m2.xlarge"
+    "m3.2xlarge"
+    "m3.large"
+    "m3.medium"
+    "m3.xlarge"
+    "t1.micro"})
+
+(def hvm-instance-types
+  #{"c3.2xlarge"
     "c3.4xlarge"
     "c3.8xlarge"
     "c3.large"
@@ -29,13 +52,6 @@
     "i2.4xlarge"
     "i2.8xlarge"
     "i2.xlarge"
-    "m1.large"
-    "m1.medium"
-    "m1.small"
-    "m1.xlarge"
-    "m2.2xlarge"
-    "m2.4xlarge"
-    "m2.xlarge"
     "m3.2xlarge"
     "m3.large"
     "m3.medium"
@@ -45,10 +61,18 @@
     "r3.8xlarge"
     "r3.large"
     "r3.xlarge"
-    "t1.micro"
     "t2.micro"
     "t2.small"
     "t2.medium"})
+
+(defn allowed-instances
+  [virtualisation-type]
+  (cond (= (name virtualisation-type) "para") para-instance-types
+        (= (name virtualisation-type) "hvm") hvm-instance-types
+        :else (throw (ex-info (format "Unknown virtualisation type %s" virtualisation-type)))))
+
+(def instance-types
+  (set/union para-instance-types hvm-instance-types))
 
 (def availability-zones
   #{"a" "b" "c"})

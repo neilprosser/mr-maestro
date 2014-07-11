@@ -22,6 +22,7 @@
               :exploud.messages.data/create-names
               :exploud.messages.data/get-image-details
               :exploud.messages.data/verify-image
+              :exploud.messages.data/check-instance-type-compatibility
               :exploud.messages.data/check-contact-property
               :exploud.messages.data/check-shuppet-configuration
               :exploud.messages.data/add-required-security-groups
