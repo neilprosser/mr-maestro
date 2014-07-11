@@ -25,16 +25,19 @@
       (catch Exception e
         nil))))
 
+;ent-indexdaemon-3.0.15-1-para-2014-07-11_10-53-25
+
 (defn image-details
   "Extracts details from the name of an image in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
   [name]
   (when name
-    (when-let [matches (re-find #"ent-([^-]+)-([\.0-9]+)-([0-9]+)-([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
+    (when-let [matches (re-find #"ent-([^-]+)-([\.0-9]+)-([0-9]+)-(?:([a-z]+)-)?([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
       {:image-name name
        :application (nth matches 1)
        :version (nth matches 2)
        :iteration (nth matches 3)
-       :bake-date (time/date-time (string->int (nth matches 4)) (string->int (nth matches 5)) (string->int (nth matches 6)) (string->int (nth matches 7)) (string->int (nth matches 8)) (string->int (nth matches 9)))})))
+       :virt-type (or (nth matches 4) "para")
+       :bake-date (time/date-time (string->int (nth matches 5)) (string->int (nth matches 6)) (string->int (nth matches 7)) (string->int (nth matches 8)) (string->int (nth matches 9)) (string->int (nth matches 10)))})))
 
 (defn generate-id
   "Create a random ID for a deployment or task."
