@@ -51,12 +51,14 @@
 (fact "that getting the account ID works for `poke`"
       (account-id :poke) => "dev-account-id"
       (provided
-       (environments/environment :poke) => {:account "dev"}))
+       (environments/environment :poke) => {:name "poke"
+                                            :metadata {:account "dev"}}))
 
 (fact "that getting the account ID works for `prod`"
       (account-id :prod) => "prod-account-id"
       (provided
-       (environments/environment :prod) => {:account "prod"}))
+       (environments/environment :prod) => {:name "prod"
+                                            :metadata {:account "prod"}}))
 
 (fact "that getting the account ID for something unknown gives the same as `poke`"
       (account-id :whatever) => "dev-account-id"
@@ -66,12 +68,14 @@
 (fact "that getting the autoscaling topic works for `poke`"
       (autoscaling-topic :poke) => "dev-autoscaling-topic-arn"
       (provided
-       (environments/environment :poke) => {:account "dev"}))
+       (environments/environment :poke) => {:name "poke"
+                                            :metadata {:account "dev"}}))
 
 (fact "that getting the autoscaling topic works for `prod`"
       (autoscaling-topic :prod) => "prod-autoscaling-topic-arn"
       (provided
-       (environments/environment :prod) => {:account "prod"}))
+       (environments/environment :prod) => {:name "prod"
+                                            :metadata {:account "prod"}}))
 
 (fact "that getting the autoscaling topic for something unknown gives the same as `poke`"
       (autoscaling-topic :whatever) => "dev-autoscaling-topic-arn"
@@ -81,12 +85,14 @@
 (fact "that getting the announcement queue URL works for `poke`"
       (announcement-queue-url "region" :poke) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements"
       (provided
-       (environments/environment :poke) => {:account "dev"}))
+       (environments/environment :poke) => {:name "poke"
+                                            :metadata {:account "dev"}}))
 
 (fact "that getting the announcement queue URL works for `prod`"
       (announcement-queue-url "region" :prod) => "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements"
       (provided
-       (environments/environment :prod) => {:account "prod"}))
+       (environments/environment :prod) => {:name "prod"
+                                            :metadata {:account "prod"}}))
 
 (fact "that getting the announcement queue URL for something unknown gives the same as `poke`"
       (announcement-queue-url "region" :whatever) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements"

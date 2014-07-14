@@ -55,7 +55,7 @@
 (defn- environment-to-account*
   "Get the account name keyword we should use for an environment. We'll default to `:dev` in the event of not knowing."
   [environment]
-  (keyword (:account (environments/environment environment) "dev")))
+  (keyword (get-in (environments/environment environment) [:metadata :account] "dev")))
 
 (def environment-to-account
   (if (env :disable-caching)
