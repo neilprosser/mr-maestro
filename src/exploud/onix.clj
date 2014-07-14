@@ -81,7 +81,7 @@
   [environment-name]
   (let [{:keys [body status]} (http/simple-get (environment-url (name environment-name)))]
     (when (= status 200)
-      (:metadata (json/parse-string body true)))))
+      (json/parse-string body true))))
 
 (defn environments
   "Gets all environments Onix knows about."

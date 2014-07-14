@@ -290,7 +290,7 @@
 
    (GET "/environments"
         []
-        (response {:environments (keys (environments/environments))}))
+        (response {:environments (apply sorted-set (keys (environments/environments)))}))
 
    (GET "/in-progress"
         []

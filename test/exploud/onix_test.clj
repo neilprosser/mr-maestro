@@ -106,14 +106,14 @@
       (provided
        (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 200
                                                                      :body ..body..}
-       (json/parse-string ..body.. true) => {:metadata ..env..}))
+       (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment works properly when using a keyword"
       (environment :env) => ..env..
       (provided
        (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 200
                                                                      :body ..body..}
-       (json/parse-string ..body.. true) => {:metadata ..env..}))
+       (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment which doesn't exist gives nil"
       (environment "env") => nil
