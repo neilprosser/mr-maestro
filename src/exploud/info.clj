@@ -26,13 +26,3 @@
     (onix/add-property application-name :contact (:email details))
     (shuppet/apply-config application-name)
     (merge (application application-name) tyranitar-application shuppet-application)))
-
-(defn environments
-  "Retrieves a list of all the environments we know about."
-  []
-  (onix/environments))
-
-(defn environment
-  "The information about a particular environment."
-  [environment-name]
-  (onix/environment environment-name))

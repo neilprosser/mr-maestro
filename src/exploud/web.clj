@@ -16,6 +16,7 @@
              [aws :as aws]
              [deployments :as deployments]
              [elasticsearch :as es]
+             [environments :as environments]
              [info :as info]
              [jsonp :refer [wrap-json-with-padding]]
              [pokemon :as pokemon]
@@ -289,7 +290,7 @@
 
    (GET "/environments"
         []
-        (response {:environments (info/environments)}))
+        (response {:environments (keys (environments/environments))}))
 
    (GET "/in-progress"
         []

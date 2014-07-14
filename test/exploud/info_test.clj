@@ -36,13 +36,3 @@
        => ..shuppet-apply..
        (application "application")
        => {:onix "business"}))
-
-(fact "that we can get environments"
-      (environments) => ..envs..
-      (provided
-       (onix/environments) => ..envs..))
-
-(fact "that we can get an environment"
-      (environment "env") => ..env..
-      (provided
-       (onix/environment "env") => ..env..))

@@ -7,6 +7,7 @@
             [environ.core :refer [env]]
             [exploud
              [elasticsearch :as elasticsearch]
+             [environments :as environments]
              [messages :as messages]
              [redis :as redis]
              [web :as web]]
@@ -74,7 +75,8 @@
   (configure-logging)
   (start-graphite-reporting)
   (redis/init messages/handler)
-  (elasticsearch/init))
+  (elasticsearch/init)
+  (environments/init))
 
 (def server
   "Our trusty server."

@@ -14,8 +14,8 @@
             [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
             [exploud
+             [environments :as environments]
              [numel :as numel]
-             [onix :as onix]
              [util :as util]]))
 
 (def ^:private autoscale-queue-name
@@ -55,7 +55,7 @@
 (defn- environment-to-account*
   "Get the account name keyword we should use for an environment. We'll default to `:dev` in the event of not knowing."
   [environment]
-  (keyword (:account (onix/environment environment) "dev")))
+  (keyword (:account (environments/environment environment) "dev")))
 
 (def environment-to-account
   (if (env :disable-caching)
@@ -65,8 +65,8 @@
 (defn use-current-role?
   "Whether we should use the current IAM role or should assume a role in another account."
   [environment-name]
-  (when-let [environment (onix/environment environment-name)]
-    (not= "prod" (get-in environment [:metadata :account]))))
+  (when-let [environment (environments/environment environment-name)]
+    (= "dev" (get-in environment [:metadata :account]))))
 
 (defn alternative-credentials-if-necessary
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."

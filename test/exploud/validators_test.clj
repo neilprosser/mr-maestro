@@ -1,7 +1,7 @@
 (ns exploud.validators-test
   (:require [bouncer.core :as b]
             [exploud
-             [onix :as onix]
+             [environments :as environments]
              [validators :refer :all]]
             [midje.sweet :refer :all]))
 
@@ -260,17 +260,17 @@
 (fact "that our valid deployment request passes validation"
       (first (b/validate deployment-request deployment-request-validators)) => falsey
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment request spots that we need an AMI"
       (first (b/validate (dissoc deployment-request :ami) deployment-request-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment request spots that we need an application"
       (first (b/validate (dissoc deployment-request :application) deployment-request-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment request spots that we need an environment"
       (first (b/validate (dissoc deployment-request :environment) deployment-request-validators)) => truthy)
@@ -278,12 +278,12 @@
 (fact "that validating a deployment request spots that we're using an unknown environment"
       (first (b/validate deployment-request deployment-request-validators)) => truthy
       (provided
-       (onix/environments) => #{}))
+       (environments/environments) => {}))
 
 (fact "that validating a deployment request spots that we need a message"
       (first (b/validate (dissoc deployment-request :message) deployment-request-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (def deployment
   {:application "application"
@@ -297,12 +297,12 @@
 (fact "that our valid deployment passes validation"
       (first (b/validate deployment deployment-validators)) => falsey
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need an application"
       (first (b/validate (dissoc deployment :application) deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need an environment"
       (first (b/validate (dissoc deployment :environment) deployment-validators)) => truthy)
@@ -310,34 +310,34 @@
 (fact "that validating a deployment spots that we're using an unknown environment"
       (first (b/validate deployment deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{}))
+       (environments/environments) => {}))
 
 (fact "that validating a deployment spots that we need an ID"
       (first (b/validate (dissoc deployment :id) deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need a message"
       (first (b/validate (dissoc deployment :message) deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need an image ID"
       (first (b/validate (assoc-in deployment [:new-state :image-details :id] nil) deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need a valid image ID"
       (first (b/validate (assoc-in deployment [:new-state :image-details :id] "ami-whatever") deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need a region"
       (first (b/validate (dissoc deployment :region) deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))
 
 (fact "that validating a deployment spots that we need a user"
       (first (b/validate (dissoc deployment :user) deployment-validators)) => truthy
       (provided
-       (onix/environments) => #{"environment"}))
+       (environments/environments) => {:environment {}}))

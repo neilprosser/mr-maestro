@@ -7,7 +7,7 @@
              [set :as set]
              [string :as str]]
             [exploud
-             [onix :as onix]
+             [environments :as environments]
              [util :as util]]))
 
 (def healthcheck-types
@@ -165,7 +165,7 @@
 (v/defvalidator known-environment?
   {:default-message-format "environment %s is not known"}
   [input]
-  (contains? (onix/environments) input))
+  (contains? (apply hash-set (keys (environments/environments))) (keyword input)))
 
 (def scheduled-action-validators
   {:cron v/required

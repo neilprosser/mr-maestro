@@ -6,6 +6,7 @@
              [aws :as aws]
              [deployments :as deployments]
              [elasticsearch :as es]
+             [environments :as environments]
              [info :as info]
              [redis :as redis]
              [util :as util]
@@ -452,7 +453,8 @@
       => (contains {:body {:environments ["env1" "env2"]}
                     :status 200})
       (provided
-       (info/environments) => #{"env1" "env2"}))
+       (environments/environments) => {:env1 {}
+                                       :env2 {}}))
 
 (fact "that getting a list of in-progress deployments works"
       (request :get "/1.x/in-progress")
