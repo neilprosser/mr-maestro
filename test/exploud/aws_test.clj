@@ -11,23 +11,34 @@
             [midje.sweet :refer :all]))
 
 (fact "that we should use the current role for `poke`"
-      (use-current-role? :poke) => truthy)
+      (use-current-role? :poke) => truthy
+      (provided
+       (onix/environment :poke) => {:name "poke"
+                                    :metadata {:account "dev"}}))
 
 (fact "that we shouldn't use the current role for `prod`"
-      (use-current-role? :prod) => falsey)
+      (use-current-role? :prod) => falsey
+      (provided
+       (onix/environment :prod) => {:name "prod"
+                                    :metadata {:account "prod"}}))
 
 (fact "that we handle the environment as a string when checking whether we should use the current role"
-      (use-current-role? "prod") => falsey)
+      (use-current-role? "prod") => falsey
+      (provided
+       (onix/environment "prod") => {:name "prod"
+                                     :metadata {:account "prod"}}))
 
 (fact "that we don't provide alternative credentials when using `poke`"
       (alternative-credentials-if-necessary :poke) => nil
       (provided
+       (use-current-role? :poke) => true
        (sts/assume-role {:role-arn "prod-role-arn"
                          :role-session-name "exploud"}) => nil :times 0))
 
 (fact "that we provide alternative credentials when using `prod`"
       (alternative-credentials-if-necessary :prod) => ..credentials..
       (provided
+       (use-current-role? :prod) => false
        (sts/assume-role {:role-arn "prod-role-arn"
                          :role-session-name "exploud"}) => {:credentials ..credentials..}))
 
@@ -97,6 +108,7 @@
 (fact "that describe-instances is called with name and state"
       (describe-instances "env" "region" "name" "state") => truthy
       (provided
+       (config anything anything) => {}
        (ec2/describe-instances anything
                                :filters
                                [{:name "tag:Name" :values ["name-*"]}
@@ -107,6 +119,7 @@
 (fact "that describe-instances defaults name and state if nil"
       (describe-instances "env" "region" nil nil) => truthy
       (provided
+       (config anything anything) => {}
        (ec2/describe-instances anything
                                :filters
                                [{:name "tag:Name" :values ["*"]}
@@ -117,6 +130,7 @@
 (fact "that describe-instances preserves name if contains *"
       (describe-instances "env" "region" "part-*-part" nil) => truthy
       (provided
+       (config anything anything) => {}
        (ec2/describe-instances anything
                                :filters
                                [{:name "tag:Name" :values ["part-*-part"]}
@@ -127,6 +141,7 @@
 (fact "that describe-instances-plain formats response for multiple reservations"
       (describe-instances-plain "env" "region" nil nil) => (contains "two")
       (provided
+       (config anything anything) => {}
        (ec2/describe-instances anything
                                anything
                                anything) => {:reservations [{:instances [..instance1..]}
@@ -137,6 +152,7 @@
 (fact "that describe-instances-plain formats response from multiple instances in one reservation"
       (describe-instances-plain "env" "region" nil nil) => (contains "two")
       (provided
+       (config anything anything) => {}
        (ec2/describe-instances anything
                                anything
                                anything) => {:reservations [{:instances [..instance1.. ..instance2..]}]}
@@ -181,18 +197,21 @@
       (subnets-by-purpose "environment" "region" "purpose")
       => nil
       (provided
+       (config anything anything) => {}
        (ec2/describe-subnets anything) => {:subnets []}))
 
 (fact "that getting the subnets for a specific purpose gracefully handles a subnet missing the `immutable_metadata` tag"
       (subnets-by-purpose "environment" "region" "purpose")
       => nil
       (provided
+       (config anything anything) => {}
        (ec2/describe-subnets anything) => {:subnets [{:tags [{:key "something" :value "whatever"}]}]}))
 
 (fact "that getting the subnets for a specific purpose gracefully handles a subnet with invalid JSON in the `immutable_metadata` tag"
       (subnets-by-purpose "environment" "region" "purpose")
       => nil
       (provided
+       (config anything anything) => {}
        (ec2/describe-subnets anything) => {:subnets [{:tags [{:key "immutable_metadata" :value "garbage"}]}]}))
 
 (fact "that filtering subnets by availability zone works when something is specified"

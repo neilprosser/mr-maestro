@@ -24,6 +24,7 @@
       (create-launch-configuration {:parameters create-launch-configuration-params}) => (contains {:status :error})
       (provided
        (aws/launch-configuration "lc" "environment" "region") => nil
+       (aws/config anything anything) => {}
        (auto/create-launch-configuration anything
                                          :launch-configuration-name "lc"
                                          :iam-instance-profile "application"
@@ -44,6 +45,7 @@
       (create-launch-configuration {:parameters create-launch-configuration-params}) => (contains {:status :success})
       (provided
        (aws/launch-configuration "lc" "environment" "region") => nil
+       (aws/config anything anything) => {}
        (auto/create-launch-configuration anything
                                          :launch-configuration-name "lc"
                                          :iam-instance-profile "application"
@@ -86,6 +88,7 @@
       (create-auto-scaling-group {:parameters create-auto-scaling-group-params}) => (contains {:status :error})
       (provided
        (aws/auto-scaling-group "asg" "environment" "region") => nil
+       (aws/config anything anything) => {}
        (auto/create-auto-scaling-group anything
                                        :auto-scaling-group-name "asg"
                                        :availability-zones ["regiona" "regionb"]
@@ -114,6 +117,7 @@
       (create-auto-scaling-group {:parameters create-auto-scaling-group-params}) => (contains {:status :success})
       (provided
        (aws/auto-scaling-group "asg" "environment" "region") => nil
+       (aws/config anything anything) => {}
        (auto/create-auto-scaling-group anything
                                        :auto-scaling-group-name "asg"
                                        :availability-zones ["regiona" "regionb"]
@@ -145,6 +149,7 @@
 (fact "that disabling adding instances errors if there is an exception"
       (disable-adding-instances {:parameters disable-adding-instances-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/suspend-processes anything
                                :auto-scaling-group-name "asg"
                                :scaling-processes ["AddToLoadBalancer"]) =throws=> (ex-info "Busted" {})))
@@ -152,6 +157,7 @@
 (fact "that disabling adding instances returns the correct response if it succeeds"
       (disable-adding-instances {:parameters disable-adding-instances-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/suspend-processes anything
                                :auto-scaling-group-name "asg"
                                :scaling-processes ["AddToLoadBalancer"])
@@ -170,6 +176,7 @@
       (add-scaling-notifications {:parameters add-scaling-notifications-params}) => (contains {:status :error})
       (provided
        (aws/autoscaling-topic "environment") => ..topic..
+       (aws/config anything anything) => {}
        (auto/put-notification-configuration anything
                                             :auto-scaling-group-name "asg"
                                             :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
@@ -182,6 +189,7 @@
       (add-scaling-notifications {:parameters add-scaling-notifications-params}) => (contains {:status :success})
       (provided
        (aws/autoscaling-topic "environment") => ..topic..
+       (aws/config anything anything) => {}
        (auto/put-notification-configuration anything
                                             :auto-scaling-group-name "asg"
                                             :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
@@ -201,6 +209,7 @@
       (provided
        (aws/announcement-queue-url "region" "environment") => ..announcement-queue..
        (aws/asg-created-message "asg") => ..message..
+       (aws/config anything anything) => {}
        (sqs/send-message anything
                          :queue-url ..announcement-queue..
                          :delay-seconds 0
@@ -214,6 +223,7 @@
       (provided
        (aws/announcement-queue-url "region" "environment") => ..announcement-queue..
        (aws/asg-created-message "asg") => ..message..
+       (aws/config anything anything) => {}
        (sqs/send-message anything
                          :queue-url ..announcement-queue..
                          :delay-seconds 0
@@ -234,6 +244,7 @@
 (fact "that resizing an auto scaling group errors if there is an exception"
       (resize-auto-scaling-group {:parameters resize-auto-scaling-group-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/update-auto-scaling-group anything
                                        :auto-scaling-group-name "asg"
                                        :desired-capacity 2
@@ -246,6 +257,7 @@
 (fact "that resizing an auto scaling group returns the correct response if it succeeds"
       (resize-auto-scaling-group {:parameters resize-auto-scaling-group-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/update-auto-scaling-group anything
                                        :auto-scaling-group-name "asg"
                                        :desired-capacity 2
@@ -267,6 +279,7 @@
                                     :parameters wait-for-instances-to-exist-params})
       => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
                                           :max-records 1) =throws=> (ex-info "Busted" {})))
@@ -277,6 +290,7 @@
       => (contains {:status :retry
                     :backoff-ms 10000})
       (provided
+       (aws/config anything anything) => {}
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
                                           :max-records 1) => {:auto-scaling-groups [{:instances []}]}))
@@ -286,6 +300,7 @@
                                     :parameters wait-for-instances-to-exist-params})
       => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
                                           :max-records 1) => {:auto-scaling-groups [{:instances [{}]}]}))
@@ -313,6 +328,7 @@
                                             :parameters wait-for-instances-to-be-in-service-params})
       => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
                                           :max-records 1) =throws=> (ex-info "Busted" {})))
@@ -323,6 +339,7 @@
       => (contains {:status :retry
                     :backoff-ms 10000})
       (provided
+       (aws/config anything anything) => {}
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
                                           :max-records 1) => {:auto-scaling-groups [{:instances [{:lifecycle-state "Busted"}]}]}))
@@ -332,6 +349,7 @@
                                             :parameters wait-for-instances-to-be-in-service-params})
       => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/describe-auto-scaling-groups anything
                                           :auto-scaling-group-names ["asg"]
                                           :max-records 1) => {:auto-scaling-groups [{:instances [{:lifecycle-state "NotReadyYet"} {:lifecycle-state "InService"}]}]}))
@@ -355,6 +373,7 @@
 (fact "that disabling launching instances errors if there is an exception"
       (disable-instance-launching {:parameters disable-instance-launching-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/suspend-processes anything
                                :auto-scaling-group-name "asg"
                                :scaling-processes ["Launch"]) =throws=> (ex-info "Busted" {})))
@@ -362,6 +381,7 @@
 (fact "that disabling launching instances returns the correct response if it succeeds"
       (disable-instance-launching {:parameters disable-instance-launching-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/suspend-processes anything
                                :auto-scaling-group-name "asg"
                                :scaling-processes ["Launch"])
@@ -378,6 +398,7 @@
 (fact "that disabling terminating instances errors if there is an exception"
       (disable-instance-termination {:parameters disable-instance-termination-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/suspend-processes anything
                                :auto-scaling-group-name "asg"
                                :scaling-processes ["Terminate"]) =throws=> (ex-info "Busted" {})))
@@ -385,6 +406,7 @@
 (fact "that disabling terminating instances returns the correct response if it succeeds"
       (disable-instance-termination {:parameters disable-instance-termination-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/suspend-processes anything
                                :auto-scaling-group-name "asg"
                                :scaling-processes ["Terminate"])
@@ -401,6 +423,7 @@
 (fact "that enabling launching instances errors if there is an exception"
       (enable-instance-launching {:parameters enable-instance-launching-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/resume-processes anything
                               :auto-scaling-group-name "asg"
                               :scaling-processes ["Launch"]) =throws=> (ex-info "Busted" {})))
@@ -408,6 +431,7 @@
 (fact "that enabling launching instances returns the correct response if it succeeds"
       (enable-instance-launching {:parameters enable-instance-launching-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/resume-processes anything
                               :auto-scaling-group-name "asg"
                               :scaling-processes ["Launch"])
@@ -424,6 +448,7 @@
 (fact "that enabling terminating instances errors if there is an exception"
       (enable-instance-termination {:parameters enable-instance-termination-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/resume-processes anything
                               :auto-scaling-group-name "asg"
                               :scaling-processes ["Terminate"]) =throws=> (ex-info "Busted" {})))
@@ -431,6 +456,7 @@
 (fact "that enabling terminating instances returns the correct response if it succeeds"
       (enable-instance-termination {:parameters enable-instance-termination-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/resume-processes anything
                               :auto-scaling-group-name "asg"
                               :scaling-processes ["Terminate"])
@@ -447,6 +473,7 @@
 (fact "that enabling adding instances errors if there is an exception"
       (enable-adding-instances {:parameters enable-adding-instances-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/resume-processes anything
                               :auto-scaling-group-name "asg"
                               :scaling-processes ["AddToLoadBalancer"]) =throws=> (ex-info "Busted" {})))
@@ -454,6 +481,7 @@
 (fact "that enabling adding instances returns the correct response if it succeeds"
       (enable-adding-instances {:parameters enable-adding-instances-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/resume-processes anything
                               :auto-scaling-group-name "asg"
                               :scaling-processes ["AddToLoadBalancer"])
@@ -485,6 +513,7 @@
       (register-instances-with-load-balancers {:parameters register-instances-with-load-balancers-params}) => (contains {:status :success})
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "i-1"} {:instance-id "i-2"}]
+       (aws/config anything anything) => {}
        (elb/register-instances-with-load-balancer anything
                                                   :load-balancer-name "lb-1"
                                                   :instances [{:instance-id "i-1"}
@@ -512,6 +541,7 @@
 (fact "that getting an error while adding scheduled actions is an error"
       (add-scheduled-actions {:parameters add-scheduled-actions-params}) => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/put-scheduled-update-group-action anything
                                                :auto-scaling-group-name "asg"
                                                :desired-capacity 1
@@ -529,6 +559,7 @@
 (fact "that adding scheduled actions calls what we expect"
       (add-scheduled-actions {:parameters add-scheduled-actions-params}) => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/put-scheduled-update-group-action anything
                                                :auto-scaling-group-name "asg"
                                                :desired-capacity 1
@@ -658,6 +689,7 @@
       (deregister-old-instances-from-load-balancers {:parameters deregister-old-instances-from-load-balancers-params}) => (contains {:status :success})
       (provided
        (aws/auto-scaling-group-instances "old-asg" "environment" "region") => [{:instance-id "i-1"} {:instance-id "i-2"}]
+       (aws/config anything anything) => {}
        (elb/describe-load-balancers anything
                                     :load-balancer-names ["lb-1"])
        => {:load-balancer-descriptions [{:instances [{:instance-id "i-1"}]}]}
@@ -679,6 +711,7 @@
       (deregister-old-instances-from-load-balancers {:parameters deregister-old-instances-from-load-balancers-params}) => (contains {:status :success})
       (provided
        (aws/auto-scaling-group-instances "old-asg" "environment" "region") => [{:instance-id "i-1"} {:instance-id "i-2"}]
+       (aws/config anything anything) => {}
        (elb/describe-load-balancers anything
                                     :load-balancer-names ["lb-1"])
        => {:load-balancer-descriptions [{:instances []}]}
@@ -710,6 +743,7 @@
       (provided
        (aws/announcement-queue-url "region" "environment") => ..announcement-queue..
        (aws/asg-deleted-message "old-asg") => ..message..
+       (aws/config anything anything) => {}
        (sqs/send-message anything
                          :queue-url ..announcement-queue..
                          :delay-seconds 0
@@ -720,6 +754,7 @@
       (provided
        (aws/announcement-queue-url "region" "environment") => ..announcement-queue..
        (aws/asg-deleted-message "old-asg") => ..message..
+       (aws/config anything anything) => {}
        (sqs/send-message anything
                          :queue-url ..announcement-queue..
                          :delay-seconds 0
@@ -749,6 +784,7 @@
       (delete-old-auto-scaling-group {:parameters delete-old-auto-scaling-group-params}) => (contains {:status :error})
       (provided
        (aws/auto-scaling-group "old-asg" "environment" "region") => {}
+       (aws/config anything anything) => {}
        (auto/delete-auto-scaling-group anything
                                        :auto-scaling-group-name "old-asg"
                                        :force-delete true) =throws=> (ex-info "Busted" {})))
@@ -757,6 +793,7 @@
       (delete-old-auto-scaling-group {:parameters delete-old-auto-scaling-group-params}) => (contains {:status :success})
       (provided
        (aws/auto-scaling-group "old-asg" "environment" "region") => {}
+       (aws/config anything anything) => {}
        (auto/delete-auto-scaling-group anything
                                        :auto-scaling-group-name "old-asg"
                                        :force-delete true) => ..delete-result..))
@@ -835,6 +872,7 @@
       (delete-old-launch-configuration {:parameters delete-old-launch-configuration-params}) => (contains {:status :error})
       (provided
        (aws/launch-configuration "old-lc" "environment" "region") => {}
+       (aws/config anything anything) => {}
        (auto/delete-launch-configuration anything
                                          :launch-configuration-name "old-lc") =throws=> (ex-info "Busted" {})))
 
@@ -842,6 +880,7 @@
       (delete-old-launch-configuration {:parameters delete-old-launch-configuration-params}) => (contains {:status :success})
       (provided
        (aws/launch-configuration "old-lc" "environment" "region") => {}
+       (aws/config anything anything) => {}
        (auto/delete-launch-configuration anything
                                          :launch-configuration-name "old-lc") => ..delete-result..))
 
@@ -888,6 +927,7 @@
                                                              :tyranitar {:deployment-params {:scale-down-after-deployment true}}}}})
       => (contains {:status :success})
       (provided
+       (aws/config anything anything) => {}
        (auto/update-auto-scaling-group anything
                                        :auto-scaling-group-name "asg"
                                        :desired-capacity 0
@@ -900,6 +940,7 @@
                                                              :tyranitar {:deployment-params {:scale-down-after-deployment true}}}}})
       => (contains {:status :error})
       (provided
+       (aws/config anything anything) => {}
        (auto/update-auto-scaling-group anything
                                        :auto-scaling-group-name "asg"
                                        :desired-capacity 0

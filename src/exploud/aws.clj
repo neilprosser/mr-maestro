@@ -64,8 +64,9 @@
 
 (defn use-current-role?
   "Whether we should use the current IAM role or should assume a role in another account."
-  [environment]
-  (not= :prod (keyword environment)))
+  [environment-name]
+  (when-let [environment (onix/environment environment-name)]
+    (not= "prod" (get-in environment [:metadata :account]))))
 
 (defn alternative-credentials-if-necessary
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."

@@ -79,7 +79,7 @@
 (defn environment
   "Gets a particular environment. Returns `nil` if the environment doesn't exist"
   [environment-name]
-  (let [{:keys [body status]} (http/simple-get (environment-url environment-name))]
+  (let [{:keys [body status]} (http/simple-get (environment-url (name environment-name)))]
     (when (= status 200)
       (:metadata (json/parse-string body true)))))
 
