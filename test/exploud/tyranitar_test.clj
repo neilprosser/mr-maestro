@@ -25,6 +25,15 @@
        (http/simple-get
         "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties"
         {:socket-timeout 30000})
+       => {:status 503}))
+
+(fact "that getting application properties which fails with a 500 throws an exception"
+      (application-properties "environment" "application" "hash")
+      => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
+      (provided
+       (http/simple-get
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/application-properties"
+        {:socket-timeout 30000})
        => {:status 500}))
 
 (fact "that getting deployment params does the right thing"
@@ -46,6 +55,15 @@
        (http/simple-get
         "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params"
         {:socket-timeout 30000})
+       => {:status 503}))
+
+(fact "that getting deployment params which fails with a 500 throws an exception"
+      (deployment-params "environment" "application" "hash")
+      => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
+      (provided
+       (http/simple-get
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/deployment-params"
+        {:socket-timeout 30000})
        => {:status 500}))
 
 (fact "that getting launch data does the right thing"
@@ -63,6 +81,15 @@
 (fact "that getting launch data which fails throws an exception"
       (launch-data "environment" "application" "hash")
       => (throws ExceptionInfo "Unexpected response")
+      (provided
+       (http/simple-get
+        "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data"
+        {:socket-timeout 30000})
+       => {:status 503}))
+
+(fact "that getting launch data which fails with a 500 throws an exception"
+      (launch-data "environment" "application" "hash")
+      => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
       (provided
        (http/simple-get
         "http://tyranitar:8080/1.x/applications/environment/application/hash/launch-data"

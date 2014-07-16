@@ -52,10 +52,9 @@
   [environment application-name commit-hash file-name]
   (let [url (file-url environment application-name commit-hash file-name)
         {:keys [body status] :as response} (http/simple-get url {:socket-timeout get-timeout})]
-    (if (= status 200)
-      (json/parse-string body true)
-      (throw (ex-info "Unexpected response" {:type ::unexpected-response
-                                             :response response})))))
+    (cond (= status 200) (json/parse-string body true)
+          (= status 500) (throw (ex-info "Error retrieving file content - is the JSON valid?" {:type ::file-invalid :response response}))
+          :else (throw (ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
 
 (defn application-properties
   "Gets the application properties for an application and environment with a
