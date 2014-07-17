@@ -2,7 +2,7 @@
   :description "Exploud service"
   :url "http://wikis.in.nokia.com/NokiaMusicArchitecture/Exploud"
 
-  :dependencies [[amazonica "0.2.16"]
+  :dependencies [[amazonica "0.2.18"]
                  [bouncer "0.3.0"]
                  [camel-snake-kebab "0.1.5"]
                  [ch.qos.logback/logback-classic "1.1.2"]
