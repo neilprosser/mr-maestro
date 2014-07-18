@@ -20,8 +20,11 @@
 (def default-healthcheck-skip
   false)
 
-(def default-maximum-attempts
+(def default-instances-maximum-attempts
   50)
+
+(def default-load-balancer-maximum-attempts
+  150)
 
 (defn- create-url
   [ip port healthcheck-path]
@@ -57,7 +60,7 @@
         service-port (get application-properties :service.port default-service-port)
         skip-healthcheck? (get application-properties :service.healthcheck.skip default-healthcheck-skip)
         healthcheck-path (util/strip-first-forward-slash (get application-properties :service.healthcheck.path default-healthcheck-path))
-        max-attempts (get deployment-params :instance-healthy-attempts  default-maximum-attempts)
+        max-attempts (get deployment-params :instance-healthy-attempts  default-instances-maximum-attempts)
         min (:min deployment-params)]
     (if-not state
       (do
@@ -108,7 +111,7 @@
         {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [selected-load-balancers]} deployment-params
-        max-attempts (get deployment-params :load-balancer-healthy-attempts default-maximum-attempts)]
+        max-attempts (get deployment-params :load-balancer-healthy-attempts default-load-balancer-maximum-attempts)]
     (if-not state
       (do
         (log/write "No need to check load balancer health.")

@@ -171,7 +171,7 @@
        (aws/auto-scaling-group-instances "asg" "environment" "region") =throws=> (ex-info "Busted" {})))
 
 (fact "that waiting for load balancer health errors if too many unsuccessful attempts have been made"
-      (wait-for-load-balancers-to-be-healthy {:attempt 50
+      (wait-for-load-balancers-to-be-healthy {:attempt 150
                                               :parameters wait-for-load-balancers-to-be-healthy-params})
       => (contains {:status :error})
       (provided
