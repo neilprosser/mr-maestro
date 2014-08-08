@@ -157,6 +157,7 @@
                                    :undo-message "message"
                                    :undo-silent true
                                    :undo-user "user"}) => ..es-result..
+       (redis/resume "application" "environment" "region") => ..resume-result..
        (redis/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:application "application"
                                     :environment "environment"
@@ -180,6 +181,7 @@
                                    :undo-message "message"
                                    :undo-silent true
                                    :undo-user "user"}) => ..es-result..
+       (redis/resume "application" "environment" "region") => ..resume-result..
        (redis/enqueue {:action :exploud.messages.data/start-deployment
                        :parameters {:id "id"
                                     :status "running"
