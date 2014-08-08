@@ -128,13 +128,47 @@
        (redis/in-progress? "application" "environment" "region") => "id"
        (es/deployment "id") => nil))
 
-(fact "that undoing a deployment which hasn't failed throws an exception"
-      (undo undo-params) => (throws ExceptionInfo "Deployment has not failed")
+(fact "that undoing a deployment which hasn't failed and isn't paused throws an exception"
+      (undo undo-params) => (throws ExceptionInfo "Deployment has not failed or is not paused")
       (provided
        (redis/in-progress? "application" "environment" "region") => "id"
-       (es/deployment "id") => {:status "invalid"}))
+       (redis/paused? "application" "environment" "region") => false
+       (es/deployment "id") => {:application "application"
+                                :environment "environment"
+                                :region "region"
+                                :status "invalid"}))
 
-(fact "that undoing a deployment triggers the right task"
+(fact "that undoing a deployment which is paused triggers the right task"
+      (undo undo-params) => "id"
+      (provided
+       (redis/in-progress? "application" "environment" "region") => "id"
+       (redis/paused? "application" "environment" "region") => true
+       (es/deployment "id") => {:application "application"
+                                :environment "environment"
+                                :id "id"
+                                :region "region"
+                                :status "running"}
+       (es/upsert-deployment "id" {:application "application"
+                                   :environment "environment"
+                                   :id "id"
+                                   :region "region"
+                                   :status "running"
+                                   :undo true
+                                   :undo-message "message"
+                                   :undo-silent true
+                                   :undo-user "user"}) => ..es-result..
+       (redis/enqueue {:action :exploud.messages.data/start-deployment
+                       :parameters {:application "application"
+                                    :environment "environment"
+                                    :id "id"
+                                    :region "region"
+                                    :status "running"
+                                    :undo true
+                                    :undo-message "message"
+                                    :undo-silent true
+                                    :undo-user "user"}}) => ..enqueue-result..))
+
+(fact "that undoing a failed deployment triggers the right task"
       (undo undo-params) => "id"
       (provided
        (redis/in-progress? "application" "environment" "region") => "id"

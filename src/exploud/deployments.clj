@@ -72,14 +72,16 @@
   [{:keys [application environment message region silent user] :as parameters}]
   (if-let [id (in-progress? parameters)]
     (if-let [deployment (es/deployment id)]
-      (if (= "failed" (:status deployment))
+      (if (or (= "failed" (:status deployment))
+              (paused? deployment))
         (let [updated-deployment (assoc deployment :status "running" :undo true :undo-message message :undo-silent silent :undo-user user)]
           (es/upsert-deployment id updated-deployment)
+          (redis/resume application environment region)
           (redis/enqueue {:action :exploud.messages.data/start-deployment
                           :parameters updated-deployment})
           (:id updated-deployment))
-        (throw (ex-info "Deployment has not failed" {:type ::deployment-not-failed
-                                                     :id id})))
+        (throw (ex-info "Deployment has not failed or is not paused" {:type ::deployment-not-failed
+                                                                      :id id})))
       (throw (ex-info "Deployment could not be found" {:type ::deployment-not-found
                                                        :id id})))
     (throw (ex-info "Deployment is not in progress" {:type ::deployment-not-in-progress
