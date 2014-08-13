@@ -325,6 +325,10 @@
         []
         (response {:result (es/deployments-by-application)}))
 
+   (GET "/stats/deployments/by-year"
+        []
+        (response {:result (es/deployments-by-year)}))
+
    (GET "/stats/deployments/by-month"
         []
         (response {:result (es/deployments-by-month)}))
@@ -332,6 +336,10 @@
    (GET "/stats/deployments/by-day"
         []
         (response {:result (es/deployments-by-day)}))
+
+   (GET "/stats/deployments/by-year/environment/:environment"
+        [environment]
+        (response {:result (es/deployments-in-environment-by-year environment)}))
 
    (GET "/stats/deployments/by-month/environment/:environment"
         [environment]
