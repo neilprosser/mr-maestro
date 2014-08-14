@@ -1,6 +1,8 @@
 (ns exploud.notification
   "## Deals with various notifications"
-  (:require [environ.core :refer [env]]
+  (:require [clojure.tools.logging :refer [warn]]
+            [environ.core :refer [env]]
+            [exploud.log :as log]
             [postal.core :as mail]))
 
 (def ^:private content-type
@@ -71,4 +73,8 @@
              (prod? environment))
     (let [host (env :service-smtp-host)]
       (when (seq host)
-        (mail/send-message {:host host} (build-message deployment))))))
+        (try
+          (mail/send-message {:host host} (build-message deployment))
+          (catch javax.mail.MessagingException e
+            (log/write "Failed to send completion message.")
+            (warn e "Failed to send completion message")))))))

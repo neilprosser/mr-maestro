@@ -1,6 +1,8 @@
 (ns exploud.notification-test
   (:require [environ.core :refer [env]]
-            [exploud.notification :refer :all]
+            [exploud
+             [log :as log]
+             [notification :refer :all]]
             [midje.sweet :refer :all]
             [postal.core :as mail]))
 
@@ -77,3 +79,20 @@
       => nil
       (provided
        (mail/send-message anything anything) => nil :times 0))
+
+(fact "that an exception while sending the completion message doesn't screw things up"
+      (send-completion-message deployment)
+      => nil
+      (provided
+       (env :service-smtp-host) => "dummy-value"
+       (env :service-mail-from) => "noreply@brislabs.com"
+       (env :service-mail-to) => "to@address.com"
+       (build-message-body deployment) => "body"
+       (mail/send-message {:host "dummy-value"}
+                          {:from "noreply@brislabs.com"
+                           :to "to@address.com"
+                           :subject "prod: myapp v0.12 deployed"
+                           :body [{:type "text/html; charset=\"UTF-8\""
+                                   :content "body"}]})
+       =throws=> (javax.mail.MessagingException. "Boom")
+       (log/write "Failed to send completion message.") => nil))
