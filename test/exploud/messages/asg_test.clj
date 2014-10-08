@@ -834,7 +834,7 @@
        (aws/auto-scaling-group "old-asg" "environment" "region") => {}))
 
 (fact "that waiting for the deletion of an auto scaling group too many times is an error"
-      (wait-for-old-auto-scaling-group-deletion {:attempt 50
+      (wait-for-old-auto-scaling-group-deletion {:attempt 100
                                                  :parameters wait-for-old-auto-scaling-group-deletion-params})
       => (contains {:status :error})
       (provided

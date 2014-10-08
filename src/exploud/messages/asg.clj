@@ -16,8 +16,14 @@
 (def ^:private default-key-name
   "exploud")
 
-(def ^:private default-max-attempts
+(def ^:private default-wait-for-instances-to-exist-attempts
   50)
+
+(def ^:private default-wait-for-instances-to-be-in-service-attempts
+  50)
+
+(def ^:private default-auto-scaling-group-deletion-attempts
+  100)
 
 (defn create-launch-configuration
   [{:keys [parameters]}]
@@ -178,7 +184,7 @@
         {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [max min]} deployment-params
-        max-attempts default-max-attempts]
+        max-attempts default-wait-for-instances-to-exist-attempts]
     (if-not state
       (do
         (log/write "No need to wait for instances to exist.")
@@ -203,7 +209,7 @@
         {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [max min]} deployment-params
-        max-attempts default-max-attempts]
+        max-attempts default-wait-for-instances-to-be-in-service-attempts]
     (if-not state
       (do
         (log/write "No need to wait for instances to be in service.")
@@ -504,7 +510,7 @@
         state (state-key parameters)
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar
-        max-attempts (get deployment-params :auto-scaling-group-deletion-attempts default-max-attempts)]
+        max-attempts (get deployment-params :auto-scaling-group-deletion-attempts default-auto-scaling-group-deletion-attempts)]
     (if-let [old-auto-scaling-group-name (:auto-scaling-group-name state)]
       (try
         (if (aws/auto-scaling-group old-auto-scaling-group-name environment region)
