@@ -111,38 +111,16 @@
        (json/generate-string {:Event "autoscaling:ASG_TERMINATE" :AutoScalingGroupName "asg"}) => ..message..
        (json/generate-string {:Message ..message..}) => ..whole-message..))
 
-(fact "that describe-instances is called with name and state"
+(fact "that describe-instances is called with name, environment and state"
       (describe-instances "env" "region" "name" "state") => truthy
       (provided
        (config anything anything) => {}
        (ec2/describe-instances anything
                                :filters
-                               [{:name "tag:Name" :values ["name-*"]}
+                               [{:name "tag:Name" :values ["name-env-*"]}
                                 {:name "instance-state-name" :values ["state"]}])
        => [{}]
        (numel/application-registrations "env" "name") => {}))
-
-(fact "that describe-instances defaults name and state if nil"
-      (describe-instances "env" "region" nil nil) => truthy
-      (provided
-       (config anything anything) => {}
-       (ec2/describe-instances anything
-                               :filters
-                               [{:name "tag:Name" :values ["*"]}
-                                {:name "instance-state-name" :values ["running"]}])
-       => [{}]
-       (numel/application-registrations "env" anything) => {} :times 0))
-
-(fact "that describe-instances preserves name if contains *"
-      (describe-instances "env" "region" "part-*-part" nil) => truthy
-      (provided
-       (config anything anything) => {}
-       (ec2/describe-instances anything
-                               :filters
-                               [{:name "tag:Name" :values ["part-*-part"]}
-                                {:name "instance-state-name" :values ["running"]}])
-       => [{}]
-       (numel/application-registrations "env" "part-*-part") => {}))
 
 (fact "that describe-instances-plain formats response for multiple reservations"
       (describe-instances-plain "env" "region" nil nil) => (contains "two")

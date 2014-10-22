@@ -2,7 +2,9 @@
   (:require [cemerick.url :refer [url]]
             [cheshire.core :as json]
             [environ.core :refer [env]]
-            [exploud.http :as http]))
+            [exploud
+             [environments :as environments]
+             [http :as http]]))
 
 (def timeout
   "The number of milliseconds we'll wait for a response."
@@ -18,9 +20,9 @@
 
 (defn application-registrations-url
   [environment application]
-  (if (= "prod" (name environment))
-    (str (url prod-numel-url "1.x" "registration" application))
-    (str (url poke-numel-url "1.x" "registration" application))))
+  (if (environments/prod-account? environment)
+    (str (url prod-numel-url "1.x" "registrations" environment application))
+    (str (url poke-numel-url "1.x" "registrations" environment application))))
 
 (defn application-registrations
   [environment application]

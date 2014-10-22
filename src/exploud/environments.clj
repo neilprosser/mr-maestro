@@ -34,6 +34,11 @@
     (catch Exception e
       (warn e "Failed to update environments"))))
 
+(defn prod-account?
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (= "prod" (get-in e [:metadata :account]))))
+
 (defn init
   []
   (create-pool)

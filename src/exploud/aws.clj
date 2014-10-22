@@ -64,8 +64,7 @@
 (defn use-current-role?
   "Whether we should use the current IAM role or should assume a role in another account."
   [environment-name]
-  (when-let [environment (environments/environment environment-name)]
-    (= "dev" (get-in environment [:metadata :account]))))
+  (not (environments/prod-account? environment-name)))
 
 (defn alternative-credentials-if-necessary
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."
@@ -133,9 +132,7 @@
   "Returns a json object describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
   [environment region name state]
-  (let [pattern-name (or (and (str/blank? name) "*")
-                         (and (.contains name "*") name)
-                         (str name "-*"))
+  (let [pattern-name (str name "-" environment "-*")
         state (or state "running")
         config (config environment region)
         registrations (when name (map-by-instance-id (numel/application-registrations environment name)))]
