@@ -1,7 +1,8 @@
 /bin/echo "preinstall script started [$1]"
 
-prefixDir=/usr/local/exploud
-identifier=exploud.jar
+APP_NAME=exploud
+prefixDir=/usr/local/$APP_NAME
+identifier=$APP_NAME.jar
 
 isJettyRunning=`pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l`
 if [ $isJettyRunning -eq 0 ]
@@ -14,7 +15,7 @@ else
 
   /bin/echo "Timeout is $waitTimeOut seconds"
   /bin/echo "Exploud is running, stopping service"
-  /sbin/service exploud stop &
+  /sbin/service $APP_NAME stop &
   myPid=$!
 
   until [ `pgrep java -lf | grep $identifier | cut -d" " -f1 | /usr/bin/wc -l` -eq 0 ]
@@ -39,10 +40,10 @@ rm -rf $prefixDir
 if [ "$1" -le 1 ]
 then
   mkdir -p $prefixDir
-  /usr/sbin/useradd -r -s /sbin/nologin -d $prefixDir -m -c "Exploud user for the Exploud service" exploud 2> /dev/null || :
+  /usr/sbin/useradd -r -s /sbin/nologin -d $prefixDir -m -c "Exploud user for the Exploud service" $APP_NAME 2> /dev/null || :
 fi
 
-/usr/bin/getent passwd exploud
+/usr/bin/getent passwd $APP_NAME
 
 /bin/echo "preinstall script finished"
 exit 0

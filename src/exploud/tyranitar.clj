@@ -28,7 +28,7 @@
 
 (def tyranitar-url
   "The URL where Tyranitar is deployed."
-  (url (env :service-tyranitar-url)))
+  (url (env :tyranitar-baseurl)))
 
 (defn- file-url
   "Creates the URL where we can find the content of a particular file for an

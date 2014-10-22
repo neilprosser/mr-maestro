@@ -56,9 +56,9 @@
 (fact "that messages are correctly formatted for sending"
       (send-completion-message deployment) => nil
       (provided
-       (env :service-smtp-host) => "dummy-value"
-       (env :service-mail-from) => "noreply@brislabs.com"
-       (env :service-mail-to) => "to@address.com"
+       (env :mail-smtp-host) => "dummy-value"
+       (env :mail-from-address) => "noreply@brislabs.com"
+       (env :mail-to-address) => "to@address.com"
        (build-message-body deployment) => "body"
        (mail/send-message {:host "dummy-value"}
                           {:from "noreply@brislabs.com"
@@ -84,9 +84,9 @@
       (send-completion-message deployment)
       => nil
       (provided
-       (env :service-smtp-host) => "dummy-value"
-       (env :service-mail-from) => "noreply@brislabs.com"
-       (env :service-mail-to) => "to@address.com"
+       (env :mail-smtp-host) => "dummy-value"
+       (env :mail-from-address) => "noreply@brislabs.com"
+       (env :mail-to-address) => "to@address.com"
        (build-message-body deployment) => "body"
        (mail/send-message {:host "dummy-value"}
                           {:from "noreply@brislabs.com"

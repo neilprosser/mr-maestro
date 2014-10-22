@@ -1,17 +1,19 @@
 /bin/echo "postinstall script started [$1]"
 
+APP_NAME=exploud
+
 if [ "$1" -le 1 ]
 then
-  /sbin/chkconfig --add exploud
+  /sbin/chkconfig --add $APP_NAME
 else
-  /sbin/chkconfig --list exploud
+  /sbin/chkconfig --list $APP_NAME
 fi
 
-ln -s /var/encrypted/logs/exploud /var/log/exploud
+ln -s /var/encrypted/logs/$APP_NAME /var/log/$APP_NAME
 
-chown -R exploud:exploud /usr/local/exploud
+chown -R $APP_NAME:$APP_NAME /usr/local/$APP_NAME
 
-chmod 755 /usr/local/exploud/bin
+chmod 755 /usr/local/$APP_NAME/bin
 
 /bin/echo "postinstall script finished"
 exit 0

@@ -69,7 +69,7 @@
   [virtualisation-type]
   (cond (= (name virtualisation-type) "para") para-instance-types
         (= (name virtualisation-type) "hvm") hvm-instance-types
-        :else (throw (ex-info (format "Unknown virtualisation type %s" virtualisation-type)))))
+        :else (throw (ex-info (format "Unknown virtualisation type %s" virtualisation-type) {}))))
 
 (def instance-types
   (set/union para-instance-types hvm-instance-types))

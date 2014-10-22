@@ -7,9 +7,7 @@
              [http :as http]
              [log :as log]
              [responses :refer :all]
-             [util :as util]]
-            [slingshot.slingshot :refer [try+]])
-  (:import clojure.lang.ExceptionInfo))
+             [util :as util]]))
 
 (def default-service-port
   8080)
@@ -32,10 +30,10 @@
 
 (defn- ok-response?
   [url]
-  (try+
+  (try
    (let [{:keys [status]} (http/simple-get url {:socket-timeout 2000})]
      (= status 200))
-   (catch ExceptionInfo _
+   (catch Exception _
      false)))
 
 (defn- check-instance-health

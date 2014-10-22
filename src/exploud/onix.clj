@@ -7,7 +7,7 @@
 
 (def onix-url
   "The URL where Onix is running."
-  (url (env :service-onix-url)))
+  (url (env :onix-baseurl)))
 
 (defn applications-url
   "The URL where we can get information about the applications Onix knows

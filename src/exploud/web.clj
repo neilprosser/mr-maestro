@@ -26,23 +26,19 @@
             [metrics.ring
              [expose :refer [expose-metrics-as-json]]
              [instrument :refer [instrument]]]
-            [nokia.ring-utils
+            [radix
              [error :refer [wrap-error-handling error-response]]
-             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]]
+             [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
+             [setup :as setup]]
             [ring.middleware
              [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
              [params :refer [wrap-params]]]
             [ring.util.response :refer [header]]))
 
-(def ^:dynamic *version*
+(def version
   "The version of our application."
-  "none")
-
-(defn set-version!
-  "Sets the version of the application."
-  [version]
-  (alter-var-root #'*version* (fn [_] version)))
+  (setup/version "exploud"))
 
 (def default-environment
   "The default environment we'll use for queries."
@@ -91,8 +87,9 @@
   (GET "/healthcheck"
        []
        (response {:name "exploud"
-                  :version *version*
-                  :success true}))
+                  :version version
+                  :success true
+                  :dependencies []}))
 
   (context
    "/1.x" []

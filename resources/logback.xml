@@ -10,35 +10,36 @@
 
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>${SERVICE_LOGGING_FILETHRESHOLD:-debug}</level>
+      <level>${LOGGING_FILETHRESHOLD:-info}</level>
     </filter>
-    <file>${SERVICE_LOGGING_PATH:-/tmp}/exploud.log</file>
+    <file>${LOGGING_PATH:-/tmp}/${SERVICE_NAME}.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${SERVICE_LOGGING_PATH:-/tmp}/exploud.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+      <fileNamePattern>${LOGGING_PATH:-/tmp}/${SERVICE_NAME}.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
       <maxHistory>3</maxHistory>
     </rollingPolicy>
     <encoder>
-      <pattern>%d{dd/MM/yyyy HH:mm:ss.SSS} [%thread] %-5level %X{logItemId} %logger{36} - %msg%n %X{stack}</pattern>
+      <pattern>%d [%thread] %-5level %X{log-id} %logger{36} - %msg%n%ex</pattern>
     </encoder>
   </appender>
 
-  <appender name="service" class="com.ovi.common.logging.LoggingServiceAppender">
+  <appender name="stash" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>${SERVICE_LOGGING_SERVICETHRESHOLD:-off}</level>
+      <level>${LOGGING_STASHTHRESHOLD:-warn}</level>
     </filter>
-    <filter class="com.ovi.common.logging.GraphiteReporterFilter" />
-    <LoggingServiceUrl>${ENVIRONMENT_MUSIC_ERRORLOGGING1JAVA_BASEURL:-http://errorlogging.music.cq3.brislabs.com:8080/ErrorLogging/1.x}/logitems</LoggingServiceUrl>
-    <ServiceName>${SERVICE_NAME}</ServiceName>
-    <DefaultCategory>Service</DefaultCategory>
-    <FailureLoggerName>failure</FailureLoggerName>
+    <filter class="mixradio.metrics.GraphiteReporterFilter" />
+    <file>${LOGGING_PATH:-/tmp}/${SERVICE_NAME}-stash.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${LOGGING_PATH:-/tmp}/${SERVICE_NAME}-stash.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+      <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+        <maxFileSize>50MB</maxFileSize>
+      </timeBasedFileNamingAndTriggeringPolicy>
+      <maxHistory>1</maxHistory>
+    </rollingPolicy>
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
   </appender>
 
-  <logger name="failure" level="WARN" additivity="false">
+  <root level="${LOGGING_LEVEL:-info}">
     <appender-ref ref="file" />
-  </logger>
-
-  <root level="${SERVICE_LOGGING_LEVEL:-debug}">
-    <appender-ref ref="file" />
-    <appender-ref ref="service" />
+    <appender-ref ref="stash" />
   </root>
 </configuration>

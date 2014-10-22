@@ -61,8 +61,8 @@
 
 (defn- build-message
   [deployment]
-  {:from (env :service-mail-from)
-   :to (env :service-mail-to)
+  {:from (env :mail-from-address)
+   :to (env :mail-to-address)
    :subject (build-message-title deployment)
    :body [{:type content-type :content (build-message-body deployment)}]})
 
@@ -71,7 +71,7 @@
   [{:keys [environment undo] :as deployment}]
   (when (and (not undo)
              (prod? environment))
-    (let [host (env :service-smtp-host)]
+    (let [host (env :mail-smtp-host)]
       (when (seq host)
         (try
           (mail/send-message {:host host} (build-message deployment))

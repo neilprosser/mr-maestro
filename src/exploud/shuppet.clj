@@ -15,7 +15,7 @@
 
 (def shuppet-url
   "We only need the URL for the 'poke' Shuppet."
-  (url (env :service-shuppet-url)))
+  (url (env :shuppet-baseurl)))
 
 (defn create-application-url
   "The URL to create a new app in Shuppet."

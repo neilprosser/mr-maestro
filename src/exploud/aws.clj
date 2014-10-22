@@ -11,7 +11,6 @@
             [clojure.string :as str]
             [io.clj.logging :refer [with-logging-context]]
             [clojure.tools.logging :as log]
-            [dire.core :refer [with-pre-hook!]]
             [environ.core :refer :all]
             [exploud
              [environments :as environments]

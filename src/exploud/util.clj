@@ -1,6 +1,6 @@
 (ns exploud.util
   "## Some helper functions"
-  (:require [camel-snake-kebab :as csk]
+  (:require [camel-snake-kebab.core :as csk]
             [clj-time.core :as time]
             [clojure
              [string :as str]

@@ -5,19 +5,20 @@
 # To use this script run it as root - it will switch to the specified user
 #
 # Here is a little (and extremely primitive) startup/shutdown script
-# for RedHat systems. It assumes that Exploud lives in /usr/local/exploud,
+# for RedHat based systems. It assumes that Exploud lives in /usr/local/exploud,
 # it's run by user 'exploud' and JDK binaries are in /usr/java/default/bin.
 # All this can be changed in the script itself.
 #
 # Either modify this script for your requirements or just ensure that
 # the following variables are set correctly before calling the script.
 # chkconfig: 345 99 05
-# description: Runs the Exploud Server
+# description: Runs Exploud
 # processname: exploud
+
+LOCKFILE=/var/lock/subsys/exploud
 
 #define where exploud is
 GIVEN_HOME="/usr/local/exploud"
-LOCK_FILE=/var/lock/subsys/exploud
 
 JETTY_HOME=${JETTY_HOME:-"$GIVEN_HOME"}
 
@@ -59,7 +60,7 @@ start)
     else
         $SUBIT "$JETTY_CMD_START"
     fi
-    touch $LOCK_FILE
+    touch $LOCKFILE
     ;;
 stop)
     echo Stopping Exploud
@@ -68,7 +69,7 @@ stop)
     else
         $SUBIT "$JETTY_CMD_STOP"
     fi
-    rm -f $LOCK_FILE
+    rm -f $LOCKFILE
     ;;
 restart)
     $0 stop

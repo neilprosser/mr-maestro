@@ -10,7 +10,6 @@ echo "VERSION=$version" > release_version.properties
 
 export http_no_proxy=*.brislabs.com
 export no_proxy=*.brislabs.com
-export JVM_OPTS="-Dservice.port=$JETTY_PORT"
 export LEIN_SNAPSHOTS_IN_RELEASE=y
 lein release || exit 1
 
