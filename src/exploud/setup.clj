@@ -30,7 +30,7 @@
   [server]
   (doto server
     (.setStopAtShutdown true)
-    (.setGracefulShutdown setup/shutdown-timeout)))
+    (.setStopTimeout setup/shutdown-timeout)))
 
 (defn start-server
   "Starts the server."
