@@ -1,4 +1,4 @@
-(defproject exploud "0.90"
+(defproject exploud "0.91-SNAPSHOT"
   :description "Exploud service"
   :url "http://github.brislabs.com/cloud-tooling/exploud/wiki"
 
