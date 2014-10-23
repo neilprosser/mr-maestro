@@ -29,7 +29,8 @@
             [radix
              [error :refer [wrap-error-handling error-response]]
              [ignore-trailing-slash :refer [wrap-ignore-trailing-slash]]
-             [setup :as setup]]
+             [setup :as setup]
+             [reload :refer [wrap-reload]]]
             [ring.middleware
              [format-params :refer [wrap-json-kw-params]]
              [format-response :refer [wrap-json-response]]
@@ -360,6 +361,7 @@
 (def app
   "Sets up our application, adding in various bits of middleware."
   (-> routes
+      (wrap-reload)
       (instrument)
       (wrap-error-handling)
       (wrap-cors-headers)
