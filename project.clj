@@ -4,7 +4,6 @@
 
   :dependencies [[amazonica "0.2.27" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
                  [bouncer "0.3.1"]
-                 [camel-snake-kebab "0.2.4"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.3.1"]
                  [clj-http "1.0.0"]
@@ -26,6 +25,7 @@
                  [net.logstash.logback/logstash-logback-encoder "3.3"]
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.logging "0.3.1"]
+                 [org.tobereplaced/lettercase "1.0.0"]
                  [overtone/at-at "1.2.0"]
                  [ring-middleware-format "0.4.0"]]
 

@@ -1,15 +1,15 @@
 (ns exploud.util
   "## Some helper functions"
-  (:require [camel-snake-kebab.core :as csk]
-            [clj-time.core :as time]
+  (:require [clj-time.core :as time]
             [clojure
              [string :as str]
-             [walk :as walk]])
+             [walk :as walk]]
+            [org.tobereplaced.lettercase :refer [lower-hyphen-keyword]])
   (:import java.util.UUID))
 
 (defn clojurize-keys
   [m]
-  (let [f (fn [[k v]] [(csk/->kebab-case k) v])]
+  (let [f (fn [[k v]] [(lower-hyphen-keyword (name k)) v])]
     (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
 
 (defn remove-nil-values
