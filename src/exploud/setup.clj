@@ -29,7 +29,6 @@
   "Configures the server."
   [server]
   (doto server
-    (.setSendServerVersion false)
     (.setStopAtShutdown true)
     (.setGracefulShutdown setup/shutdown-timeout)))
 
@@ -40,7 +39,8 @@
                         :join? false
                         :stacktraces? (not setup/production?)
                         :auto-reload? (not setup/production?)
-                        :configurator configure-server}))
+                        :configurator configure-server
+                        :send-server-version false}))
 
 (defn start
   "Sets up our application and starts the server."
