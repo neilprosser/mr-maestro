@@ -335,20 +335,24 @@
        (shuppet/configuration "environment" "application") => {} :times 0))
 
 (fact "that adding the block device mappings works if nothing has been provided"
-      (create-block-device-mappings {:parameters {:new-state {:tyranitar {:deployment-params {:instance-type "c3.2xlarge"}}}}})
+      (create-block-device-mappings {:parameters {:new-state {:image-details {:virt-type "para"}
+                                                              :tyranitar {:deployment-params {:instance-type "c3.2xlarge"}}}}})
       => {:parameters {:new-state {:block-device-mappings ..block-devices..
+                                   :image-details {:virt-type "para"}
                                    :tyranitar {:deployment-params {:instance-type "c3.2xlarge"}}}}
           :status :success}
       (provided
-       (dev/create-mappings nil 2 nil) => ..block-devices..))
+       (dev/create-mappings nil 2 nil "para") => ..block-devices..))
 
 (fact "that adding the block device mappings work if something has been provided"
-      (create-block-device-mappings {:parameters {:new-state {:tyranitar {:deployment-params {:instance-type "m1.xlarge"
+      (create-block-device-mappings {:parameters {:new-state {:image-details {:virt-type "hvm"}
+                                                              :tyranitar {:deployment-params {:instance-type "m1.xlarge"
                                                                                               :volumes {:root {:size 12}
                                                                                                         :instance-stores 2
                                                                                                         :block-devices [{:size 20
                                                                                                                          :type "gp2"}]}}}}}})
       => {:parameters {:new-state {:block-device-mappings ..block-devices..
+                                   :image-details {:virt-type "hvm"}
                                    :tyranitar {:deployment-params {:instance-type "m1.xlarge"
                                                                    :volumes {:root {:size 12}
                                                                              :instance-stores 2
@@ -356,7 +360,7 @@
                                                                                               :type "gp2"}]}}}}}
           :status :success}
       (provided
-       (dev/create-mappings {:size 12} 2 [{:size 20 :type "gp2"}]) => ..block-devices..))
+       (dev/create-mappings {:size 12} 2 [{:size 20 :type "gp2"}] "hvm") => ..block-devices..))
 
 (fact "that checking for deleted load balancers removes previously used load balancers which no longer exist"
       (check-for-deleted-load-balancers {:parameters {:environment "environment"

@@ -366,12 +366,13 @@
 (defn create-block-device-mappings
   [{:keys [parameters]}]
   (let [state (:new-state parameters)
-        {:keys [tyranitar]} state
+        {:keys [image-details tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [instance-type volumes]} deployment-params
-        {:keys [block-devices instance-stores root]} volumes]
+        {:keys [block-devices instance-stores root]} volumes
+        {:keys [virt-type]} image-details]
     (log/write (format "Creating block device mappings."))
-    (success (assoc-in parameters [:new-state :block-device-mappings] (dev/create-mappings root (or instance-stores (get-in instance-info [instance-type :instance-stores])) block-devices)))))
+    (success (assoc-in parameters [:new-state :block-device-mappings] (dev/create-mappings root (or instance-stores (get-in instance-info [instance-type :instance-stores])) block-devices virt-type)))))
 
 (defn add-required-security-groups
   [{:keys [parameters]}]
