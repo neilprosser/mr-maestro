@@ -4,7 +4,11 @@
             [midje.sweet :refer :all])
   (:import java.util.UUID))
 
-(fact "That we correctly recognise new image names with virtualisation types in them"
+(fact "that we generate the correct character for an index"
+      (char-for-index 0) => \a
+      (char-for-index 22) => \w)
+
+(fact "that we correctly recognise new image names with virtualisation types in them"
       (image-details "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25")
       => {:image-name "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25"
           :application "indexdaemon"

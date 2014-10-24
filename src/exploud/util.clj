@@ -7,6 +7,10 @@
             [org.tobereplaced.lettercase :refer [lower-hyphen-keyword]])
   (:import java.util.UUID))
 
+(defn char-for-index
+  [index]
+  (char (+ 97 index)))
+
 (defn clojurize-keys
   [m]
   (let [f (fn [[k v]] [(lower-hyphen-keyword (name k)) v])]

@@ -6,6 +6,7 @@
              [string :as str]]
             [exploud
              [aws :as aws]
+             [block-devices :as dev]
              [hubot :as hubot]
              [log :as log]
              [onix :as onix]
@@ -20,6 +21,45 @@
 
 (def ^:private required-security-group-names
   ["exploud-healthcheck" "mgmt-mon-scan"])
+
+(def ^:private instance-info
+  {"c1.medium" {:instance-stores 1}
+   "c1.xlarge" {:instance-stores 4}
+   "c3.large" {:instance-stores 2}
+   "c3.xlarge" {:instance-stores 2}
+   "c3.2xlarge" {:instance-stores 2}
+   "c3.4xlarge" {:instance-stores 2}
+   "c3.8xlarge" {:instance-stores 2}
+   "cc2.8xlarge" {:instance-stores 4}
+   "cg1.4xlarge" {:instance-stores 2}
+   "cr1.8xlarge" {:instance-stores 2}
+   "g2.2xlarge" {:instance-stores 1}
+   "hi1.4xlarge" {:instance-stores 2}
+   "hs1.8xlarge" {:instance-stores 24}
+   "i2.xlarge" {:instance-stores 1}
+   "i2.2xlarge" {:instance-stores 2}
+   "i2.4xlarge" {:instance-stores 4}
+   "i2.8xlarge" {:instance-stores 8}
+   "m1.small" {:instance-stores 1}
+   "m1.medium" {:instance-stores 1}
+   "m1.large" {:instance-stores 2}
+   "m1.xlarge" {:instance-stores 4}
+   "m2.xlarge" {:instance-stores 1}
+   "m2.2xlarge" {:instance-stores 1}
+   "m2.4xlarge" {:instance-stores 2}
+   "m3.medium" {:instance-stores 1}
+   "m3.large" {:instance-stores 1}
+   "m3.xlarge" {:instance-stores 2}
+   "m3.2xlarge" {:instance-stores 2}
+   "r3.large" {:instance-stores 1}
+   "r3.xlarge" {:instance-stores 1}
+   "r3.2xlarge" {:instance-stores 1}
+   "r3.4xlarge" {:instance-stores 1}
+   "r3.8xlarge" {:instance-stores 2}
+   "t1.micro" {:instance-stores 0}
+   "t2.small" {:instance-stores 0}
+   "t2.micro" {:instance-stores 0}
+   "t2.medium" {:instance-stores 0}})
 
 (defn start-deployment-preparation
   [{:keys [parameters]}]
@@ -322,6 +362,16 @@
         (catch Exception e
           (error-with e)))
       (success parameters))))
+
+(defn create-block-device-mappings
+  [{:keys [parameters]}]
+  (let [state (:new-state parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [instance-type volumes]} deployment-params
+        {:keys [block-devices instance-stores root]} volumes]
+    (log/write (format "Creating block device mappings."))
+    (success (assoc-in parameters [:new-state :block-device-mappings] (dev/create-mappings root (or instance-stores (get-in instance-info [instance-type :instance-stores])) block-devices)))))
 
 (defn add-required-security-groups
   [{:keys [parameters]}]

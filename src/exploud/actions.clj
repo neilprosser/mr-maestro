@@ -25,6 +25,7 @@
               :exploud.messages.data/check-instance-type-compatibility
               :exploud.messages.data/check-contact-property
               :exploud.messages.data/check-shuppet-configuration
+              :exploud.messages.data/create-block-device-mappings
               :exploud.messages.data/add-required-security-groups
               :exploud.messages.data/map-security-group-ids
               :exploud.messages.data/verify-load-balancers
