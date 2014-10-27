@@ -17,7 +17,7 @@
   [index virtualisation-type]
   (if (= virtualisation-type "hvm")
     (str "/dev/xvd" (util/char-for-index index))
-    (str "/dev/sd" (util/char-for-index index) (when (= 0 index) "1"))))
+    (str "/dev/sd" (util/char-for-index index) (when (zero? index) "1"))))
 
 (defn assign-device-names
   [devices virtualisation-type]

@@ -47,7 +47,7 @@
             (log/write (format "Creating launch configuration '%s' with image '%s'." launch-configuration-name image-id))
             (auto/create-launch-configuration (aws/config environment region)
                                               :launch-configuration-name launch-configuration-name
-                                              :block-device-mappings (or block-device-mappings [])
+                                              :block-device-mappings (vec block-device-mappings)
                                               :iam-instance-profile application
                                               :image-id image-id
                                               :instance-type instance-type
