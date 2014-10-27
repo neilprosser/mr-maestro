@@ -30,7 +30,7 @@
   (let [{:keys [application environment region]} parameters
         state-key (util/new-state-key parameters)
         state (state-key parameters)
-        {:keys [image-details launch-configuration-name selected-security-group-ids tyranitar user-data]} state
+        {:keys [block-device-mappings image-details launch-configuration-name selected-security-group-ids tyranitar user-data]} state
         {:keys [deployment-params]} tyranitar
         {:keys [instance-type]} deployment-params
         image-id (:id image-details)]
@@ -47,6 +47,7 @@
             (log/write (format "Creating launch configuration '%s' with image '%s'." launch-configuration-name image-id))
             (auto/create-launch-configuration (aws/config environment region)
                                               :launch-configuration-name launch-configuration-name
+                                              :block-device-mappings (or block-device-mappings [])
                                               :iam-instance-profile application
                                               :image-id image-id
                                               :instance-type instance-type

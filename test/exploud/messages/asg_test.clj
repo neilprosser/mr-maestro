@@ -12,7 +12,8 @@
   {:application "application"
    :environment "environment"
    :region "region"
-   :new-state {:image-details {:id "image"}
+   :new-state {:block-device-mappings [{:a "device"}]
+               :image-details {:id "image"}
                :launch-configuration-name "lc"
                :selected-security-group-ids ["sg-1" "sg-2"]
                :tyranitar {:application-properties {}
@@ -27,6 +28,7 @@
        (aws/config anything anything) => {}
        (auto/create-launch-configuration anything
                                          :launch-configuration-name "lc"
+                                         :block-device-mappings [{:a "device"}]
                                          :iam-instance-profile "application"
                                          :image-id "image"
                                          :instance-type "instance"
@@ -48,6 +50,7 @@
        (aws/config anything anything) => {}
        (auto/create-launch-configuration anything
                                          :launch-configuration-name "lc"
+                                         :block-device-mappings [{:a "device"}]
                                          :iam-instance-profile "application"
                                          :image-id "image"
                                          :instance-type "instance"
