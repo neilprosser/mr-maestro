@@ -8,10 +8,9 @@
 (def wait-for-instances-to-be-healthy-params
   {:environment "environment"
    :region "region"
-   :new-state {
-               :auto-scaling-group-name "asg"
+   :new-state {:auto-scaling-group-name "asg"
                :tyranitar {:application-properties {:service.port 9090
-                                                    :service.healthcheck.path "/the/healthcheck"
+                                                    :healthcheck.path "/the/healthcheck"
                                                     :service.healthcheck.skip false}
                            :deployment-params {:min 2}}}})
 
@@ -29,6 +28,32 @@
           :backoff-ms 10000}
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => []))
+
+(fact "that the healthcheck path falls back to the legacy if the standard one isn't provided"
+      (wait-for-instances-to-be-healthy {:attempt 1 :parameters (assoc-in (assoc-in wait-for-instances-to-be-healthy-params [:new-state :tyranitar :application-properties :service.healthcheck.path] "/some/healthcheck") [:new-state :tyranitar :application-properties :healthcheck.path] nil)})
+      => (contains {:status :success})
+      (provided
+       (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "i-1"}
+                                                                           {:instance-id "i-2"}]
+       (aws/instances "environment" "region" ["i-1" "i-2"]) => [{:instance-id "i-1"
+                                                                 :private-ip-address "ip1"}
+                                                                {:instance-id "i-2"
+                                                                 :private-ip-address "ip2"}]
+       (http/simple-get "http://ip1:9090/some/healthcheck" {:socket-timeout 2000}) => {:status 200}
+       (http/simple-get "http://ip2:9090/some/healthcheck" {:socket-timeout 2000}) => {:status 200}))
+
+(fact "that the healthcheck path falls back to the default if the standard and legacy ones aren't provided"
+      (wait-for-instances-to-be-healthy {:attempt 1 :parameters (assoc-in (assoc-in wait-for-instances-to-be-healthy-params [:new-state :tyranitar :application-properties :service.healthcheck.path] nil) [:new-state :tyranitar :application-properties :healthcheck.path] nil)})
+      => (contains {:status :success})
+      (provided
+       (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "i-1"}
+                                                                           {:instance-id "i-2"}]
+       (aws/instances "environment" "region" ["i-1" "i-2"]) => [{:instance-id "i-1"
+                                                                 :private-ip-address "ip1"}
+                                                                {:instance-id "i-2"
+                                                                 :private-ip-address "ip2"}]
+       (http/simple-get "http://ip1:9090/healthcheck" {:socket-timeout 2000}) => {:status 200}
+       (http/simple-get "http://ip2:9090/healthcheck" {:socket-timeout 2000}) => {:status 200}))
 
 (fact "that getting one healthy instance when the minimum is two retries"
       (wait-for-instances-to-be-healthy {:attempt 1 :parameters wait-for-instances-to-be-healthy-params})

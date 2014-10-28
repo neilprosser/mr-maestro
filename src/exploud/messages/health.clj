@@ -48,6 +48,12 @@
     (log/write (format "%s came back [%s]." (util/pluralise (count check-results) "Healthcheck") (str/join ", " (map (fn [r] (format "%s => %s" (:url r) (:successful? r))) check-results))))
     check-results))
 
+(defn- healthcheck-path
+  [application-properties]
+  (let [standard (get application-properties :healthcheck.path)
+        legacy (get application-properties :service.healthcheck.path)]
+    (or standard legacy default-healthcheck-path)))
+
 (defn wait-for-instances-to-be-healthy
   [{:keys [parameters attempt]}]
   (let [{:keys [environment region]} parameters
@@ -57,7 +63,7 @@
         {:keys [application-properties deployment-params]} tyranitar
         service-port (get application-properties :service.port default-service-port)
         skip-healthcheck? (get application-properties :service.healthcheck.skip default-healthcheck-skip)
-        healthcheck-path (util/strip-first-forward-slash (get application-properties :service.healthcheck.path default-healthcheck-path))
+        healthcheck-path (util/strip-first-forward-slash (healthcheck-path application-properties))
         max-attempts (get deployment-params :instance-healthy-attempts  default-instances-maximum-attempts)
         min (:min deployment-params)]
     (if-not state
