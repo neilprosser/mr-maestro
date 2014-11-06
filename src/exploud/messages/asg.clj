@@ -221,7 +221,7 @@
           (if (< in-service-count min)
             (do
               (when (= 1 attempt)
-                (log/write (format "Waiting for at least %d %s to be InService in group '%s'." min (util/pluralise in-service-count "instance") auto-scaling-group-name)))
+                (log/write (format "Waiting for at least %d %s to be InService in group '%s'." min (util/pluralise min "instance") auto-scaling-group-name)))
               (capped-retry-after 10000 attempt max-attempts))
             (do
               (log/write (format "Auto scaling group '%s' has %d InService %s which is between min %d and max %d." auto-scaling-group-name in-service-count (util/pluralise in-service-count "instance") min max))
