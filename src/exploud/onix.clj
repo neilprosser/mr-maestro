@@ -13,34 +13,33 @@
   "The URL where we can get information about the applications Onix knows
    about."
   []
-  (str (url onix-url "1.x" "applications")))
+  (str (url onix-url "applications")))
 
 (defn application-url
   "The URL where we can get information about a specific application."
   [application-name]
-  (str (url onix-url "1.x" "applications" application-name)))
+  (str (url onix-url "applications" application-name)))
 
 (defn environments-url
   "The URL where we can get information about the environments Onix knows about."
   []
-  (str (url onix-url "1.x" "environments")))
+  (str (url onix-url "environments")))
 
 (defn environment-url
   "The URL where we can get information about a specific environment."
   [environment-name]
-  (str (url onix-url "1.x" "environments" environment-name)))
+  (str (url onix-url "environments" environment-name)))
 
 (defn property-url
   "The URL where we can get information about the property of an application."
   [application-name property-name]
-  (str (url onix-url "1.x" "applications" application-name property-name)))
+  (str (url onix-url "applications" application-name property-name)))
 
 (defn create-application
   "Creates an applcation in Onix and returns the application. If the
    application is already present, this method will fail."
   [application-name]
-  (let [body (json/generate-string {:name application-name})
-        {:keys [body status] :as response} (http/simple-post (applications-url) {:content-type :json :body body})]
+  (let [{:keys [body status] :as response} (http/simple-put (application-url application-name))]
     (if (= status 201)
       (json/parse-string body true)
       (throw (ex-info "Unexpected status while creating application" {:type ::unexpected-response :response response})))))

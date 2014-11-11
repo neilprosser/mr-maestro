@@ -68,7 +68,7 @@
         :mail-to-address "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
         :numel-poke-baseurl "http://numelpoke:8080"
         :numel-prod-baseurl "http://numelprod:8080"
-        :onix-baseurl "http://onix:8080"
+        :onix-baseurl "http://onix"
         :prod-vpc-id "vpc-prod"
         :production false
         :redis-host "localhost"

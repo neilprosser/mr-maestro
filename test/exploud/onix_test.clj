@@ -10,12 +10,7 @@
       (create-application "app-name")
       => ..application..
       (provided
-       (json/generate-string {:name "app-name"})
-       => ..body..
-       (http/simple-post
-        "http://onix:8080/1.x/applications"
-        {:content-type :json
-         :body ..body..})
+       (http/simple-put "http://onix/applications/app-name")
        => {:status 201
            :body ..response-json..}
        (json/parse-string ..response-json.. true)
@@ -25,12 +20,7 @@
       (create-application "app-name")
       => (throws ExceptionInfo "Unexpected status while creating application")
       (provided
-       (json/generate-string {:name "app-name"})
-       => ..body..
-       (http/simple-post
-        "http://onix:8080/1.x/applications"
-        {:content-type :json
-         :body ..body..})
+       (http/simple-put "http://onix/applications/app-name")
        => {:status 500}))
 
 (fact "that when adding a property we do the right thing"
@@ -40,7 +30,7 @@
        (json/generate-string {:value "some value"})
        => ..body..
        (http/simple-put
-        "http://onix:8080/1.x/applications/application/property"
+        "http://onix/applications/application/property"
         {:content-type :json
          :body ..body..})
        => {:status 201}))
@@ -52,7 +42,7 @@
        (json/generate-string {:value "some value"})
        => ..body..
        (http/simple-put
-        "http://onix:8080/1.x/applications/application/property"
+        "http://onix/applications/application/property"
         {:content-type :json
          :body ..body..})
        => {:status 500}))
@@ -62,7 +52,7 @@
       => ..details..
       (provided
        (http/simple-get
-        "http://onix:8080/1.x/applications/app-name")
+        "http://onix/applications/app-name")
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -73,7 +63,7 @@
       => nil
       (provided
        (http/simple-get
-        "http://onix:8080/1.x/applications/app-name")
+        "http://onix/applications/app-name")
        => {:status 404}))
 
 (fact "that when upserting an application that doesn't exist we create it"
@@ -97,32 +87,32 @@
       => {:names ["name1" "name2"]}
       (provided
        (http/simple-get
-        "http://onix:8080/1.x/applications")
+        "http://onix/applications")
        => {:status 200
            :body "{\"applications\":[\"name1\",\"name2\"]}"}))
 
 (fact "that getting an environment works properly when the environment exists"
       (environment "env") => ..env..
       (provided
-       (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 200
-                                                                     :body ..body..}
+       (http/simple-get "http://onix/environments/env") => {:status 200
+                                                            :body ..body..}
        (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment works properly when using a keyword"
       (environment :env) => ..env..
       (provided
-       (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 200
-                                                                     :body ..body..}
+       (http/simple-get "http://onix/environments/env") => {:status 200
+                                                            :body ..body..}
        (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment which doesn't exist gives nil"
       (environment "env") => nil
       (provided
-       (http/simple-get "http://onix:8080/1.x/environments/env") => {:status 404}))
+       (http/simple-get "http://onix/environments/env") => {:status 404}))
 
 (fact "that getting environments works properly"
       (environments) => #{"one" "two"}
       (provided
-       (http/simple-get "http://onix:8080/1.x/environments") => {:status 200
-                                                                 :body ..body..}
+       (http/simple-get "http://onix/environments") => {:status 200
+                                                        :body ..body..}
        (json/parse-string ..body.. true) => {:environments ["one" "two"]}))
