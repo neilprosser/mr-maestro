@@ -21,7 +21,7 @@
        => ..app..))
 
 (fact "that upserting an application attempts to put it into Onix, Tyranitar"
-      (upsert-application "region" "application" {:email "contact@somewhere.com"})
+      (upsert-application "region" "application" "contact@somewhere.com")
       => {:tyranitar "business" :onix "business" :shuppet "business"}
       (provided
        (onix/upsert-application "application")

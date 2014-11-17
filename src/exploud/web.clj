@@ -190,13 +190,10 @@
         (response (info/application application)))
 
    (PUT "/applications/:application"
-        [application description email owner]
+        [application email]
         (guarded
          (if (re-matches application-regex application)
-           (let [body (info/upsert-application default-region application
-                                               {:description description
-                                                :email email
-                                                :owner owner})]
+           (let [body (info/upsert-application default-region application email)]
              (response body nil 201))
            (error-response "Illegal application name" 400))))
 

@@ -19,10 +19,10 @@
   "Upserts an application into Onix, Tyranitar and Shuppet. This function
    can be run many times, it won't fail if the application is present in any of the
    stores."
-  [region application-name details]
+  [region application-name email]
   (let [onix-application (onix/upsert-application application-name)
         tyranitar-application (tyr/upsert-application application-name)
         shuppet-application (shuppet/upsert-application application-name)]
-    (onix/add-property application-name :contact (:email details))
+    (onix/add-property application-name :contact email)
     (shuppet/apply-config application-name)
     (merge (application application-name) tyranitar-application shuppet-application)))
