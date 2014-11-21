@@ -46,6 +46,10 @@
   [environment]
   {:term {:environment environment}})
 
+(defn user-filter
+  [user]
+  {:term {:user user}})
+
 (defn parent-filter
   [type parent-id]
   {:has_parent {:type type
@@ -164,6 +168,12 @@
   (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})
         facets (get-in result [:facets :user :terms])]
     (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
+
+(defn deployments-by-user-by-application
+  [user]
+  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (user-filter user)]}}) :size 0 :facets {:application (application-facet)})
+        facets (get-in result [:facets :application :terms])]
+    (map (fn [f] {:application (:term f) :count (:count f)}) facets)))
 
 (defn deployments-by-application
   []

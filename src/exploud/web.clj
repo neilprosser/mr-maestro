@@ -316,6 +316,10 @@
         []
         (response {:result (es/deployments-by-user)}))
 
+   (GET "/stats/deployments/by-user/:user/by-application"
+        [user]
+        (response {:result (es/deployments-by-user-by-application user)}))
+
    (GET "/stats/deployments/by-application"
         []
         (response {:result (es/deployments-by-application)}))
