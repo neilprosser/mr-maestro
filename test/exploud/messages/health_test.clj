@@ -10,12 +10,12 @@
    :region "region"
    :new-state {:auto-scaling-group-name "asg"
                :tyranitar {:application-properties {:service.port 9090
-                                                    :healthcheck.path "/the/healthcheck"
-                                                    :service.healthcheck.skip false}
-                           :deployment-params {:min 2}}}})
+                                                    :healthcheck.path "/the/healthcheck"}
+                           :deployment-params {:min 2
+                                               :skip-instance-healthcheck false}}}})
 
 (fact "that healthchecks are skipped if told to"
-      (wait-for-instances-to-be-healthy {:attempt 1 :parameters (assoc-in wait-for-instances-to-be-healthy-params [:new-state :tyranitar :application-properties :service.healthcheck.skip] true)})
+      (wait-for-instances-to-be-healthy {:attempt 1 :parameters (assoc-in wait-for-instances-to-be-healthy-params [:new-state :tyranitar :deployment-params :skip-instance-healthcheck] true)})
       => (contains {:status :success}))
 
 (fact "that checking the health when min is zero skips the process"

@@ -54,6 +54,12 @@
         legacy (get application-properties :service.healthcheck.path)]
     (or standard legacy default-healthcheck-path)))
 
+(defn- skip-instance-healthcheck?
+  [application-properties deployment-params]
+  (let [standard (get deployment-params :skip-instance-healthcheck)
+        legacy (get application-properties :service.healthcheck.skip)]
+    (or standard legacy default-healthcheck-skip)))
+
 (defn wait-for-instances-to-be-healthy
   [{:keys [parameters attempt]}]
   (let [{:keys [environment region]} parameters
@@ -62,7 +68,7 @@
         {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [application-properties deployment-params]} tyranitar
         service-port (get application-properties :service.port default-service-port)
-        skip-healthcheck? (get application-properties :service.healthcheck.skip default-healthcheck-skip)
+        skip-healthcheck? (skip-instance-healthcheck? application-properties deployment-params)
         healthcheck-path (util/strip-first-forward-slash (healthcheck-path application-properties))
         max-attempts (get deployment-params :instance-healthy-attempts  default-instances-maximum-attempts)
         min (:min deployment-params)]
