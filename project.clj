@@ -66,8 +66,8 @@
         :mail-from-address "exploud@brislabs.com"
         :mail-smtp-host ""
         :mail-to-address "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
-        :numel-poke-baseurl "http://numelpoke:8080"
-        :numel-prod-baseurl "http://numelprod:8080"
+        :numel-poke-baseurl "http://numelpoke"
+        :numel-prod-baseurl "http://numelprod"
         :onix-baseurl "http://onix"
         :prod-vpc-id "vpc-prod"
         :production false
@@ -80,7 +80,7 @@
         :service-jvmargs ""
         :service-name "exploud"
         :service-port 8080
-        :shuppet-baseurl "http://shuppet:8080"
+        :shuppet-baseurl "http://shuppet"
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
         :threads 254

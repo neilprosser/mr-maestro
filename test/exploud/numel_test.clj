@@ -12,7 +12,7 @@
       => ..json..
       (provided
        (environments/prod-account? "prod") => true
-       (http/simple-get "http://numelprod:8080/1.x/registrations/prod/application" {:socket-timeout 10000}) => {:body ..body..
+       (http/simple-get "http://numelprod/1.x/registrations/prod/application" {:socket-timeout 10000}) => {:body ..body..
                                                                                                                 :status 200}
        (json/parse-string ..body.. true) => ..json..))
 
@@ -21,7 +21,7 @@
       => ..json..
       (provided
        (environments/prod-account? "anything") => false
-       (http/simple-get "http://numelpoke:8080/1.x/registrations/anything/application" {:socket-timeout 10000}) => {:body ..body..
+       (http/simple-get "http://numelpoke/1.x/registrations/anything/application" {:socket-timeout 10000}) => {:body ..body..
                                                                                                                     :status 200}
        (json/parse-string ..body.. true) => ..json..))
 
@@ -30,5 +30,5 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (environments/prod-account? "anything") => false
-       (http/simple-get "http://numelpoke:8080/1.x/registrations/anything/application" {:socket-timeout 10000}) => {:body ..body..
+       (http/simple-get "http://numelpoke/1.x/registrations/anything/application" {:socket-timeout 10000}) => {:body ..body..
                                                                                                                     :status 500}))
