@@ -84,7 +84,7 @@
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
         :threads 254
-        :tyranitar-baseurl "http://tyranitar:8080"}
+        :tyranitar-baseurl "http://tyranitar"}
 
   :clean-targets ^{:protect false} [:target-path "docs"]
 

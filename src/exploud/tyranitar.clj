@@ -34,18 +34,18 @@
   "Creates the URL where we can find the content of a particular file for an
    application and environment combination."
   [environment application-name commit-hash file-name]
-  (str (url tyranitar-url "1.x" "applications" environment application-name commit-hash file-name)))
+  (str (url tyranitar-url "applications" environment application-name commit-hash file-name)))
 
 (defn- commits-url
   "Creates the URL where we can find the commits for an application in an
    environment."
   [environment application-name]
-  (str (url tyranitar-url "1.x" "applications" environment application-name)))
+  (str (url tyranitar-url "applications" environment application-name)))
 
 (defn- applications-url
   "The URL where we'll find a list of applications."
   []
-  (str (url tyranitar-url "1.x" "applications")))
+  (str (url tyranitar-url "applications")))
 
 (defn- get-file-content
   "Gets the content of a file for an application and environment."
