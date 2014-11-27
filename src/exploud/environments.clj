@@ -1,6 +1,6 @@
 (ns exploud.environments
   (:require [clojure.tools.logging :refer [warn]]
-            [exploud.onix :as onix]
+            [exploud.lister :as lister]
             [overtone.at-at :as at]))
 
 (def ^:private pool
@@ -29,7 +29,7 @@
 (defn update-environments
   []
   (try
-    (when-let [environments (map-by-name-kw (map onix/environment (onix/environments)))]
+    (when-let [environments (map-by-name-kw (map lister/environment (lister/environments)))]
       (reset! environments-atom environments))
     (catch Exception e
       (warn e "Failed to update environments"))))

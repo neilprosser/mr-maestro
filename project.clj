@@ -68,7 +68,8 @@
         :mail-to-address "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
         :numel-poke-baseurl "http://numelpoke"
         :numel-prod-baseurl "http://numelprod"
-        :onix-baseurl "http://onix"
+        :lister-baseurl "http://lister"
+        :pedantic-baseurl "http://pedantic"
         :prod-vpc-id "vpc-prod"
         :production false
         :redis-host "localhost"
@@ -80,11 +81,10 @@
         :service-jvmargs ""
         :service-name "exploud"
         :service-port 8080
-        :shuppet-baseurl "http://shuppet"
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
         :threads 254
-        :tyranitar-baseurl "http://tyranitar"}
+        :tyrant-baseurl "http://tyrant"}
 
   :clean-targets ^{:protect false} [:target-path "docs"]
 

@@ -9,22 +9,22 @@
 (def ^:private action-ordering
   (linked-set :exploud.messages.data/start-deployment-preparation
               :exploud.messages.data/validate-deployment
-              :exploud.messages.data/get-onix-metadata
-              :exploud.messages.data/ensure-tyranitar-hash
-              :exploud.messages.data/verify-tyranitar-hash
-              :exploud.messages.data/get-tyranitar-application-properties
-              :exploud.messages.data/get-tyranitar-deployment-params
+              :exploud.messages.data/get-lister-metadata
+              :exploud.messages.data/ensure-tyrant-hash
+              :exploud.messages.data/verify-tyrant-hash
+              :exploud.messages.data/get-tyrant-application-properties
+              :exploud.messages.data/get-tyrant-deployment-params
               :exploud.messages.data/validate-deployment-params
-              :exploud.messages.data/get-tyranitar-launch-data
+              :exploud.messages.data/get-tyrant-launch-data
               :exploud.messages.data/populate-previous-state
-              :exploud.messages.data/populate-previous-tyranitar-application-properties
+              :exploud.messages.data/populate-previous-tyrant-application-properties
               :exploud.messages.data/get-previous-image-details
               :exploud.messages.data/create-names
               :exploud.messages.data/get-image-details
               :exploud.messages.data/verify-image
               :exploud.messages.data/check-instance-type-compatibility
               :exploud.messages.data/check-contact-property
-              :exploud.messages.data/check-shuppet-configuration
+              :exploud.messages.data/check-pedantic-configuration
               :exploud.messages.data/create-block-device-mappings
               :exploud.messages.data/add-required-security-groups
               :exploud.messages.data/map-security-group-ids

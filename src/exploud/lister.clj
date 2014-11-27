@@ -1,42 +1,42 @@
-(ns exploud.onix
-  "## Integration with Onix"
+(ns exploud.lister
+  "## Integration with Lister"
   (:require [cheshire.core :as json]
             [cemerick.url :refer [url]]
             [environ.core :refer [env]]
             [exploud.http :as http]))
 
-(def onix-url
-  "The URL where Onix is running."
-  (url (env :onix-baseurl)))
+(def lister-url
+  "The URL where Lister is running."
+  (url (env :lister-baseurl)))
 
 (defn applications-url
-  "The URL where we can get information about the applications Onix knows
+  "The URL where we can get information about the applications Lister knows
    about."
   []
-  (str (url onix-url "applications")))
+  (str (url lister-url "applications")))
 
 (defn application-url
   "The URL where we can get information about a specific application."
   [application-name]
-  (str (url onix-url "applications" application-name)))
+  (str (url lister-url "applications" application-name)))
 
 (defn environments-url
-  "The URL where we can get information about the environments Onix knows about."
+  "The URL where we can get information about the environments Lister knows about."
   []
-  (str (url onix-url "environments")))
+  (str (url lister-url "environments")))
 
 (defn environment-url
   "The URL where we can get information about a specific environment."
   [environment-name]
-  (str (url onix-url "environments" environment-name)))
+  (str (url lister-url "environments" environment-name)))
 
 (defn property-url
   "The URL where we can get information about the property of an application."
   [application-name property-name]
-  (str (url onix-url "applications" application-name property-name)))
+  (str (url lister-url "applications" application-name property-name)))
 
 (defn create-application
-  "Creates an applcation in Onix and returns the application. If the
+  "Creates an applcation in Lister and returns the application. If the
    application is already present, this method will fail."
   [application-name]
   (let [{:keys [body status] :as response} (http/simple-put (application-url application-name))]
@@ -61,7 +61,7 @@
       (:metadata (json/parse-string body true)))))
 
 (defn applications
-  "Gets all applications Onix knows about."
+  "Gets all applications Lister knows about."
   []
   (let [{:keys [body status]} (http/simple-get (applications-url))]
     (if (= status 200)
@@ -83,7 +83,7 @@
       (json/parse-string body true))))
 
 (defn environments
-  "Gets all environments Onix knows about."
+  "Gets all environments Lister knows about."
   []
   (let [{:keys [body status]} (http/simple-get (environments-url))]
     (when (= status 200)

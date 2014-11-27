@@ -1,7 +1,7 @@
-(ns exploud.tyranitar
-  "## Integration with Tyranitar
+(ns exploud.tyrant
+  "## Integration with Tyrant
 
-   We use Tyranitar as a store for version-controlled information about
+   We use Tyrant as a store for version-controlled information about
    applications. We use it to store three main parts of configuration:
 
    - __application-properties__ - the properties that are given to an
@@ -26,26 +26,26 @@
   "The number of millisecond we'll wait for POST requests."
   180000)
 
-(def tyranitar-url
-  "The URL where Tyranitar is deployed."
-  (url (env :tyranitar-baseurl)))
+(def tyrant-url
+  "The URL where Tyrant is deployed."
+  (url (env :tyrant-baseurl)))
 
 (defn- file-url
   "Creates the URL where we can find the content of a particular file for an
    application and environment combination."
   [environment application-name commit-hash file-name]
-  (str (url tyranitar-url "applications" environment application-name commit-hash file-name)))
+  (str (url tyrant-url "applications" environment application-name commit-hash file-name)))
 
 (defn- commits-url
   "Creates the URL where we can find the commits for an application in an
    environment."
   [environment application-name]
-  (str (url tyranitar-url "applications" environment application-name)))
+  (str (url tyrant-url "applications" environment application-name)))
 
 (defn- applications-url
   "The URL where we'll find a list of applications."
   []
-  (str (url tyranitar-url "applications")))
+  (str (url tyrant-url "applications")))
 
 (defn- get-file-content
   "Gets the content of a file for an application and environment."
@@ -95,7 +95,7 @@
   (contains? (apply hash-set (map :hash (commits environment application-name))) hash))
 
 (defn create-application
-  "Creates an application in Tyranitar. Will fail if the application already
+  "Creates an application in Tyrant. Will fail if the application already
    exists."
   [application-name]
   (let [content (json/generate-string {:name application-name})

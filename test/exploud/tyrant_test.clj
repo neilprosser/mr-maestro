@@ -1,8 +1,8 @@
-(ns exploud.tyranitar-test
+(ns exploud.tyrant-test
   (:require [cheshire.core :as json]
             [exploud
              [http :as http]
-             [tyranitar :refer :all]]
+             [tyrant :refer :all]]
             [midje.sweet :refer :all])
   (:import clojure.lang.ExceptionInfo))
 
@@ -11,7 +11,7 @@
       => ..properties..
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/application-properties"
+        "http://tyrant/applications/environment/application/hash/application-properties"
         {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
@@ -23,7 +23,7 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/application-properties"
+        "http://tyrant/applications/environment/application/hash/application-properties"
         {:socket-timeout 30000})
        => {:status 503}))
 
@@ -32,7 +32,7 @@
       => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/application-properties"
+        "http://tyrant/applications/environment/application/hash/application-properties"
         {:socket-timeout 30000})
        => {:status 500}))
 
@@ -41,7 +41,7 @@
       => ..properties..
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/deployment-params"
+        "http://tyrant/applications/environment/application/hash/deployment-params"
         {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
@@ -53,7 +53,7 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/deployment-params"
+        "http://tyrant/applications/environment/application/hash/deployment-params"
         {:socket-timeout 30000})
        => {:status 503}))
 
@@ -62,7 +62,7 @@
       => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/deployment-params"
+        "http://tyrant/applications/environment/application/hash/deployment-params"
         {:socket-timeout 30000})
        => {:status 500}))
 
@@ -71,7 +71,7 @@
       => ..properties..
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/launch-data"
+        "http://tyrant/applications/environment/application/hash/launch-data"
         {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
@@ -83,7 +83,7 @@
       => (throws ExceptionInfo "Unexpected response")
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/launch-data"
+        "http://tyrant/applications/environment/application/hash/launch-data"
         {:socket-timeout 30000})
        => {:status 503}))
 
@@ -92,7 +92,7 @@
       => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application/hash/launch-data"
+        "http://tyrant/applications/environment/application/hash/launch-data"
         {:socket-timeout 30000})
        => {:status 500}))
 
@@ -101,7 +101,7 @@
       => ..commits..
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application"
+        "http://tyrant/applications/environment/application"
         {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
@@ -113,7 +113,7 @@
       => "last-commit"
       (provided
        (http/simple-get
-        "http://tyranitar/applications/environment/application"
+        "http://tyrant/applications/environment/application"
         {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
@@ -136,7 +136,7 @@
       (verify-commit-hash "environment" "application" "hash")
       => (throws ExceptionInfo "Unexpected response")
       (provided
-       (http/simple-get "http://tyranitar/applications/environment/application" {:socket-timeout 30000}) => {:status 500}))
+       (http/simple-get "http://tyrant/applications/environment/application" {:socket-timeout 30000}) => {:status 500}))
 
 (fact "that creating an application does the right thing"
       (create-application "application")
@@ -145,7 +145,7 @@
        (json/generate-string {:name "application"})
        => ..application-body..
        (http/simple-post
-        "http://tyranitar/applications"
+        "http://tyrant/applications"
         {:content-type :json
          :body ..application-body..
          :socket-timeout 180000})
@@ -161,7 +161,7 @@
        (json/generate-string {:name "application"})
        => ..application-body..
        (http/simple-post
-        "http://tyranitar/applications"
+        "http://tyrant/applications"
         {:content-type :json
          :body ..application-body..
          :socket-timeout 180000})
@@ -171,7 +171,7 @@
       (application "application")
       => ..application..
       (provided
-       (http/simple-get "http://tyranitar/applications"
+       (http/simple-get "http://tyrant/applications"
                         {:socket-timeout 30000})
        => {:status 200
            :body ..body..}
@@ -182,7 +182,7 @@
       (application "application")
       => (throws ExceptionInfo "Unexpected response")
       (provided
-       (http/simple-get "http://tyranitar/applications"
+       (http/simple-get "http://tyrant/applications"
                         {:socket-timeout 30000})
        => {:status 500}))
 

@@ -1,26 +1,26 @@
-(ns exploud.onix-test
+(ns exploud.lister-test
   (:require [cheshire.core :as json]
             [exploud
              [http :as http]
-             [onix :refer :all]]
+             [lister :refer :all]]
             [midje.sweet :refer :all])
   (:import clojure.lang.ExceptionInfo))
 
-(fact "that when creating an application we send the right thing to Onix"
+(fact "that when creating an application we send the right thing to Lister"
       (create-application "app-name")
       => ..application..
       (provided
-       (http/simple-put "http://onix/applications/app-name")
+       (http/simple-put "http://lister/applications/app-name")
        => {:status 201
            :body ..response-json..}
        (json/parse-string ..response-json.. true)
        => ..application..))
 
-(fact "that when creating an application and Onix gives a non-201 status we throw an exception"
+(fact "that when creating an application and Lister gives a non-201 status we throw an exception"
       (create-application "app-name")
       => (throws ExceptionInfo "Unexpected status while creating application")
       (provided
-       (http/simple-put "http://onix/applications/app-name")
+       (http/simple-put "http://lister/applications/app-name")
        => {:status 500}))
 
 (fact "that when adding a property we do the right thing"
@@ -30,7 +30,7 @@
        (json/generate-string {:value "some value"})
        => ..body..
        (http/simple-put
-        "http://onix/applications/application/property"
+        "http://lister/applications/application/property"
         {:content-type :json
          :body ..body..})
        => {:status 201}))
@@ -42,7 +42,7 @@
        (json/generate-string {:value "some value"})
        => ..body..
        (http/simple-put
-        "http://onix/applications/application/property"
+        "http://lister/applications/application/property"
         {:content-type :json
          :body ..body..})
        => {:status 500}))
@@ -52,7 +52,7 @@
       => ..details..
       (provided
        (http/simple-get
-        "http://onix/applications/app-name")
+        "http://lister/applications/app-name")
        => {:status 200
            :body ..body..}
        (json/parse-string ..body.. true)
@@ -63,7 +63,7 @@
       => nil
       (provided
        (http/simple-get
-        "http://onix/applications/app-name")
+        "http://lister/applications/app-name")
        => {:status 404}))
 
 (fact "that when upserting an application that doesn't exist we create it"
@@ -87,32 +87,32 @@
       => {:names ["name1" "name2"]}
       (provided
        (http/simple-get
-        "http://onix/applications")
+        "http://lister/applications")
        => {:status 200
            :body "{\"applications\":[\"name1\",\"name2\"]}"}))
 
 (fact "that getting an environment works properly when the environment exists"
       (environment "env") => ..env..
       (provided
-       (http/simple-get "http://onix/environments/env") => {:status 200
-                                                            :body ..body..}
+       (http/simple-get "http://lister/environments/env") => {:status 200
+                                                              :body ..body..}
        (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment works properly when using a keyword"
       (environment :env) => ..env..
       (provided
-       (http/simple-get "http://onix/environments/env") => {:status 200
-                                                            :body ..body..}
+       (http/simple-get "http://lister/environments/env") => {:status 200
+                                                              :body ..body..}
        (json/parse-string ..body.. true) => ..env..))
 
 (fact "that getting an environment which doesn't exist gives nil"
       (environment "env") => nil
       (provided
-       (http/simple-get "http://onix/environments/env") => {:status 404}))
+       (http/simple-get "http://lister/environments/env") => {:status 404}))
 
 (fact "that getting environments works properly"
       (environments) => #{"one" "two"}
       (provided
-       (http/simple-get "http://onix/environments") => {:status 200
-                                                        :body ..body..}
+       (http/simple-get "http://lister/environments") => {:status 200
+                                                          :body ..body..}
        (json/parse-string ..body.. true) => {:environments ["one" "two"]}))

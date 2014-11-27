@@ -1,38 +1,38 @@
 (ns exploud.info-test
   (:require [exploud
              [info :refer :all]
-             [onix :as onix]
-             [tyranitar :as tyr]
-             [shuppet :as shuppet]]
+             [lister :as lister]
+             [pedantic :as pedantic]
+             [tyrant :as tyr]]
             [midje.sweet :refer :all]))
 
-(fact "that getting applications returns whatever Onix gives back"
+(fact "that getting applications returns whatever Lister gives back"
       (applications)
       => ..applications..
       (provided
-       (onix/applications)
+       (lister/applications)
        => ..applications..))
 
-(fact "that getting an application returns whatever Onix gives back"
+(fact "that getting an application returns whatever Lister gives back"
       (application "application")
       => ..app..
       (provided
-       (onix/application "application")
+       (lister/application "application")
        => ..app..))
 
-(fact "that upserting an application attempts to put it into Onix, Tyranitar"
+(fact "that upserting an application attempts to put it into Lister, Tyrant and Pedantic"
       (upsert-application "region" "application" "contact@somewhere.com")
-      => {:tyranitar "business" :onix "business" :shuppet "business"}
+      => {:tyrant "business" :lister "business" :pedantic "business"}
       (provided
-       (onix/upsert-application "application")
-       => ..onix..
+       (lister/upsert-application "application")
+       => ..lister..
        (tyr/upsert-application "application")
-       => {:tyranitar "business"}
-       (shuppet/upsert-application "application")
-       => {:shuppet "business"}
-       (onix/add-property "application" :contact "contact@somewhere.com")
+       => {:tyrant "business"}
+       (pedantic/upsert-application "application")
+       => {:pedantic "business"}
+       (lister/add-property "application" :contact "contact@somewhere.com")
        => nil
-       (shuppet/apply-config "application")
-       => ..shuppet-apply..
+       (pedantic/apply-config "application")
+       => ..pedantic-apply..
        (application "application")
-       => {:onix "business"}))
+       => {:lister "business"}))

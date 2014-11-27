@@ -6,17 +6,11 @@ Exploud is the main port of call for deploying applications to AWS. It will kick
 
 ## Resources
 
-`GET /1.x/ping`
+`GET /ping`
 `pong`.
 
-`GET /1.x/status`
-Status information in JSON form.
-
-`GET /1.x/pokemon`
-An ASCII representation of Exploud.
-
-`GET /1.x/icon`
-The JPEG representation of Exploud.
+`GET /healthcheck`
+Shows the health of the application.
 
 `GET /1.x/instances/:app-name`
 All instances of an application in JSON form.
@@ -38,13 +32,13 @@ Query deployments. Query parameters allowed are:
 The details of a specific deployment.
 
 `GET /1.x/applications`
-The list of all applications known about by Onix.
+The list of all applications known about by Lister.
 
 `GET /1.x/applications/:application`
 The details of a specific application.
 
 `PUT /1.x/applications/:application`
-Upsert an application to Onix, Shuppet and Tyranitar.
+Upsert an application to Lister, Pedantic and Tyrant.
 
 `POST /1.x/applications/:application/deploy`
 Begin the deployment of an application. JSON body must include the following:

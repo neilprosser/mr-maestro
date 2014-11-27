@@ -56,12 +56,6 @@
       (request :get "/1.x/ping") => (contains {:body "pong"
                                                :status 200}))
 
-(fact "that we've got a pokémon resource"
-      (request :get "/1.x/pokemon") => (contains {:status 200}))
-
-(fact "that we've got an icon resource"
-      (request :get "/1.x/icon") => (contains {:status 200}))
-
 (fact "that we can retrieve the queue status"
       (request :get "/1.x/queue-status") => (contains {:body {:queue "status"}
                                                        :status 200})

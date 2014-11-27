@@ -4,9 +4,9 @@
             [exploud
              [aws :as aws]
              [block-devices :as dev]
-             [onix :as onix]
-             [shuppet :as shuppet]
-             [tyranitar :as tyr]
+             [lister :as lister]
+             [pedantic :as pedantic]
+             [tyrant :as tyr]
              [util :as util]
              [validators :as v]]
             [exploud.messages.data :refer :all]
@@ -29,35 +29,35 @@
       (provided
        (b/validate ..deployment.. v/deployment-validators) => ["busted"]))
 
-(fact "that getting the Onix metadata fails when there is an error"
-      (get-onix-metadata {:parameters {:application "application"}}) => (contains {:status :error})
+(fact "that getting the Lister metadata fails when there is an error"
+      (get-lister-metadata {:parameters {:application "application"}}) => (contains {:status :error})
       (provided
-       (onix/application "application") =throws=> (ex-info "Broken" {})))
+       (lister/application "application") =throws=> (ex-info "Broken" {})))
 
-(fact "that getting the Onix metadata fails when there is no metadata"
-      (get-onix-metadata {:parameters {:application "application"}}) => (contains {:status :error})
+(fact "that getting the Lister metadata fails when there is no metadata"
+      (get-lister-metadata {:parameters {:application "application"}}) => (contains {:status :error})
       (provided
-       (onix/application "application") => nil))
+       (lister/application "application") => nil))
 
-(fact "that getting the Onix metadata works"
-      (get-onix-metadata {:parameters {:application "application"}}) => (contains {:status :success
-                                                                                   :parameters {:application "application"
-                                                                                                :new-state {:onix ..onix..}}})
+(fact "that getting the Lister metadata works"
+      (get-lister-metadata {:parameters {:application "application"}}) => (contains {:status :success
+                                                                                     :parameters {:application "application"
+                                                                                                  :new-state {:onix ..lister..}}})
       (provided
-       (onix/application "application") => ..onix..))
+       (lister/application "application") => ..lister..))
 
-(fact "that ensuring the Tyranitar hash doesn't go to Tyranitar if the hash is present"
-      (ensure-tyranitar-hash {:parameters {:application "application"
-                                           :environment "environment"
-                                           :new-state {:hash "hash"}}}) => {:status :success
-                                                                            :parameters {:application "application"
-                                                                                         :environment "environment"
-                                                                                         :new-state {:hash "hash"}}})
+(fact "that ensuring the Tyrant hash doesn't go to Tyrant if the hash is present"
+      (ensure-tyrant-hash {:parameters {:application "application"
+                                        :environment "environment"
+                                        :new-state {:hash "hash"}}}) => {:status :success
+                                                                         :parameters {:application "application"
+                                                                                      :environment "environment"
+                                                                                      :new-state {:hash "hash"}}})
 
-(fact "that ensuring the Tyranitar hash goes to Tyranitar if the hash isn't present"
-      (ensure-tyranitar-hash {:parameters {:application "application"
-                                           :environment "environment"
-                                           :new-state {}}})
+(fact "that ensuring the Tyrant hash goes to Tyrant if the hash isn't present"
+      (ensure-tyrant-hash {:parameters {:application "application"
+                                        :environment "environment"
+                                        :new-state {}}})
       => {:status :success
           :parameters {:application "application"
                        :environment "environment"
@@ -65,56 +65,56 @@
       (provided
        (tyr/last-commit-hash "environment" "application") => "last-hash"))
 
-(fact "that ensuring the Tyranitar hash is an error if there's an exception"
-      (ensure-tyranitar-hash {:parameters {:application "application"
-                                           :environment "environment"
-                                           :new-state {}}})
+(fact "that ensuring the Tyrant hash is an error if there's an exception"
+      (ensure-tyrant-hash {:parameters {:application "application"
+                                        :environment "environment"
+                                        :new-state {}}})
       => (contains {:status :error})
       (provided
        (tyr/last-commit-hash "environment" "application") =throws=> (ex-info "Busted" {})))
 
-(fact "that verifying the Tyranitar hash works"
-      (verify-tyranitar-hash {:parameters {:application "application"
-                                           :environment "environment"
-                                           :new-state {:hash "hash"}}})
+(fact "that verifying the Tyrant hash works"
+      (verify-tyrant-hash {:parameters {:application "application"
+                                        :environment "environment"
+                                        :new-state {:hash "hash"}}})
       => (contains {:status :success})
       (provided
        (tyr/verify-commit-hash "environment" "application" "hash") => true))
 
-(fact "that verifying the Tyranitar hash is an error if it doesn't match"
-      (verify-tyranitar-hash {:parameters {:application "application"
-                                           :environment "environment"
-                                           :new-state {:hash "hash"}}})
+(fact "that verifying the Tyrant hash is an error if it doesn't match"
+      (verify-tyrant-hash {:parameters {:application "application"
+                                        :environment "environment"
+                                        :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/verify-commit-hash "environment" "application" "hash") => false))
 
-(fact "that an exception while verifying the Tyranitar hash is an error"
-      (verify-tyranitar-hash {:parameters {:application "application"
-                                           :environment "environment"
-                                           :new-state {:hash "hash"}}})
+(fact "that an exception while verifying the Tyrant hash is an error"
+      (verify-tyrant-hash {:parameters {:application "application"
+                                        :environment "environment"
+                                        :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/verify-commit-hash "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
-(fact "that getting no Tyranitar application properties is an error"
-      (get-tyranitar-application-properties {:parameters {:application "application"
-                                                          :environment "environment"
-                                                          :new-state {:hash "hash"}}})
+(fact "that getting no Tyrant application properties is an error"
+      (get-tyrant-application-properties {:parameters {:application "application"
+                                                       :environment "environment"
+                                                       :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/application-properties "environment" "application" "hash") => nil))
 
-(fact "that an error while getting Tyranitar application properties is an error"
-      (get-tyranitar-application-properties {:parameters {:application "application"
-                                                          :environment "environment"
-                                                          :new-state {:hash "hash"}}})
+(fact "that an error while getting Tyrant application properties is an error"
+      (get-tyrant-application-properties {:parameters {:application "application"
+                                                       :environment "environment"
+                                                       :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/application-properties "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
-(fact "that getting Tyranitar application properties works"
-      (get-tyranitar-application-properties {:parameters {:application "application"
+(fact "that getting Tyrant application properties works"
+      (get-tyrant-application-properties {:parameters {:application "application"
                                                           :environment "environment"
                                                           :new-state {:hash "hash"}}})
       => {:status :success
@@ -125,24 +125,24 @@
       (provided
        (tyr/application-properties "environment" "application" "hash") => {:tyranitar :properties}))
 
-(fact "that getting no Tyranitar deployment params is an error"
-      (get-tyranitar-deployment-params {:parameters {:application "application"
-                                                     :environment "environment"
-                                                     :new-state {:hash "hash"}}})
+(fact "that getting no Tyrant deployment params is an error"
+      (get-tyrant-deployment-params {:parameters {:application "application"
+                                                  :environment "environment"
+                                                  :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/deployment-params "environment" "application" "hash") => nil))
 
-(fact "that an error while getting Tyranitar deployment params is an error"
-      (get-tyranitar-deployment-params {:parameters {:application "application"
+(fact "that an error while getting Tyrant deployment params is an error"
+      (get-tyrant-deployment-params {:parameters {:application "application"
                                                      :environment "environment"
                                                      :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/deployment-params "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
-(fact "that getting Tyranitar deployment params adds in defaults where a value hasn't been specified"
-      (get-in (get-tyranitar-deployment-params {:parameters {:application "application"
+(fact "that getting Tyrant deployment params adds in defaults where a value hasn't been specified"
+      (get-in (get-tyrant-deployment-params {:parameters {:application "application"
                                                              :environment "environment"
                                                              :new-state {:hash "hash"}}}) [:parameters :new-state :tyranitar :deployment-params])
       => (contains {:default-cooldown 10
@@ -155,32 +155,32 @@
                                     :other ["other is broken"]})
       => "Validation result:\n* other is broken\n* something has one problem\n* something has another problem")
 
-(fact "that validating Tyranitar deployment params is an error if the validation fails"
+(fact "that validating Tyrant deployment params is an error if the validation fails"
       (validate-deployment-params {:parameters {:new-state {:tyranitar {:deployment-params {:max "a"}}}}})
       => (contains {:status :error}))
 
-(fact "that getting no Tyranitar launch data is an error"
-      (get-tyranitar-launch-data {:parameters {:application "application"
+(fact "that getting no Tyrant launch data is an error"
+      (get-tyrant-launch-data {:parameters {:application "application"
                                                :environment "environment"
                                                :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/launch-data "environment" "application" "hash") => nil))
 
-(fact "that validating Tyranitar deployment params is successful if the validation succeeds"
+(fact "that validating Tyrant deployment params is successful if the validation succeeds"
       (validate-deployment-params {:parameters {:new-state {:tyranitar {:deployment-params {}}}}})
       => (contains {:status :success}))
 
-(fact "that an error while getting Tyranitar launch data is an error"
-      (get-tyranitar-launch-data {:parameters {:application "application"
+(fact "that an error while getting Tyrant launch data is an error"
+      (get-tyrant-launch-data {:parameters {:application "application"
                                                :environment "environment"
                                                :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/launch-data "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
-(fact "that getting Tyranitar launch data works"
-      (get-tyranitar-launch-data {:parameters {:application "application"
+(fact "that getting Tyrant launch data works"
+      (get-tyrant-launch-data {:parameters {:application "application"
                                                :environment "environment"
                                                :new-state {:hash "hash"}}})
       => {:status :success
@@ -242,8 +242,8 @@
       (provided
        (aws/last-application-auto-scaling-group "application" "environment" "region") => nil))
 
-(fact "that populating previous tyranitar application properties when no previous state exists succeeds"
-      (populate-previous-tyranitar-application-properties {:parameters {:application "application"
+(fact "that populating previous Tyranit application properties when no previous state exists succeeds"
+      (populate-previous-tyrant-application-properties {:parameters {:application "application"
                                                                         :environment "environment"}})
       => {:parameters {:application "application"
                        :environment "environment"}
@@ -306,33 +306,33 @@
                                                                    :tyranitar {:deployment-params {:instance-type "t2.micro"}}}}})
       => (contains {:status :error}))
 
-(fact "that checking Shuppet configuration succeeds when Shuppet configuration exists"
-      (check-shuppet-configuration {:parameters {:application "application"
-                                                 :environment "poke"}})
+(fact "that checking Pedantic configuration succeeds when Pedantic configuration exists"
+      (check-pedantic-configuration {:parameters {:application "application"
+                                                  :environment "poke"}})
       => (contains {:status :success})
       (provided
-       (shuppet/configuration "poke" "application") => {}))
+       (pedantic/configuration "poke" "application") => {}))
 
-(fact "that checking Shuppet configuration fails when Shuppet configuration doesn't exist"
-      (check-shuppet-configuration {:parameters {:application "application"
-                                                 :environment "poke"}})
+(fact "that checking Pedantic configuration fails when Pedantic configuration doesn't exist"
+      (check-pedantic-configuration {:parameters {:application "application"
+                                                  :environment "poke"}})
       => (contains {:status :error})
       (provided
-       (shuppet/configuration "poke" "application") => nil))
+       (pedantic/configuration "poke" "application") => nil))
 
-(fact "that checking Shuppet configuration retries when Shuppet throws up"
-      (check-shuppet-configuration {:parameters {:application "application"
-                                                 :environment "prod"}})
+(fact "that checking Pedantic configuration retries when Pedantic throws up"
+      (check-pedantic-configuration {:parameters {:application "application"
+                                                  :environment "prod"}})
       => (contains {:status :retry})
       (provided
-       (shuppet/configuration "prod" "application") =throws=> (ex-info "Busted" {:type :exploud.shuppet/unexpected-response})))
+       (pedantic/configuration "prod" "application") =throws=> (ex-info "Busted" {:type :exploud.pedantic/unexpected-response})))
 
-(fact "that checking Shuppet configuration ignores environments other than 'poke' or 'prod'"
-      (check-shuppet-configuration {:parameters {:application "application"
-                                                 :environment "environment"}})
+(fact "that checking Pedantic configuration ignores environments other than 'poke' or 'prod'"
+      (check-pedantic-configuration {:parameters {:application "application"
+                                                  :environment "environment"}})
       => (contains {:status :success})
       (provided
-       (shuppet/configuration "environment" "application") => {} :times 0))
+       (pedantic/configuration "environment" "application") => {} :times 0))
 
 (fact "that adding the block device mappings works if nothing has been provided"
       (create-block-device-mappings {:parameters {:new-state {:image-details {:virt-type "para"}

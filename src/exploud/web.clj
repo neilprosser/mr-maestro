@@ -19,7 +19,6 @@
              [environments :as environments]
              [info :as info]
              [jsonp :refer [wrap-json-with-padding]]
-             [pokemon :as pokemon]
              [redis :as redis]
              [util :as util]
              [validators :as v]]
@@ -98,16 +97,6 @@
    (GET "/ping"
         []
         (response "pong" "text/plain"))
-
-   (GET "/pokemon"
-        []
-        (response pokemon/pokemon "text/plain"))
-
-   (GET "/icon"
-        []
-        (response (clojure.java.io/input-stream
-                   (clojure.java.io/resource "exploud.jpg"))
-                  "image/jpeg"))
 
    (GET "/queue-status"
         []

@@ -1,19 +1,19 @@
 (ns exploud.environments-test
   (:require [exploud
              [environments :refer :all]
-             [onix :as onix]]
+             [lister :as lister]]
             [midje.sweet :refer :all]
             [overtone.at-at :as at]))
 
 (fact "that getting nil back when updating environments does not replace the value"
       (do (reset! environments-atom nil) (update-environments) (environments)) => nil
       (provided
-       (onix/environments) => nil))
+       (lister/environments) => nil))
 
 (fact "that an exception while getting environments does not replace the value"
       (do (reset! environments-atom nil) (update-environments) (environments)) => nil
       (provided
-       (onix/environments) =throws=> (ex-info "Busted" {})))
+       (lister/environments) =throws=> (ex-info "Busted" {})))
 
 (fact "that updating our environments does what we expect"
       (do (reset! environments-atom nil) (update-environments) (environments)) => {:env1 {:name "env1"
@@ -21,9 +21,9 @@
                                                                                    :env2 {:name "env2"
                                                                                           :metadata {:second "metadata"}}}
       (provided
-       (onix/environments) => ["env1" "env2"]
-       (onix/environment "env1") => {:name "env1" :metadata {:first "metadata"}}
-       (onix/environment "env2") => {:name "env2" :metadata {:second "metadata"}}))
+       (lister/environments) => ["env1" "env2"]
+       (lister/environment "env1") => {:name "env1" :metadata {:first "metadata"}}
+       (lister/environment "env2") => {:name "env2" :metadata {:second "metadata"}}))
 
 (fact "that getting a single environment does what we expect when the environment exists"
       (environment "env2") => ..env2..

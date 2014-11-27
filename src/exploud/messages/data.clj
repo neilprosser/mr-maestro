@@ -8,12 +8,12 @@
              [aws :as aws]
              [block-devices :as dev]
              [hubot :as hubot]
+             [lister :as lister]
              [log :as log]
-             [onix :as onix]
              [naming :as naming]
+             [pedantic :as pedantic]
              [responses :refer :all]
-             [shuppet :as shuppet]
-             [tyranitar :as tyr]
+             [tyrant :as tyr]
              [userdata :as ud]
              [util :as util]
              [validators :as v]]
@@ -76,37 +76,37 @@
                                                             :details details}))
       (success parameters))))
 
-(defn get-onix-metadata
+(defn get-lister-metadata
   [{:keys [parameters]}]
-  (log/write "Getting Onix metadata.")
+  (log/write "Getting Lister metadata.")
   (when-let [application (:application parameters)]
     (try
-      (if-let [onix-details (onix/application application)]
-        (success (assoc-in parameters [:new-state :onix] onix-details))
-        (error-with (ex-info "Failed to obtain Onix metadata." {:application application})))
+      (if-let [lister-details (lister/application application)]
+        (success (assoc-in parameters [:new-state :onix] lister-details))
+        (error-with (ex-info "Failed to obtain Lister metadata." {:application application})))
       (catch Exception e
         (error-with e)))))
 
-(defn ensure-tyranitar-hash
+(defn ensure-tyrant-hash
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters
         state (:new-state parameters)
         {:keys [hash]} state]
     (try
       (if hash
-        (log/write "Using given Tyranitar hash.")
-        (log/write "Getting latest Tyranitar hash."))
+        (log/write "Using given Tyrant hash.")
+        (log/write "Getting latest Tyrant hash."))
       (success (assoc-in parameters [:new-state :hash] (or hash (tyr/last-commit-hash environment application))))
       (catch Exception e
         (error-with e)))))
 
-(defn verify-tyranitar-hash
+(defn verify-tyrant-hash
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters
         state (:new-state parameters)
         {:keys [hash]} state]
     (try
-      (log/write (format "Verifying Tyranitar hash '%s'." hash))
+      (log/write (format "Verifying Tyrant hash '%s'." hash))
       (if (tyr/verify-commit-hash environment application hash)
         (success parameters)
         (do
@@ -118,7 +118,7 @@
       (catch Exception e
         (error-with e)))))
 
-(defn get-tyranitar-application-properties
+(defn get-tyrant-application-properties
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters
         state (:new-state parameters)
@@ -148,7 +148,7 @@
    :subnet-purpose "internal"
    :termination-policy "Default"})
 
-(defn get-tyranitar-deployment-params
+(defn get-tyrant-deployment-params
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters
         state (:new-state parameters)
@@ -185,7 +185,7 @@
         (error-with (ex-info "Deployment params are invalid." {:type ::invalid-deployment-params})))
       (success parameters))))
 
-(defn get-tyranitar-launch-data
+(defn get-tyrant-launch-data
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters
         state (:new-state parameters)
@@ -255,7 +255,7 @@
       (catch Exception e
         (error-with e)))))
 
-(defn populate-previous-tyranitar-application-properties
+(defn populate-previous-tyrant-application-properties
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters
         state (:previous-state parameters)
@@ -343,22 +343,22 @@
         state (:new-state parameters)
         {:keys [onix]} state
         {:keys [contact]} onix]
-    (log/write (format "Checking that the 'contact' property is set for application '%s' in Onix." application))
+    (log/write (format "Checking that the 'contact' property is set for application '%s' in Lister." application))
     (if contact
       (success parameters)
-      (error-with (ex-info "Contact property is not set in Onix metadata." {:type ::contact-missing})))))
+      (error-with (ex-info "Contact property is not set in Lister metadata." {:type ::contact-missing})))))
 
-(defn check-shuppet-configuration
+(defn check-pedantic-configuration
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters]
-    (log/write (format "Checking that Shuppet configuration exists for application '%s' in environment '%s'." application environment))
+    (log/write (format "Checking that Pedantic configuration exists for application '%s' in environment '%s'." application environment))
     (if (or (= environment "poke") (= environment "prod"))
       (try
-        (if (shuppet/configuration environment application)
+        (if (pedantic/configuration environment application)
           (success parameters)
-          (error-with (ex-info "Shuppet configuration missing for the application." {:type ::missing-shuppet
-                                                                                     :application application
-                                                                                     :environment environment})))
+          (error-with (ex-info "Pedantic configuration missing for the application." {:type ::missing-pedantic
+                                                                                      :application application
+                                                                                      :environment environment})))
         (catch Exception e
           (error-with e)))
       (success parameters))))

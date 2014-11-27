@@ -28,7 +28,7 @@
 
 (defn- unexpected-response?
   [e]
-  (= :exploud.shuppet/unexpected-response (:type (ex-data e))))
+  (= :exploud.pedantic/unexpected-response (:type (ex-data e))))
 
 (defn- retryable-error?
   [e]
