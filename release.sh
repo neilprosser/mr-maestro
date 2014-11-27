@@ -14,7 +14,7 @@ export LEIN_SNAPSHOTS_IN_RELEASE=y
 lein release || exit 1
 
 #upload rpm
-scp -i ~/.ssh/dmt-key exploud/RPMS/noarch/*.rpm root@yumrepo.brislabs.com:/var/tmp/rpms/
+scp -i ~/.ssh/dmt-key maestro/RPMS/noarch/*.rpm root@yumrepo.brislabs.com:/var/tmp/rpms/
 name=`find . -name '*.noarch.rpm'`
 name=`basename $name`
 scp -i ~/.ssh/dmt-key project.clj root@yumrepo.brislabs.com:/var/tmp/rpms/$name.RECEIPT

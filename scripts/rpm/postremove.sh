@@ -2,8 +2,8 @@
 
 if [ "$1" = 0 ]
 then
-  /usr/sbin/userdel -r exploud 2> /dev/null || :
-  /bin/rm -rf /usr/local/exploud
+  /usr/sbin/userdel -r maestro 2> /dev/null || :
+  /bin/rm -rf /usr/local/maestro
 fi
 
 /bin/echo "postremove script finished"

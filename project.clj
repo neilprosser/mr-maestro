@@ -1,6 +1,5 @@
-(defproject exploud "0.101-SNAPSHOT"
-  :description "Exploud service"
-  :url "http://github.brislabs.com/cloud-tooling/exploud/wiki"
+(defproject maestro "0.101-SNAPSHOT"
+  :description "Maestro service"
 
   :dependencies [[amazonica "0.2.29" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
                  [bouncer "0.3.1"]
@@ -63,7 +62,7 @@
         :logging-level "info"
         :logging-path "/tmp"
         :logging-stashthreshold "warn"
-        :mail-from-address "exploud@brislabs.com"
+        :mail-from-address "maestro@somewhere.com"
         :mail-smtp-host ""
         :mail-to-address "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
         :numel-poke-baseurl "http://numelpoke"
@@ -79,7 +78,7 @@
         :requestlog-retainhours 24
         :service-dev-vpc-id "vpc-dev"
         :service-jvmargs ""
-        :service-name "exploud"
+        :service-name "maestro"
         :service-port 8080
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
@@ -91,38 +90,38 @@
   :lein-release {:deploy-via :shell
                  :shell ["lein" "do" "clean," "uberjar," "pom," "rpm"]}
 
-  :ring {:handler exploud.web/app
-         :main exploud.setup
+  :ring {:handler maestro.web/app
+         :main maestro.setup
          :port ~(Integer/valueOf (get (System/getenv) "SERVICE_PORT" "8080"))
-         :init exploud.setup/setup
+         :init maestro.setup/setup
          :browser-uri "/healthcheck"
          :nrepl {:start? true}}
 
-  :uberjar-name "exploud.jar"
+  :uberjar-name "maestro.jar"
 
   :eastwood {:namespaces [:source-paths]}
 
-  :rpm {:name "exploud"
-        :summary "RPM for Exploud service"
+  :rpm {:name "maestro"
+        :summary "RPM for Maestro service"
         :copyright "MixRadio 2014"
         :preinstall {:scriptFile "scripts/rpm/preinstall.sh"}
         :postinstall {:scriptFile "scripts/rpm/postinstall.sh"}
         :preremove {:scriptFile "scripts/rpm/preremove.sh"}
         :postremove {:scriptFile "scripts/rpm/postremove.sh"}
         :requires ["jdk >= 2000:1.7.0_55-fcs"]
-        :mappings [{:directory "/usr/local/exploud"
+        :mappings [{:directory "/usr/local/maestro"
                     :filemode "444"
-                    :username "exploud"
-                    :groupname "exploud"
-                    :sources {:source [{:location "target/exploud.jar"}]}}
-                   {:directory "/usr/local/exploud/bin"
+                    :username "maestro"
+                    :groupname "maestro"
+                    :sources {:source [{:location "target/maestro.jar"}]}}
+                   {:directory "/usr/local/maestro/bin"
                     :filemode "744"
-                    :username "exploud"
-                    :groupname "exploud"
+                    :username "maestro"
+                    :groupname "maestro"
                     :sources {:source [{:location "scripts/bin"}]}}
                    {:directory "/etc/rc.d/init.d"
                     :filemode "755"
-                    :sources {:source [{:location "scripts/service/exploud"
-                                        :destination "exploud"}]}}]}
+                    :sources {:source [{:location "scripts/service/maestro"
+                                        :destination "maestro"}]}}]}
 
-  :main exploud.setup)
+  :main maestro.setup)

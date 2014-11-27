@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PIDS=$(pgrep java -lf | grep exploud | cut -d" " -f1);
+PIDS=$(pgrep java -lf | grep maestro | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then

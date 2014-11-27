@@ -1,12 +1,12 @@
 #!/bin/sh
 
-APP_NAME=exploud
+APP_NAME=maestro
 
 PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
 
 if [ -n "$PIDS" ]
 then
-  echo "Exploud is already running in process $PIDS";
+  echo "Maestro is already running in process $PIDS";
   exit 1
 fi
 
@@ -32,8 +32,8 @@ SERVICE_PORT=${SERVICE_PORT:-"8080"}
 HEALTHCHECK_PATH=${HEALTHCHECK_PATH:-"/healthcheck"}
 START_TIMEOUT_SECONDS=${START_TIMEOUT_SECONDS:-"60"}
 LOGGING_PATH=${LOGGING_PATH:-"/var/log/${SERVICE_NAME}"}
-LOG_FILE=${LOGGING_PATH}/exploud.out
-ERR_FILE=${LOGGING_PATH}/exploud.err
+LOG_FILE=${LOGGING_PATH}/maestro.out
+ERR_FILE=${LOGGING_PATH}/maestro.err
 
 mkdir -p /var/encrypted/logs/${APP_NAME}
 
@@ -44,7 +44,7 @@ waitTimeout=$START_TIMEOUT_SECONDS
 sleepCounter=0
 sleepIncrement=2
 
-echo "Giving Exploud $waitTimeout seconds to start successfully"
+echo "Giving Maestro $waitTimeout seconds to start successfully"
 echo "Using $statusUrl to determine service status"
 
 retVal=0
@@ -53,7 +53,7 @@ until [ `curl --write-out %{http_code} --silent --output /dev/null $statusUrl` -
 do
   if [ $sleepCounter -ge $waitTimeout ]
   then
-    echo "Exploud didn't start within $waitTimeout seconds."
+    echo "Maestro didn't start within $waitTimeout seconds."
     PIDS=$(pgrep java -lf | grep $APP_NAME | cut -d" " -f1);
     if [ -n "$PIDS" ]
 	then
@@ -80,9 +80,9 @@ cat $ERR_FILE 1>&2
 
 if [ $retVal -eq 1 ]
 then
-  echo "Starting Exploud failed"
+  echo "Starting Maestro failed"
 else
-  echo "Starting Exploud succeeded"
+  echo "Starting Maestro succeeded"
 fi
 
 exit $retVal

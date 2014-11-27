@@ -1,8 +1,8 @@
-# Exploud - exploding things onto the cloud
+# Maestro - exploding things onto the cloud
 
 ## Intro
 
-Exploud is the main port of call for deploying applications to AWS. It will kick of each stage of the deployment and track any resulting task which describes the progress of the operation.
+Maestro is the main port of call for deploying applications to AWS. It will kick of each stage of the deployment and track any resulting task which describes the progress of the operation.
 
 ## Resources
 
