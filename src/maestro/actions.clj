@@ -1,5 +1,6 @@
 (ns maestro.actions
-  (:require [linked.set :refer [linked-set]]
+  (:require [clojure.string :as str]
+            [linked.set :refer [linked-set]]
             [maestro.messages
              [asg :as asg]
              [data :as data]
@@ -66,10 +67,15 @@
               :maestro.messages.notification/send-completion-notification
               :maestro.messages.data/complete-deployment))
 
+(defn- replace-legacy
+  [action]
+  (let [new-namespace (str/replace-first (namespace action) "exploud" "maestro")]
+    (keyword new-namespace (name action))))
+
 (defn to-function
   [action]
   (when action
-    (let [namespace (namespace action)
+    (let [namespace (namespace (replace-legacy action))
           name (name action)]
       (resolve (symbol (format "%s/%s" namespace name))))))
 
@@ -96,7 +102,7 @@
 
 (defn sequence-number
   [action]
-  (count (take-while #(not= % action) action-ordering)))
+  (count (take-while #(not= % (replace-legacy action)) action-ordering)))
 
 (defn resume-action
   [tasks]
