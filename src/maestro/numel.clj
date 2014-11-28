@@ -21,8 +21,8 @@
 (defn application-registrations-url
   [environment application]
   (if (environments/prod-account? environment)
-    (str (url prod-numel-url "1.x" "registrations" environment application))
-    (str (url poke-numel-url "1.x" "registrations" environment application))))
+    (str (url prod-numel-url "registrations" environment application))
+    (str (url poke-numel-url "registrations" environment application))))
 
 (defn application-registrations
   [environment application]
