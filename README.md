@@ -1,62 +1,83 @@
-# Maestro - exploding things onto the cloud
+# Mr. Maestro - deployment management
 
 ## Intro
 
-Maestro is the main port of call for deploying applications to AWS. It will kick of each stage of the deployment and track any resulting task which describes the progress of the operation.
+Maestro is the main port of call for deploying applications to AWS. It will kick off each stage of the deployment and track the resulting tasks which describe the progress of the deployment.
 
 ## Resources
 
-`GET /ping`
-`pong`.
+`GET /ping` - `pong`
 
-`GET /healthcheck`
-Shows the health of the application.
+`GET /healthcheck` - Shows the health of the application, will give a `200` response code if everything is healthy, otherwise `500`
 
-`GET /1.x/instances/:app-name`
-All instances of an application in JSON form.
+`GET /queue-status` - Shows the status of the Redis message-queue
 
-`GET /1.x/images/:app-name`
-All images of an application in JSON form.
+`GET /lock` - A `200` if Maestro is locked, a `404` if it is unlocked
 
-`GET /1.x/deployments`
-Query deployments. Query parameters allowed are:
+`POST /lock` - Lock Maestro
 
-  * `application` - the application to filter by
-  * `environment` - the environment to filter by
-  * `start-from` - the lower bound of a date filter on deployment start time.
-  * `start-to` - the upper bound of a date filter on deployment start time.
-  * `size` - the number of deployments to retrieve (default: 10)
-  * `from` - the number of deployments to start retrieving from (default: 0)
+`DELETE /lock` - Unlock Maestro
 
-`GET /1.x/deployments/:deployment-id`
-The details of a specific deployment.
+`GET /deployments` - Query deployments, allowed query-parameters are:
 
-`GET /1.x/applications`
-The list of all applications known about by Lister.
+* `application` - the application to filter by
+* `environment` - the environment to filter by
+* `from` - the number of deployments to start retrieving from (default: `0`)
+* `full` - whether to retrieve complete deployment information (default: `false`)
+* `region` - limit deployments to this region
+* `size` - the number of deployments to retrieve (default: `10`)
+* `start-from` - the lower bound of a date filter on deployment start time
+* `start-to` - the upper bound of a date filter on deployment start time
+* `status` - limit deployments to ones having this status
 
-`GET /1.x/applications/:application`
-The details of a specific application.
+`GET /deployments/:deployment-id` - The details of a specific deployment
 
-`PUT /1.x/applications/:application`
-Upsert an application to Lister, Pedantic and Tyrant.
+`DELETE /deployments/:deployment-id` - Delete a specific deployment
 
-`POST /1.x/applications/:application/deploy`
-Begin the deployment of an application. JSON body must include the following:
+`GET /deployments/:deployment-id/tasks` - Shows the tasks from a specific deployment
 
-  * `ami` - the image to use for deployment
-  * `environment` - the environment to deploy to
-  * `message` - a message which describes why the deployment is happening
-  * `user` - the user who is making the deployment
+`GET /deployments/:deployment-id/logs` - Shows the logs from a specific deployment
 
-`POST /1.x/applications/:application/rollback`
-Begin a rollback of an application (a rollback is considered to be a deployment of the penultimate completed deployment for the application and environment). JSON body must include the following:
+`GET /applications` - The list of all applications known about by Lister
 
-  * `environment` - the environment to deploy to
-  * `message` - a message which describes why the deployment is happening
-  * `user` - the user who is making the deployment
+`GET /applications/:application` - The details of a specific application
 
-`GET /1.x/environments`
-All environments in JSON form.
+`PUT /applications/:application` - Upsert an application to Lister, Pedantic and Tyrant. **An email query-string parameter must also be provided**
 
-`GET /1.x/tasks`
-A text representation of the tasks the system is currently tracking.
+`POST /applications/:application/:environment/deploy` - Begin the deployment of an application to an environment, JSON body parameters are as follows:
+
+* `ami` - The image to use for deployment
+* `hash` - The Tyrant hash to use (if not provided, the latest hash will be used)
+* `message` - A message which describes why the deployment is happening
+* `silent` - Whether the deployment should generate notification messages (default: `false`)
+* `user` - The user who is making the deployment
+
+`POST /applications/:application/:environment/undo` - Begin an undo of an application, in an environment (an undo is considered to be the replacement of a currently failed deployment with whatever was there previously). For this to work, a deployment of the application in that environment must already be in-progress and paused (or stopped due to failure), JSON body parameters are as follows:
+
+* `message` - A message which describes why the undo is happening
+* `silent` - Whether the undo should generate notification messages (default: `false`)
+* `user` - The user who is carrying out the undo
+
+`POST /applications/:application/:environment/rollback` - Begin a rollback of an application in an environment (a rollback is considered to be a deployment using the Tyrant hash and image of the penultimate completed deployment for the application and environment). JSON body must include the following:
+
+* `message` - a message which describes why the deployment is happening
+* `silent` - Whether the rollback should generate notification messages (default: `false`)
+* `user` - the user who is making the deployment
+
+`POST /applications/:application/:environment/pause` - Register to pause an ongoing deployment of an application in an environment. The pause will apply the next time the deployment changes actions
+
+`DELETE /application/:application/:environment/pause` - Remove a pause registration for an deployment of the application in an environment
+
+`POST /applications/:application/:environment/resume` - Resume the deployment of an application in an environment
+
+`GET /environments` - All environments in JSON form
+
+`GET /in-progress` - All deployments which are currently in-progress
+
+`DELETE /in-progress/:application/:environment` - Delete a deployment lock for an application and environment
+
+`GET /paused` - All deployments which are currently paused
+
+`GET /awaiting-pause` - All deployments which are currently awaiting a pause
+
+`GET /describe-instances/:application/:environment` - List the instances which are present for the application in the environment. By default the response will be JSON but using `Accept: text/plain` will switch the output to plain-text
