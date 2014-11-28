@@ -1,4 +1,4 @@
-(defproject maestro "0.102"
+(defproject maestro "0.103-SNAPSHOT"
   :description "Maestro service"
 
   :dependencies [[amazonica "0.2.29" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
