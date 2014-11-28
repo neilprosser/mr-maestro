@@ -11,7 +11,7 @@
   (atom nil))
 
 (def ^:private index-name
-  "maestro")
+  (env :elasticsearch-index-name "maestro"))
 
 (def ^:private deployment-type
   "deployment")

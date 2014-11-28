@@ -4,17 +4,20 @@
             [taoensso.carmine :as car :refer [wcar]]
             [taoensso.carmine.message-queue :as car-mq]))
 
+(def ^:private key-prefix
+  (env :redis-key-prefix "maestro"))
+
 (def ^:private in-progress-key
-  "maestro:deployments:in-progress")
+  (str/join ":" [key-prefix "deployments:in-progress"]))
 
 (def ^:private paused-key
-  "maestro:deployments:paused")
+  (str/join ":" [key-prefix "deployments:paused"]))
 
 (def ^:private awaiting-pause-key
-  "maestro:deployments:awaiting-pause")
+  (str/join ":" [key-prefix "deployments:awaiting-pause"]))
 
 (def ^:private lock-key
-  "maestro:lock")
+  (str/join ":" [key-prefix "lock"]))
 
 (def ^:private scheduled-tasks-key
   "scheduled-tasks")

@@ -4,6 +4,7 @@
             [clojure
              [set :as set]
              [string :as str]]
+            [environ.core :refer [env]]
             [maestro
              [aws :as aws]
              [block-devices :as dev]
@@ -20,7 +21,7 @@
             [ring.util.codec :refer [base64-decode]]))
 
 (def ^:private required-security-group-names
-  ["maestro-healthcheck" "mgmt-mon-scan"])
+  (str/split (env :aws-required-security-groups) #","))
 
 (def ^:private instance-info
   {"c1.medium" {:instance-stores 1}

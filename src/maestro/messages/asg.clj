@@ -6,6 +6,7 @@
             [clojure
              [set :as set]
              [string :as str]]
+            [environ.core :refer [env]]
             [maestro
              [aws :as aws]
              [log :as log]
@@ -14,7 +15,7 @@
             [ring.util.codec :refer [base64-encode]]))
 
 (def ^:private default-key-name
-  "maestro")
+  (env :aws-key-name "maestro"))
 
 (def ^:private default-wait-for-instances-to-exist-attempts
   50)

@@ -46,10 +46,13 @@
 
   :env {:aws-dev-account-id "dev-account-id"
         :aws-dev-autoscaling-topic-arn "dev-autoscaling-topic-arn"
+        :aws-key-name "maestro"
         :aws-prod-account-id "prod-account-id"
         :aws-prod-autoscaling-topic-arn "prod-autoscaling-topic-arn"
         :aws-prod-role-arn "prod-role-arn"
+        :aws-required-security-groups "maestro-healthcheck"
         :disable-caching true
+        :elasticsearch-index-name "maestro"
         :elasticsearch-url "http://localhost:9200"
         :environment-name "dev"
         :graphite-enabled false
@@ -72,6 +75,7 @@
         :prod-vpc-id "vpc-prod"
         :production false
         :redis-host "localhost"
+        :redis-key-prefix "maestro"
         :redis-port 6379
         :redis-queue-threads 1
         :requestlog-enabled false
