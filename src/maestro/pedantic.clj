@@ -20,22 +20,22 @@
 (defn create-application-url
   "The URL to create a new app in Pedantic."
   [app-name]
-  (str (url pedantic-url "1.x" "apps" app-name)))
+  (str (url pedantic-url "apps" app-name)))
 
 (defn configuration-url
   "The URL to obtain the configuration for an application in an environment."
   [environment app-name]
-  (str (url pedantic-url "1.x" "envs" environment "apps" app-name)))
+  (str (url pedantic-url "envs" environment "apps" app-name)))
 
 (defn apply-url
   "The URL we use to apply configuration."
   [environment app-name]
-  (str (url pedantic-url "1.x" "envs" environment "apps" app-name "apply")))
+  (str (url pedantic-url "envs" environment "apps" app-name "apply")))
 
 (defn envs-url
   "The URL to find environments in Pedantic."
   []
-  (str (url pedantic-url "1.x" "envs")))
+  (str (url pedantic-url "envs")))
 
 (defn apply-config
   "Tells Pedantic to apply a config to all environments."
