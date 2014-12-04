@@ -4,6 +4,29 @@
 
 Maestro is the main port of call for deploying applications to AWS. It will kick off each stage of the deployment and track the resulting tasks which describe the progress of the deployment.
 
+## Running
+
+```
+lein run
+```
+
+or:
+
+```
+lein uberjar
+java -jar maestro.jar
+```
+
+## Configuration
+
+There are a number of properties which are present in the `project.clj`. With the `lein run` option you can just amend the properties and they'll be made available to the application via [lein-environ](https://github.com/weavejester/environ). If using the `uberjar` option, you'll want to `export` them first:
+
+```
+export ELASTICSEARCH_URL=http://elasticsearch:9200
+# The above property will be recognised by environ as :elasticsearch-url
+java -jar maestro.jar
+```
+
 ## Resources
 
 `GET /ping` - `pong`
@@ -81,3 +104,9 @@ Maestro is the main port of call for deploying applications to AWS. It will kick
 `GET /awaiting-pause` - All deployments which are currently awaiting a pause
 
 `GET /describe-instances/:application/:environment` - List the instances which are present for the application in the environment. By default the response will be JSON but using `Accept: text/plain` will switch the output to plain-text
+
+## License
+
+Copyright © 2014 MixRadio
+
+[mr-maestro is released under the 3-clause license ("New BSD License" or "Modified BSD License")](https://github.com/mixradio/mr-maestro/blob/master/LICENSE)

@@ -1,5 +1,6 @@
 (defproject maestro "0.103-SNAPSHOT"
   :description "Maestro service"
+  :license  "https://github.com/mixradio/mr-maestro/blob/master/LICENSE"
 
   :dependencies [[amazonica "0.2.29" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
                  [bouncer "0.3.1"]
