@@ -341,7 +341,7 @@
                                                                 :image-id image-id
                                                                 :environment environment
                                                                 :embargo embargo})))
-      {:status :success})))
+      (success parameters))))
 
 (defn check-instance-type-compatibility
   [{:keys [parameters]}]
