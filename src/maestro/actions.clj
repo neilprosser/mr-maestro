@@ -23,6 +23,7 @@
               :maestro.messages.data/create-names
               :maestro.messages.data/get-image-details
               :maestro.messages.data/verify-image
+              :maestro.messages.data/check-for-embargo
               :maestro.messages.data/check-instance-type-compatibility
               :maestro.messages.data/check-contact-property
               :maestro.messages.data/check-pedantic-configuration

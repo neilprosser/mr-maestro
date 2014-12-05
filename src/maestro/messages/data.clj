@@ -326,6 +326,23 @@
       (catch Exception e
         (error-with e)))))
 
+(defn check-for-embargo
+  [{:keys [parameters]}]
+  (let [{:keys [environment]} parameters
+        state (:new-state parameters)
+        {:keys [image-details]} state
+        image-id (get-in state [:image-details :id])
+        {:keys [tags]} image-details
+        {:keys [embargo]} tags]
+    (if (and (seq embargo) (some #(= environment %) (str/split embargo #",")))
+      (do
+        (log/write (format "Image '%s' is embargoed in '%s'" image-id environment))
+        (error-with (ex-info "Attempt to use embargoed image." {:type ::embargoed-image
+                                                                :image-id image-id
+                                                                :environment environment
+                                                                :embargo embargo})))
+      {:status :success})))
+
 (defn check-instance-type-compatibility
   [{:keys [parameters]}]
   (let [state (:new-state parameters)

@@ -296,6 +296,21 @@
       (provided
        (aws/image "image-id" "environment" "region") => nil))
 
+(fact "that checking for an embargo is successful no embargo tag is present"
+      (check-for-embargo {:parameters {:environment "environment"
+                                       :new-state {:image-details {:tags {}}}}})
+      => (contains {:status :success}))
+
+(fact "that checking for an embargo is successful if the environment is not embargoed"
+      (check-for-embargo {:parameters {:environment "environment"
+                                       :new-state {:image-details {:tags {:embargo "anotherenv"}}}}})
+      => (contains {:status :success}))
+
+(fact "that checking for an embargo is successful no embargo tag is present"
+      (check-for-embargo {:parameters {:environment "environment"
+                                       :new-state {:image-details {:tags {:embargo "environment"}}}}})
+      => (contains {:status :error}))
+
 (fact "that checking whether the image and instance type are compatible results in success when they are"
       (check-instance-type-compatibility {:parameters {:new-state {:image-details {:virt-type "hvm"}
                                                                    :tyranitar {:deployment-params {:instance-type "i2.8xlarge"}}}}})
