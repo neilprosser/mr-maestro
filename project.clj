@@ -88,7 +88,8 @@
         :shutdown-timeout-millis 5000
         :start-timeout-seconds 120
         :threads 254
-        :tyrant-baseurl "http://tyrant"}
+        :tyrant-baseurl "http://tyrant"
+        :ui-baseurl "http://maestro-ui"}
 
   :clean-targets ^{:protect false} [:target-path "docs"]
 

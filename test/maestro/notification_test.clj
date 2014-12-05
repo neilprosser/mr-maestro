@@ -48,7 +48,7 @@
       </tr>
       <tr>
         <td>Deployment details:</td>
-        <td><a href=\"http://maestro-ui/maestro/#/deployments/some-id\">some-id</a></td>
+        <td><a href=\"http://maestro-ui/#/deployments/some-id\">some-id</a></td>
       </tr>
   </body>
 </html>")

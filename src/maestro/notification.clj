@@ -8,6 +8,9 @@
 (def ^:private content-type
   "text/html; charset=\"UTF-8\"")
 
+(def ^:private ui-base-url
+  (clojure.string/replace (env :ui-baseurl "http://maestro") #"/*$" ""))
+
 (defn- prod?
   [environment]
   (= :prod (keyword environment)))
@@ -54,10 +57,10 @@
       </tr>
       <tr>
         <td>Deployment details:</td>
-        <td><a href=\"http://maestro-ui/maestro/#/deployments/%s\">%s</a></td>
+        <td><a href=\"%s/#/deployments/%s\">%s</a></td>
       </tr>
   </body>
-</html>" user application version image message id id)))
+</html>" user application version image message ui-base-url id id)))
 
 (defn- build-message
   [deployment]
