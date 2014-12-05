@@ -297,15 +297,15 @@
   [{:keys [parameters]}]
   (let [{:keys [environment region]} parameters
         state (:new-state parameters)
-        image (get-in state [:image-details :id])]
+        image-id (get-in state [:image-details :id])]
     (try
-      (log/write (format "Retrieving image details for '%s'." image))
-      (if-let [{:keys [name]} (aws/image image environment region)]
-        (success (update-in parameters [:new-state :image-details] merge (util/image-details name)))
+      (log/write (format "Retrieving image details for '%s'." image-id))
+      (if-let [image (aws/image image-id environment region)]
+        (success (update-in parameters [:new-state :image-details] merge (util/image-details image)))
         (do
-          (log/write (format "No image found with ID '%s'. Is the ID correct, or is the image not shared with the relevant account?" image))
+          (log/write (format "No image found with ID '%s'. Is the ID correct, or is the image not shared with the relevant account?" image-id))
           (error-with (ex-info "Image not found." {:type ::missing-image
-                                                   :image-id image}))))
+                                                   :image-id image-id}))))
       (catch Exception e
         (error-with e)))))
 

@@ -29,9 +29,13 @@
       (catch Exception e
         nil))))
 
+(defn- create-tags
+  [tags]
+  (into {} (map (fn [t] [(lower-hyphen-keyword (:key t)) (:value t)]) tags)))
+
 (defn image-details
   "Extracts details from the name of an image in the form ent-{app}-{version}-{iteration}-{year}-{month}-{day}_{hour}-{minute}-{second}"
-  [name]
+  [{:keys [name tags]}]
   (when name
     (when-let [matches (re-find #"ent-([^-]+)-([\.0-9]+)-([0-9]+)-(?:([a-z]+)-)?([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})-([0-9]{2})-([0-9]{2})$" name)]
       {:image-name name
@@ -39,7 +43,8 @@
        :version (nth matches 2)
        :iteration (nth matches 3)
        :virt-type (or (nth matches 4) "para")
-       :bake-date (time/date-time (string->int (nth matches 5)) (string->int (nth matches 6)) (string->int (nth matches 7)) (string->int (nth matches 8)) (string->int (nth matches 9)) (string->int (nth matches 10)))})))
+       :bake-date (time/date-time (string->int (nth matches 5)) (string->int (nth matches 6)) (string->int (nth matches 7)) (string->int (nth matches 8)) (string->int (nth matches 9)) (string->int (nth matches 10)))
+       :tags (create-tags tags)})))
 
 (defn generate-id
   "Create a random ID for a deployment or task."

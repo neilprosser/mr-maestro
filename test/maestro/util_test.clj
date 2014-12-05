@@ -8,35 +8,51 @@
       (char-for-index 0) => \a
       (char-for-index 22) => \w)
 
+(fact "that extracting details from an image without tags gives no tags"
+      (image-details {:name "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05"
+                      :tags []})
+      => (contains {:tags {}}))
+
 (fact "that we correctly recognise new image names with virtualisation types in them"
-      (image-details "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25")
-      => {:image-name "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25"
-          :application "indexdaemon"
-          :version "3.0.15"
-          :iteration "1"
-          :virt-type "hvm"
-          :bake-date (time/date-time 2014 7 11 10 53 25)})
+      (image-details {:name "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25"})
+      => (contains {:image-name "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25"
+                    :application "indexdaemon"
+                    :version "3.0.15"
+                    :iteration "1"
+                    :virt-type "hvm"
+                    :bake-date (time/date-time 2014 7 11 10 53 25)}))
+
+(fact "that we correctly extract the tags"
+      (image-details {:name "ent-indexdaemon-3.0.15-1-hvm-2014-07-11_10-53-25"
+                      :tags [{:key "one" :value "one"}
+                             {:key "TwoCan" :value "two"}]})
+      => (contains {:tags {:one "one"
+                           :two-can "two"}}))
 
 (fact "that extracting details from an AMI name works"
-      (image-details "ent-maestro-0.19-1-2013-10-24_18-41-23")
-      => {:image-name "ent-maestro-0.19-1-2013-10-24_18-41-23"
-          :application "maestro"
-          :version "0.19"
-          :iteration "1"
-          :virt-type "para"
-          :bake-date (time/date-time 2013 10 24 18 41 23)})
+      (image-details {:name "ent-maestro-0.19-1-2013-10-24_18-41-23"})
+      => (contains {:image-name "ent-maestro-0.19-1-2013-10-24_18-41-23"
+                    :application "maestro"
+                    :version "0.19"
+                    :iteration "1"
+                    :virt-type "para"
+                    :bake-date (time/date-time 2013 10 24 18 41 23)}))
 
 (fact "that extracting details from an AMI name works if we're doing HVM stuff"
-      (image-details "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05")
-      => {:image-name "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05"
-          :application "graphite"
-          :version "1.0"
-          :iteration "1"
-          :virt-type "para"
-          :bake-date (time/date-time 2014 5 22 13 2 5)})
+      (image-details {:name "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05"
+                      :tags [{:key "one" :value "one"}
+                             {:key "two" :value "two"}]})
+      => (contains {:image-name "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05"
+                    :application "graphite"
+                    :version "1.0"
+                    :iteration "1"
+                    :virt-type "para"
+                    :bake-date (time/date-time 2014 5 22 13 2 5)}))
 
 (fact "that extracting details from an AMI name gives nil if we're given garbage"
-      (image-details "absolutelynothinglikeanimage")
+      (image-details {:name "absolutelynothinglikeanimage"
+                      :tags [{:key "one" :value "one"}
+                             {:key "two" :value "two"}]})
       => nil)
 
 (fact "that extracting details from an AMI name gives nil if we're given nil"

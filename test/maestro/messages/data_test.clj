@@ -277,8 +277,8 @@
                                  :new-state {:image-details {:id "image-id"
                                                              :details "details"}}}})
       (provided
-       (aws/image "image-id" "environment" "region") => {:name "image-name"}
-       (util/image-details "image-name") => {:details "details"}))
+       (aws/image "image-id" "environment" "region") => ..image..
+       (util/image-details ..image..) => {:details "details"}))
 
 (fact "that getting an exception while getting image details is an error"
       (get-image-details {:parameters {:environment "environment"
