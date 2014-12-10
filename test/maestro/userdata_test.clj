@@ -7,12 +7,16 @@
                          :environment "environment"
                          :new-state {:tyranitar {:application-properties {:service.port 8080
                                                                           :path.with.dollar "abc$xyz"}
+                                                 :deployment-params {:subscriptions ["something" "something-else"]}
                                                  :launch-data ["echo business"]}}})
       => "#!/bin/bash
 cat > /etc/profile.d/asgard.sh <<EOF
 export CLOUD_APP=application
 export CLOUD_CLUSTER=application-environment
 export CLOUD_STACK=environment
+EOF
+cat > /etc/sensu/conf.d/subscriptions.d/application.json <<EOF
+{\"subscriptions\":[\"something\",\"something-else\"]}
 EOF
 cat > /var/encrypted/properties/application.properties <<EOF
 path.with.dollar=abc\\$xyz

@@ -1,5 +1,6 @@
 (ns maestro.userdata
-  (:require [clojure.string :as str]
+  (:require [cheshire.core :as json]
+            [clojure.string :as str]
             [maestro.util :as util]))
 
 (defn- write-to-file
@@ -30,6 +31,17 @@
          (map (fn [[k v]] (export (name k) v)))
          (write-to-file "/etc/profile.d/asgard.sh"))))
 
+(defn- create-subscriptions
+  [{:keys [application] :as parameters}]
+  (let [state-key (util/new-state-key parameters)
+        state (state-key parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [subscriptions]} deployment-params]
+    (->> {:subscriptions subscriptions}
+         json/generate-string
+         (write-to-file (format "/etc/sensu/conf.d/subscriptions.d/%s.json" application)))))
+
 (defn- create-application-properties
   [{:keys [application] :as parameters}]
   (let [state-key (util/new-state-key parameters)
@@ -57,6 +69,7 @@
   [parameters]
   (str/join "\n" ["#!/bin/bash"
                   (create-environment-variables parameters)
+                  (create-subscriptions parameters)
                   (create-application-properties parameters)
                   (link-application-properties parameters)
                   (create-launch-data parameters)]))
