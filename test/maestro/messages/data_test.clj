@@ -5,6 +5,7 @@
              [aws :as aws]
              [block-devices :as dev]
              [lister :as lister]
+             [log :as log]
              [pedantic :as pedantic]
              [tyrant :as tyr]
              [util :as util]
@@ -447,3 +448,37 @@
        (to-auto-scaling-group-tag "new-asg" [:Environment "environment"]) => "environment-tag"
        (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => "name-tag"
        (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
+
+(fact "that completing the deployment adds an end key to our parameters"
+      (complete-deployment {:parameters {:application "application"
+                                         :environment "environment"}})
+      => {:status :success
+          :parameters {:application "application"
+                       :end ..now..
+                       :environment "environment"}}
+      (provided
+       (time/now) => ..now..))
+
+(fact "that completing a deployment writes the correct message"
+      (complete-deployment {:parameters {:application "application"
+                                         :environment "environment"}})
+      => {:status :success
+          :parameters {:application "application"
+                       :end ..now..
+                       :environment "environment"}}
+      (provided
+       (log/write "Deployment of 'application' to 'environment' complete.") => ..log..
+       (time/now) => ..now..))
+
+(fact "that completing an undone deployment writes the correct message"
+      (complete-deployment {:parameters {:application "application"
+                                         :environment "environment"
+                                         :undo true}})
+      => {:status :success
+          :parameters {:application "application"
+                       :end ..now..
+                       :environment "environment"
+                       :undo true}}
+      (provided
+       (log/write "Undo of 'application' in 'environment' complete.") => ..log..
+       (time/now) => ..now..))
