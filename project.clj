@@ -1,4 +1,4 @@
-(defproject maestro "0.108"
+(defproject maestro "0.109-SNAPSHOT"
   :description "Maestro service"
   :license  "https://github.com/mixradio/mr-maestro/blob/master/LICENSE"
 
