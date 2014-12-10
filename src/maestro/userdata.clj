@@ -38,7 +38,7 @@
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [subscriptions]} deployment-params]
-    (->> {:subscriptions subscriptions}
+    (->> {:client {:subscriptions subscriptions}}
          json/generate-string
          (write-to-file (format "/etc/sensu/conf.d/subscriptions.d/%s.json" application)))))
 

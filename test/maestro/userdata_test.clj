@@ -16,7 +16,7 @@ export CLOUD_CLUSTER=application-environment
 export CLOUD_STACK=environment
 EOF
 cat > /etc/sensu/conf.d/subscriptions.d/application.json <<EOF
-{\"subscriptions\":[\"something\",\"something-else\"]}
+{\"client\":{\"subscriptions\":[\"something\",\"something-else\"]}}
 EOF
 cat > /var/encrypted/properties/application.properties <<EOF
 path.with.dollar=abc\\$xyz
