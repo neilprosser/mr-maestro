@@ -38,9 +38,10 @@
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [subscriptions]} deployment-params]
-    (->> {:client {:subscriptions subscriptions}}
-         json/generate-string
-         (write-to-file (format "/etc/sensu/conf.d/subscriptions.d/%s.json" application)))))
+    (when subscriptions
+      (->> {:client {:subscriptions subscriptions}}
+           json/generate-string
+           (write-to-file (format "/etc/sensu/conf.d/subscriptions.d/%s.json" application))))))
 
 (defn- create-application-properties
   [{:keys [application] :as parameters}]
@@ -67,9 +68,9 @@
 
 (defn create-user-data
   [parameters]
-  (str/join "\n" ["#!/bin/bash"
-                  (create-environment-variables parameters)
-                  (create-subscriptions parameters)
-                  (create-application-properties parameters)
-                  (link-application-properties parameters)
-                  (create-launch-data parameters)]))
+  (str/join "\n" (remove nil? ["#!/bin/bash"
+                               (create-environment-variables parameters)
+                               (create-subscriptions parameters)
+                               (create-application-properties parameters)
+                               (link-application-properties parameters)
+                               (create-launch-data parameters)])))
