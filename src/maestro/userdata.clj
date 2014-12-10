@@ -13,6 +13,9 @@
   [var value]
   (format "export %s=%s" var value))
 
+(def ^:private subscriptions-directory
+  "/etc/sensu/conf.d/subscriptions.d")
+
 (defn- create-environment-variables
   [{:keys [application environment region] :as parameters}]
   (let [state-key (util/new-state-key parameters)
@@ -39,9 +42,10 @@
         {:keys [deployment-params]} tyranitar
         {:keys [subscriptions]} deployment-params]
     (when subscriptions
-      (->> {:client {:subscriptions subscriptions}}
-           json/generate-string
-           (write-to-file (format "/etc/sensu/conf.d/subscriptions.d/%s.json" application))))))
+      (str/join "\n" [(str "mkdir -p " subscriptions-directory)
+                      (->> {:client {:subscriptions subscriptions}}
+                           json/generate-string
+                           (write-to-file (format "%s/%s.json" subscriptions-directory application)))]))))
 
 (defn- create-application-properties
   [{:keys [application] :as parameters}]

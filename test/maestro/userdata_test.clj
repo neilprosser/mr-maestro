@@ -15,6 +15,7 @@ export CLOUD_APP=application
 export CLOUD_CLUSTER=application-environment
 export CLOUD_STACK=environment
 EOF
+mkdir -p /etc/sensu/conf.d/subscriptions.d
 cat > /etc/sensu/conf.d/subscriptions.d/application.json <<EOF
 {\"client\":{\"subscriptions\":[\"something\",\"something-else\"]}}
 EOF
