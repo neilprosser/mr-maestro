@@ -4,6 +4,8 @@
 
 Maestro is the main port of call for deploying applications to AWS. It will kick off each stage of the deployment and track the resulting tasks which describe the progress of the deployment.
 
+You can see @neilprosser talking about the application in [this talk at Clojure eXchange 2014](https://skillsmatter.com/skillscasts/6057-herding-cattle-with-clojure-at-mixradio).
+
 ## Running
 
 ```
