@@ -8,7 +8,7 @@
                  [cheshire "5.3.1"]
                  [clj-http "1.0.1"]
                  [clj-time "0.8.0"]
-                 [clojurewerkz/elastisch "2.0.0"]
+                 [clojurewerkz/elastisch "2.1.0"]
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.2"]
                  [com.ninjakoala/monotony "1.0"]

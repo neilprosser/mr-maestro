@@ -22,10 +22,6 @@
 (def ^:private log-type
   "log")
 
-(defn- update-doc
-  [conn index mapping-type id doc & {:as params}]
-  (esr/post (esr/record-update-url conn index mapping-type id) :body {:doc doc} :query-params params))
-
 (defn start-date-facet
   [interval]
   {:date_histogram {:field "start" :interval interval}})
@@ -65,7 +61,7 @@
 
 (defn update-deployment
   [deployment-id partial-document]
-  (update-doc @conn index-name deployment-type deployment-id (dissoc partial-document :id) :refresh true))
+  (esd/update-with-partial-doc @conn index-name deployment-type deployment-id (dissoc partial-document :id) :refresh true))
 
 (defn deployment
   [deployment-id]
@@ -137,7 +133,7 @@
 
 (defn update-task
   [task-id deployment-id partial-document]
-  (update-doc @conn index-name task-type task-id (dissoc partial-document :id) :parent deployment-id :refresh true))
+  (esd/update-with-partial-doc @conn index-name task-type task-id (dissoc partial-document :id) :parent deployment-id :refresh true))
 
 (defn write-log
   [log-id deployment-id document]
