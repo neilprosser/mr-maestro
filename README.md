@@ -1,4 +1,4 @@
-# Mr. Maestro - deployment management
+# Mr. Maestro [![Build Status](https://travis-ci.org/mixradio/mr-maestro.png)](https://travis-ci.org/mixradio/mr-maestro)
 
 ## Intro
 
