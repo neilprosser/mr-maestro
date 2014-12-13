@@ -64,7 +64,7 @@
 (defn strip-first-forward-slash
   "Turns `/this/that` into `this/that`."
   [thing]
-  (second (re-find #"^/*(.+)" thing)))
+  (second (re-find #"^/*(.*)" thing)))
 
 (defn as-table
   "Prints a collection of maps in a textual table. Prints table headings

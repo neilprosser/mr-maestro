@@ -99,6 +99,10 @@
       (strip-first-forward-slash "this/that")
       => "this/that")
 
+(fact "that strip-first-forward-slash works if the string is just /"
+      (strip-first-forward-slash "/")
+      => "")
+
 (fact "that clojurizing things works"
       (clojurize-keys {:somethingThatIsCamelCase "woo"}) => {:something-that-is-camel-case "woo"})
 
