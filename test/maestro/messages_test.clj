@@ -96,6 +96,16 @@
                    :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-load-balancers-healthy false}}}}})
       (should-pause-because-of-deployment-params? params) => falsey)
 
+(fact "that we should pause when the old instances have been removed from the load balancer and we're told we should"
+      (def params {:action :maestro.messages.asg/deregister-old-instances-from-load-balancers
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-deregister-old-instances true}}}}})
+      (should-pause-because-of-deployment-params? params) => truthy)
+
+(fact "that we shouldn't pause when the instances have been removed from the load balancer and we're told we shouldn't"
+      (def params {:action :maestro.messages.asg/deregister-old-instances-from-load-balancers
+                   :parameters {:new-state {:tyranitar {:deployment-params {:pause-after-deregister-old-instances false}}}}})
+      (should-pause-because-of-deployment-params? params) => falsey)
+
 (fact "that we shouldn't pause when the load balancers have been declared healthy and we've not been told anything"
       (def params {:action :maestro.messages.health/wait-for-load-balancers-to-be-healthy
                    :parameters {:new-state {:tyranitar {:deployment-params {}}}}})

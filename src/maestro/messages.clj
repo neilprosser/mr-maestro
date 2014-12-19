@@ -108,6 +108,8 @@
         (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-instances-healthy])
         (= action :maestro.messages.health/wait-for-load-balancers-to-be-healthy)
         (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-load-balancers-healthy])
+        (= action :maestro.messages.asg/deregister-old-instances-from-load-balancers)
+        (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-deregister-old-instances])
         :else false))
 
 (defn should-pause?
