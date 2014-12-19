@@ -16,7 +16,6 @@
                  [compojure "1.3.1"]
                  [dire "0.5.3"]
                  [environ "1.0.0"]
-                 [frankiesardo/linked "1.0.6"]
                  [io.clj/logging "0.8.1"]
                  [joda-time "2.6"]
                  [mixradio/graphite-filter "1.0.0"]
