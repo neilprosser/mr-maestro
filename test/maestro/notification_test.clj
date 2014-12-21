@@ -1,6 +1,7 @@
 (ns maestro.notification-test
   (:require [environ.core :refer [env]]
             [maestro
+             [environments :as environments]
              [log :as log]
              [notification :refer :all]]
             [midje.sweet :refer :all]
@@ -56,6 +57,7 @@
 (fact "that messages are correctly formatted for sending"
       (send-completion-message deployment) => nil
       (provided
+       (environments/should-notify? "prod") => true
        (env :mail-smtp-host) => "dummy-value"
        (env :mail-from-address) => "noreply@brislabs.com"
        (env :mail-to-address) => "to@address.com"
@@ -68,13 +70,14 @@
                                    :content "body"}]})
        => nil))
 
-(fact "that we don't send when the environment is something other than `:prod`"
-      (send-completion-message (assoc deployment :environment :something-else))
+(fact "that we don't send when we're not told to"
+      (send-completion-message deployment)
       => nil
       (provided
+       (environments/should-notify? "prod") => false
        (mail/send-message anything anything) => nil :times 0))
 
-(fact "that we don't send when the environment is `:prod` and it's an undo"
+(fact "that we don't send when we're told to and it's an undo"
       (send-completion-message (assoc deployment :undo true))
       => nil
       (provided
@@ -84,6 +87,7 @@
       (send-completion-message deployment)
       => nil
       (provided
+       (environments/should-notify? "prod") => true
        (env :mail-smtp-host) => "dummy-value"
        (env :mail-from-address) => "noreply@brislabs.com"
        (env :mail-to-address) => "to@address.com"

@@ -19,6 +19,11 @@
   []
   (map-by-name-kw (map lister/environment (lister/environments))))
 
+(defn should-notify?
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (get-in e [:metadata :deployment-notifications])))
+
 (defn prod-account?
   [environment-name]
   (when-let [e (environment environment-name)]

@@ -2,7 +2,9 @@
   "## Deals with various notifications"
   (:require [clojure.tools.logging :refer [warn]]
             [environ.core :refer [env]]
-            [maestro.log :as log]
+            [maestro
+             [environments :as environments]
+             [log :as log]]
             [postal.core :as mail]))
 
 (def ^:private content-type
@@ -10,10 +12,6 @@
 
 (def ^:private ui-base-url
   (clojure.string/replace (env :ui-baseurl "http://maestro") #"/*$" ""))
-
-(defn- prod?
-  [environment]
-  (= :prod (keyword environment)))
 
 (defn build-message-title
   "Creates a message title from parameters contained in the given deployment."
@@ -73,7 +71,7 @@
   "Sends a 'deployment completed' email to the configured notification destination for the given deployment but only if there is something specified in `:service-smtp-host`."
   [{:keys [environment undo] :as deployment}]
   (when (and (not undo)
-             (prod? environment))
+             (environments/should-notify? environment))
     (let [host (env :mail-smtp-host)]
       (when (seq host)
         (try

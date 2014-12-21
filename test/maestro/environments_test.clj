@@ -36,3 +36,18 @@
       (provided
        (environments) => {:env1 ..env1..
                           :env2 ..env2..}))
+
+(fact "that an environment should notify when specified"
+      (should-notify? "env") => truthy
+      (provided
+       (environment "env") => {:metadata {:deployment-notifications true}}))
+
+(fact "that an environment should not notify when specified"
+      (should-notify? "env") => falsey
+      (provided
+       (environment "env") => {:metadata {:deployment-notifications false}}))
+
+(fact "that an environment should not notify when nothing specified"
+      (should-notify? "env") => falsey
+      (provided
+       (environment "env") => {:metadata {}}))
