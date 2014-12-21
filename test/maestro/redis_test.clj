@@ -161,4 +161,14 @@
   (fact "that obtaining the queue status works"
         (queue-status) => ..status..
         (provided
-         (car-mq/queue-status anything "scheduled-tasks") => ..status..)))
+         (car-mq/queue-status anything "scheduled-tasks") => ..status..))
+
+  (fact "that we are healthy if we don't get an exception while pinging Redis"
+        (healthy?) => truthy
+        (provided
+         (car/ping) => ..anything..))
+
+  (fact "that we aren't healthy if we get an exception while pinging Redis"
+        (healthy?) => falsey
+        (provided
+         (car/ping) =throws=> (ex-info "Busted" {}))))

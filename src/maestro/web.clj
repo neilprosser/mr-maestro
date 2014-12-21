@@ -86,12 +86,16 @@
 
   (GET "/healthcheck"
        []
-       (let [environments-ok? (environments/healthy?)
-             success environments-ok?]
+       (let [elasticsearch-ok? (es/healthy?)
+             environments-ok? (environments/healthy?)
+             redis-ok? (redis/healthy?)
+             success (and elasticsearch-ok? environments-ok? redis-ok?)]
          (response {:name "maestro"
                     :version version
                     :success success
-                    :dependencies [{:name "environments" :success environments-ok?}]}
+                    :dependencies [{:name "elasticsearch" :success elasticsearch-ok?}
+                                   {:name "environments" :success environments-ok?}
+                                   {:name "redis" :success redis-ok?}]}
                    "application/json"
                    (if success 200 500))))
 

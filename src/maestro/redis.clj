@@ -1,5 +1,6 @@
 (ns maestro.redis
   (:require [clojure.string :as str]
+            [clojure.tools.logging :refer [warn]]
             [environ.core :refer [env]]
             [taoensso.carmine :as car :refer [wcar]]
             [taoensso.carmine.message-queue :as car-mq]))
@@ -126,6 +127,15 @@
 (defn queue-status
   []
   (car-mq/queue-status @redis-connection scheduled-tasks-key))
+
+(defn healthy?
+  []
+  (try
+    (using-redis (car/ping))
+    true
+    (catch Exception e
+      (warn e "Failure while checking Redis health")
+      false)))
 
 (defn init
   [handler]

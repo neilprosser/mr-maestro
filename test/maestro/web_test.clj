@@ -52,12 +52,16 @@
 (fact "that our healthcheck gives 200 when everything is great"
       (request :get "/healthcheck") => (contains {:status 200})
       (provided
-       (environments/healthy?) => true))
+       (environments/healthy?) => true
+       (es/healthy?) => true
+       (redis/healthy?) => true))
 
 (fact "that our healthcheck gives 500 when something is sad"
       (request :get "/healthcheck") => (contains {:status 500})
       (provided
-       (environments/healthy?) => false))
+       (environments/healthy?) => false
+       (es/healthy?) => true
+       (redis/healthy?) => true))
 
 (fact "that we can retrieve the queue status"
       (request :get "/queue-status") => (contains {:body {:queue "status"}

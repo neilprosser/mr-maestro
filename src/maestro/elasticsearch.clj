@@ -1,5 +1,6 @@
 (ns maestro.elasticsearch
   (:require [clj-time.coerce :as c]
+            [clojure.tools.logging :refer [warn]]
             [clojurewerkz.elastisch.query :as q]
             [clojurewerkz.elastisch.rest :as esr]
             [clojurewerkz.elastisch.rest.document :as esd]
@@ -50,10 +51,6 @@
   [type parent-id]
   {:has_parent {:type type
                 :query {:term {:_id {:value parent-id}}}}})
-
-(defn init
-  []
-  (reset! conn (esr/connect (env :elasticsearch-url "http://localhost:9200"))))
 
 (defn upsert-deployment
   [deployment-id document]
@@ -212,3 +209,16 @@
   (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "day")})
         facets (get-in result [:facets :date :entries])]
     (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+
+(defn healthy?
+  []
+  (try
+    (deployment "healthcheck")
+    true
+    (catch Exception e
+      (warn e "Failed to check Elasticsearch health")
+      false)))
+
+(defn init
+  []
+  (reset! conn (esr/connect (env :elasticsearch-url "http://localhost:9200"))))

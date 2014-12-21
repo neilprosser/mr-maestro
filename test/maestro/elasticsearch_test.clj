@@ -93,3 +93,13 @@
                                                                                                                                                  :count 12}
                                                                                                                                                 {:time 1396310400000
                                                                                                                                                  :count 2}]}}}))
+
+(fact "that we are healthy if we don't get an exception while checking health"
+      (healthy?) => truthy
+      (provided
+       (deployment "healthcheck") => nil))
+
+(fact "that we aren't healthy if we get an exception while checking health"
+      (healthy?) => falsey
+      (provided
+       (deployment "healthcheck") =throws=> (ex-info "Busted" {})))
