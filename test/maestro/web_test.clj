@@ -49,8 +49,15 @@
       (request :get "/ping") => (contains {:body "pong"
                                            :status 200}))
 
-(fact "that our healthcheck works"
-      (request :get "/healthcheck") => (contains {:status 200}))
+(fact "that our healthcheck gives 200 when everything is great"
+      (request :get "/healthcheck") => (contains {:status 200})
+      (provided
+       (environments/healthy?) => true))
+
+(fact "that our healthcheck gives 500 when something is sad"
+      (request :get "/healthcheck") => (contains {:status 500})
+      (provided
+       (environments/healthy?) => false))
 
 (fact "that we can retrieve the queue status"
       (request :get "/queue-status") => (contains {:body {:queue "status"}

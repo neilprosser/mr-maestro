@@ -12,6 +12,7 @@
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.3"]
                  [com.ninjakoala/monotony "1.0"]
+                 [com.ninjakoala/ttlr "1.0.1"]
                  [com.taoensso/carmine "2.9.0"]
                  [compojure "1.3.1"]
                  [dire "0.5.3"]
@@ -25,7 +26,6 @@
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.tobereplaced/lettercase "1.0.0"]
-                 [overtone/at-at "1.2.0"]
                  [ring-middleware-format "0.4.0"]]
 
   :exclusions [commons-logging

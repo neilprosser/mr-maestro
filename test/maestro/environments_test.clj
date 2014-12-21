@@ -3,23 +3,23 @@
              [environments :refer :all]
              [lister :as lister]]
             [midje.sweet :refer :all]
-            [overtone.at-at :as at]))
+            [ninjakoala.ttlr :as ttlr]))
 
-(fact "that getting nil back when updating environments does not replace the value"
-      (do (reset! environments-atom nil) (update-environments) (environments)) => nil
+(fact "that we're healthy if there are some environments"
+      (healthy?) => truthy
       (provided
-       (lister/environments) => nil))
+       (environments) => {:env {}}))
 
-(fact "that an exception while getting environments does not replace the value"
-      (do (reset! environments-atom nil) (update-environments) (environments)) => nil
+(fact "that we aren't healthy if there aren't any environments"
+      (healthy?) => falsey
       (provided
-       (lister/environments) =throws=> (ex-info "Busted" {})))
+       (environments) => {}))
 
 (fact "that updating our environments does what we expect"
-      (do (reset! environments-atom nil) (update-environments) (environments)) => {:env1 {:name "env1"
-                                                                                          :metadata {:first "metadata"}}
-                                                                                   :env2 {:name "env2"
-                                                                                          :metadata {:second "metadata"}}}
+      (update-environments) => {:env1 {:name "env1"
+                                       :metadata {:first "metadata"}}
+                                :env2 {:name "env2"
+                                       :metadata {:second "metadata"}}}
       (provided
        (lister/environments) => ["env1" "env2"]
        (lister/environment "env1") => {:name "env1" :metadata {:first "metadata"}}

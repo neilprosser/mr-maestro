@@ -10,7 +10,9 @@
              [redis :as redis]
              [web :as web]]
             [mixradio.instrumented-jetty :refer [run-jetty]]
-            [ninjakoala.monotony :refer [redirect-logging]]
+            [ninjakoala
+             [monotony :refer [redirect-logging]]
+             [ttlr :as ttlr]]
             [radix.setup :as setup])
   (:import (org.joda.time DateTime DateTimeZone))
   (:gen-class))
@@ -51,6 +53,7 @@
   (setup/start-graphite-reporting {:graphite-prefix (str/join "." [(env :environment-name) (env :service-name) (env :box-id setup/hostname)])})
   (redis/init messages/handler)
   (elasticsearch/init)
+  (ttlr/init :cpu-count 1)
   (environments/init)
   (reset! server (start-server)))
 

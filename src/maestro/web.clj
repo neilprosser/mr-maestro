@@ -86,10 +86,14 @@
 
   (GET "/healthcheck"
        []
-       (response {:name "maestro"
-                  :version version
-                  :success true
-                  :dependencies []}))
+       (let [environments-ok? (environments/healthy?)
+             success environments-ok?]
+         (response {:name "maestro"
+                    :version version
+                    :success success
+                    :dependencies [{:name "environments" :success environments-ok?}]}
+                   "application/json"
+                   (if success 200 500))))
 
   (GET "/queue-status"
        []

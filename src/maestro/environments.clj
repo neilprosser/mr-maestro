@@ -1,45 +1,33 @@
 (ns maestro.environments
   (:require [clojure.tools.logging :refer [warn]]
             [maestro.lister :as lister]
-            [overtone.at-at :as at]))
-
-(def ^:private pool
-  (atom nil))
-
-(def environments-atom
-  (atom nil))
-
-(defn create-pool
-  []
-  (when-not @pool
-    (reset! pool (at/mk-pool :cpu-count 1))))
+            [ninjakoala.ttlr :as ttlr]))
 
 (defn environments
   []
-  @environments-atom)
-
-(defn environment
-  [environment-name]
-  (get (environments) (keyword environment-name)))
+  (ttlr/state :environments))
 
 (defn- map-by-name-kw
   [list]
   (apply merge (map (fn [v] {(keyword (:name v)) v}) list)))
 
+(defn environment
+  [environment-name]
+  (get (environments) (keyword environment-name)))
+
 (defn update-environments
   []
-  (try
-    (when-let [environments (map-by-name-kw (map lister/environment (lister/environments)))]
-      (reset! environments-atom environments))
-    (catch Exception e
-      (warn e "Failed to update environments"))))
+  (map-by-name-kw (map lister/environment (lister/environments))))
 
 (defn prod-account?
   [environment-name]
   (when-let [e (environment environment-name)]
     (= "prod" (get-in e [:metadata :account]))))
 
+(defn healthy?
+  []
+  (not (zero? (count (keys (environments))))))
+
 (defn init
   []
-  (create-pool)
-  (at/interspaced (* 1000 60 30) update-environments @pool :initial-delay 0))
+  (ttlr/schedule :environments update-environments (* 1000 60 30) (update-environments)))
