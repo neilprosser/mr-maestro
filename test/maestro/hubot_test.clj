@@ -9,15 +9,15 @@
       (speak ..room.. ..message..) => nil
       (provided
        (json/generate-string {:room ..room.. :message ..message..}) => ..json..
-       (http/simple-post "http://hubot:8080/hubot/say" {:content-type :json
-                                                        :body ..json..
-                                                        :socket-timeout 5000}) => ..post-result..))
+       (http/simple-post "http://hubot/hubot/say" {:content-type :json
+                                                   :body ..json..
+                                                   :socket-timeout 5000}) => ..post-result..))
 
 (fact "that making Hubot speak and getting an error doesn't blow-up"
       (speak ..room.. ..message..) => nil
       (provided
        (json/generate-string {:room ..room.. :message ..message..}) => ..json..
-       (http/simple-post "http://hubot:8080/hubot/say" anything) =throws=> (ex-info "Busted" {})))
+       (http/simple-post "http://hubot/hubot/say" anything) =throws=> (ex-info "Busted" {})))
 
 (fact "that making Hubot speak about a deployment being started has the right message"
       (speak-about-deployment-start {:application "application"

@@ -55,7 +55,7 @@
         :graphite-host "carbon.brislabs.com"
         :graphite-port 2003
         :graphite-post-interval-seconds 60
-        :hubot-url "http://hubot:8080"
+        :hubot-url "http://hubot"
         :logging-consolethreshold "off"
         :logging-filethreshold "info"
         :logging-level "info"
@@ -63,7 +63,7 @@
         :logging-stashthreshold "warn"
         :mail-from-address "maestro@somewhere.com"
         :mail-smtp-host ""
-        :mail-to-address "I_EXT_ENT_DEPLOYMENT_COMMS@nokia.com"
+        :mail-to-address "deployments@somewhere.com"
         :numel-poke-baseurl "http://numelpoke"
         :numel-prod-baseurl "http://numelprod"
         :lister-baseurl "http://lister"
