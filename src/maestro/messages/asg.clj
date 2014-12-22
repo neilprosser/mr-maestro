@@ -125,15 +125,17 @@
       (do
         (log/write "Nothing was created so not adding scaling notifications.")
         (success parameters))
-      (try
-        (log/write (format "Adding scaling notifications to '%s'." auto-scaling-group-name))
-        (auto/put-notification-configuration (aws/config environment region)
-                                             :auto-scaling-group-name auto-scaling-group-name
-                                             :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
-                                             :topic-arn (aws/autoscaling-topic environment))
-        (success parameters)
-        (catch Exception e
-          (error-with e))))))
+      (if-let [autoscaling-topic (aws/autoscaling-topic environment)]
+        (try
+          (log/write (format "Adding scaling notifications to '%s'." auto-scaling-group-name))
+          (auto/put-notification-configuration (aws/config environment region)
+                                               :auto-scaling-group-name auto-scaling-group-name
+                                               :notification-types ["autoscaling:EC2_INSTANCE_LAUNCH" "autoscaling:EC2_INSTANCE_TERMINATE"]
+                                               :topic-arn autoscaling-topic)
+          (success parameters)
+          (catch Exception e
+            (error-with e)))
+        (success parameters)))))
 
 (defn notify-of-auto-scaling-group-creation
   [{:keys [parameters]}]
@@ -145,15 +147,17 @@
       (do
         (log/write "Nothing was created so skipping notification.")
         (success parameters))
-      (try
-        (log/write (format "Notifying of creation of auto-scaling group '%s'." auto-scaling-group-name))
-        (sqs/send-message (aws/config environment region)
-                          :queue-url (aws/announcement-queue-url region environment)
-                          :delay-seconds 0
-                          :message-body (aws/asg-created-message auto-scaling-group-name))
-        (success parameters)
-        (catch Exception e
-          (error-with e))))))
+      (if-let [queue-url (aws/announcement-queue-url region environment)]
+        (try
+          (log/write (format "Notifying of creation of auto-scaling group '%s'." auto-scaling-group-name))
+          (sqs/send-message (aws/config environment region)
+                            :queue-url queue-url
+                            :delay-seconds 0
+                            :message-body (aws/asg-created-message auto-scaling-group-name))
+          (success parameters)
+          (catch Exception e
+            (error-with e)))
+        (success parameters)))))
 
 (defn resize-auto-scaling-group
   [{:keys [parameters]}]
@@ -473,12 +477,14 @@
   [{:keys [parameters]}]
   (let [{:keys [environment region]} parameters
         state-key (util/previous-state-key parameters)
-        state (state-key parameters)]
-    (if-let [old-auto-scaling-group-name (:auto-scaling-group-name state)]
+        state (state-key parameters)
+        old-auto-scaling-group-name (:auto-scaling-group-name state)
+        queue-url (aws/announcement-queue-url region environment)]
+    (if (and old-auto-scaling-group-name queue-url)
       (try
         (log/write (format "Notifying of deletion of auto-scaling group '%s'." old-auto-scaling-group-name))
         (sqs/send-message (aws/config environment region)
-                          :queue-url (aws/announcement-queue-url region environment)
+                          :queue-url queue-url
                           :delay-seconds 0
                           :message-body (aws/asg-deleted-message old-auto-scaling-group-name))
         (success parameters)

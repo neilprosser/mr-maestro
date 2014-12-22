@@ -7,39 +7,24 @@
             [maestro
              [aws :refer :all]
              [environments :as environments]
+             [identity :as id]
              [numel :as numel]]
             [midje.sweet :refer :all]))
 
-(fact "that we should use the current role for `poke`"
-      (use-current-role? :poke) => truthy
+(fact "that we don't provide alternative credentials when using the current account ID"
+      (alternative-credentials-if-necessary "env") => nil
       (provided
-       (environments/environment :poke) => {:name "poke"
-                                            :metadata {:account "dev"}}))
-
-(fact "that we shouldn't use the current role for `prod`"
-      (use-current-role? :prod) => falsey
-      (provided
-       (environments/environment :prod) => {:name "prod"
-                                            :metadata {:account "prod"}}))
-
-(fact "that we handle the environment as a string when checking whether we should use the current role"
-      (use-current-role? "prod") => falsey
-      (provided
-       (environments/environment "prod") => {:name "prod"
-                                             :metadata {:account "prod"}}))
-
-(fact "that we don't provide alternative credentials when using `poke`"
-      (alternative-credentials-if-necessary :poke) => nil
-      (provided
-       (use-current-role? :poke) => true
-       (sts/assume-role {:role-arn "prod-role-arn"
+       (environments/account-id "env") => "id"
+       (id/current-account-id) => "id"
+       (sts/assume-role {:role-arn "arn:aws:iam::id:role/maestro"
                          :role-session-name "maestro"}) => nil :times 0))
 
-(fact "that we provide alternative credentials when using `prod`"
-      (alternative-credentials-if-necessary :prod) => ..credentials..
+(fact "that we provide alternative credentials when not using the current account ID"
+      (alternative-credentials-if-necessary "env") => ..credentials..
       (provided
-       (use-current-role? :prod) => false
-       (sts/assume-role {:role-arn "prod-role-arn"
+       (environments/account-id "env") => "other-id"
+       (id/current-account-id) => "id"
+       (sts/assume-role {:role-arn "arn:aws:iam::other-id:role/maestro"
                          :role-session-name "maestro"}) => {:credentials ..credentials..}))
 
 (fact "that config is generated correctly for `poke`"
@@ -48,56 +33,15 @@
       (provided
        (alternative-credentials-if-necessary :poke) => {:potential :alternative}))
 
-(fact "that getting the account ID works for `poke`"
-      (account-id :poke) => "dev-account-id"
+(fact "that getting the autoscaling topic works"
+      (autoscaling-topic "env") => "topic-arn"
       (provided
-       (environments/environment :poke) => {:name "poke"
-                                            :metadata {:account "dev"}}))
+       (environments/autoscaling-topic "env") => "topic-arn"))
 
-(fact "that getting the account ID works for `prod`"
-      (account-id :prod) => "prod-account-id"
+(fact "that getting the announcement queue URL works"
+      (announcement-queue-url "region" "env") => "https://region.queue.amazonaws.com/account-id/autoscale-announcements"
       (provided
-       (environments/environment :prod) => {:name "prod"
-                                            :metadata {:account "prod"}}))
-
-(fact "that getting the account ID for something unknown gives the same as `poke`"
-      (account-id :whatever) => "dev-account-id"
-      (provided
-       (environments/environment :whatever) => nil))
-
-(fact "that getting the autoscaling topic works for `poke`"
-      (autoscaling-topic :poke) => "dev-autoscaling-topic-arn"
-      (provided
-       (environments/environment :poke) => {:name "poke"
-                                            :metadata {:account "dev"}}))
-
-(fact "that getting the autoscaling topic works for `prod`"
-      (autoscaling-topic :prod) => "prod-autoscaling-topic-arn"
-      (provided
-       (environments/environment :prod) => {:name "prod"
-                                            :metadata {:account "prod"}}))
-
-(fact "that getting the autoscaling topic for something unknown gives the same as `poke`"
-      (autoscaling-topic :whatever) => "dev-autoscaling-topic-arn"
-      (provided
-       (environments/environment :whatever) => nil))
-
-(fact "that getting the announcement queue URL works for `poke`"
-      (announcement-queue-url "region" :poke) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements"
-      (provided
-       (environments/environment :poke) => {:name "poke"
-                                            :metadata {:account "dev"}}))
-
-(fact "that getting the announcement queue URL works for `prod`"
-      (announcement-queue-url "region" :prod) => "https://region.queue.amazonaws.com/prod-account-id/autoscale-announcements"
-      (provided
-       (environments/environment :prod) => {:name "prod"
-                                            :metadata {:account "prod"}}))
-
-(fact "that getting the announcement queue URL for something unknown gives the same as `poke`"
-      (announcement-queue-url "region" :whatever) => "https://region.queue.amazonaws.com/dev-account-id/autoscale-announcements"
-      (provided
-       (environments/environment :whatever) => nil))
+       (environments/account-id "env") => "account-id"))
 
 (fact "that the auto scaling group creation message is correct"
       (asg-created-message "asg") => ..whole-message..

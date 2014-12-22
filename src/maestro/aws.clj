@@ -14,6 +14,7 @@
             [io.clj.logging :refer [with-logging-context]]
             [maestro
              [environments :as environments]
+             [identity :as id]
              [numel :as numel]
              [util :as util]]))
 
@@ -21,56 +22,17 @@
   "The queue name we'll use for sending announcements."
   "autoscale-announcements")
 
-(def ^:private dev-account-id
-  "The `dev` account ID."
-  (env :aws-dev-account-id))
-
-(def ^:private prod-account-id
-  "The `prod` account ID."
-  (env :aws-prod-account-id))
-
-(def ^:private account-ids
-  "Our map of account IDs by account name keyword."
-  {:dev dev-account-id
-   :prod prod-account-id})
-
-(def ^:private dev-autoscaling-topic-arn
-  "The `dev` autoscaling topic ARN"
-  (env :aws-dev-autoscaling-topic-arn))
-
-(def ^:private prod-autoscaling-topic-arn
-  "The `prod` autoscaling topic ARN"
-  (env :aws-prod-autoscaling-topic-arn))
-
-(def ^:private autoscaling-topics
-  "Our map of autoscaling topics by account name keyword."
-  {:dev dev-autoscaling-topic-arn
-   :prod prod-autoscaling-topic-arn})
-
-(def ^:private prod-role-arn
-  "The ARN of the `prod` role we want to assume."
-  (env :aws-prod-role-arn))
-
-(defn- environment-to-account*
-  "Get the account name keyword we should use for an environment. We'll default to `:dev` in the event of not knowing."
-  [environment]
-  (keyword (get-in (environments/environment environment) [:metadata :account] "dev")))
-
-(def environment-to-account
-  (if (env :disable-caching)
-    environment-to-account*
-    (memo/ttl environment-to-account* :ttl/threshold (* 1000 60 15))))
-
-(defn use-current-role?
-  "Whether we should use the current IAM role or should assume a role in another account."
-  [environment-name]
-  (not (environments/prod-account? environment-name)))
+(defn- role-arn
+  "Creates the role ARN for a given account ID."
+  [account-id]
+  (format "arn:aws:iam::%s:role/maestro" account-id))
 
 (defn alternative-credentials-if-necessary
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."
-  [environment]
-  (if-not (use-current-role? environment)
-    (:credentials (sts/assume-role {:role-arn prod-role-arn :role-session-name "maestro"}))))
+  [environment-name]
+  (let [account-id (environments/account-id environment-name)]
+    (when-not (= account-id (id/current-account-id))
+      (:credentials (sts/assume-role {:role-arn (role-arn account-id) :role-session-name "maestro"})))))
 
 (def ^:private proxy-details
   (let [proxy-host (env :aws-proxy-host)
@@ -85,20 +47,16 @@
          {:endpoint region}
          proxy-details))
 
-(defn account-id
-  "Get the account ID we should use for an environment."
-  [environment]
-  (get account-ids (environment-to-account environment)))
-
 (defn autoscaling-topic
-  "Get the autoscaling topic ARN we should use for an environment. We'll default ot whatever `:poke` uses in the event of not knowing."
+  "Get the autoscaling topic ARN we should use for an environment."
   [environment]
-  (get autoscaling-topics (environment-to-account environment)))
+  (environments/autoscaling-topic environment))
 
 (defn announcement-queue-url
   "Create the URL for an announcement queue in a region and for an environment."
   [region environment]
-  (format "https://%s.queue.amazonaws.com/%s/%s" region (account-id environment) autoscale-queue-name))
+  (when-let [account-id (environments/account-id environment)]
+    (format "https://%s.queue.amazonaws.com/%s/%s" region account-id autoscale-queue-name)))
 
 (defn asg-created-message
   "Create the message describing the creation of an ASG."

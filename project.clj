@@ -45,12 +45,7 @@
             [lein-release "1.0.5"]
             [lein-ring "0.8.13"]]
 
-  :env {:aws-dev-account-id "dev-account-id"
-        :aws-dev-autoscaling-topic-arn "dev-autoscaling-topic-arn"
-        :aws-key-name "maestro"
-        :aws-prod-account-id "prod-account-id"
-        :aws-prod-autoscaling-topic-arn "prod-autoscaling-topic-arn"
-        :aws-prod-role-arn "prod-role-arn"
+  :env {:aws-key-name "maestro"
         :aws-required-security-groups "maestro-healthcheck"
         :disable-caching true
         :elasticsearch-index-name "maestro"
@@ -73,7 +68,6 @@
         :numel-prod-baseurl "http://numelprod"
         :lister-baseurl "http://lister"
         :pedantic-baseurl "http://pedantic"
-        :prod-vpc-id "vpc-prod"
         :production false
         :redis-host "localhost"
         :redis-key-prefix "maestro"

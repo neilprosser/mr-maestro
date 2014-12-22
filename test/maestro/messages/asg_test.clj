@@ -201,6 +201,15 @@
 (fact "that attempting to add scaling notifications to a deployment with no previous state is successful and does nothing"
       (add-scaling-notifications {:parameters (assoc add-scaling-notifications-params :undo true :previous-state nil)}) => (contains {:status :success}))
 
+(fact "that attempting to add scaling notifications to an environment with no autoscaling-topic does nothing"
+      (add-scaling-notifications {:parameters add-scaling-notifications-params}) => (contains {:status :success})
+      (provided
+       (aws/autoscaling-topic "environment") => nil
+       (auto/put-notification-configuration anything
+                                            :auto-scaling-group-name anything
+                                            :notification-types anything
+                                            :topic-arn anything) => ..result.. :times 0))
+
 (def notify-of-auto-scaling-group-creation-params
   {:environment "environment"
    :region "region"
@@ -234,6 +243,15 @@
 
 (fact "that attempting to notify about auto scaling group creation for a deployment with no previous state is successful and does nothing"
       (notify-of-auto-scaling-group-creation {:parameters (assoc notify-of-auto-scaling-group-creation-params :undo true :previous-state nil)}) => (contains {:status :success}))
+
+(fact "that attempting to notify about auto scaling group creation for an environment with no queue URL skips the step"
+      (notify-of-auto-scaling-group-creation {:parameters notify-of-auto-scaling-group-creation-params}) => (contains {:status :success})
+      (provided
+       (aws/announcement-queue-url "region" "environment") => nil
+       (sqs/send-message anything
+                         :queue-url anything
+                         :delay-seconds 0
+                         :message-body anything) => ..send-result.. :times 0))
 
 (def resize-auto-scaling-group-params
   {:environment "environment"
@@ -765,6 +783,15 @@
 
 (fact "that attempting to notify of auto scaling group deletion for a deployment with no previous state is successful and does nothing"
       (notify-of-auto-scaling-group-deletion {:parameters (assoc notify-of-auto-scaling-group-deletion-params :previous-state nil)}) => (contains {:status :success}))
+
+(fact "that attempting to notify about auto scaling group deletion for an environment with no queue URL skips the step"
+      (notify-of-auto-scaling-group-deletion {:parameters notify-of-auto-scaling-group-deletion-params}) => (contains {:status :success})
+      (provided
+       (aws/announcement-queue-url "region" "environment") => nil
+       (sqs/send-message anything
+                         :queue-url anything
+                         :delay-seconds 0
+                         :message-body anything) => ..send-result.. :times 0))
 
 (def delete-old-auto-scaling-group-params
   {:environment "environment"

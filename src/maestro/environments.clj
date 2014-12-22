@@ -19,6 +19,21 @@
   []
   (map-by-name-kw (map lister/environment (lister/environments))))
 
+(defn account-id
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (get-in e [:metadata :account-id])))
+
+(defn account-name
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (get-in e [:metadata :account-name])))
+
+(defn autoscaling-topic
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (get-in e [:metadata :autoscaling-topic])))
+
 (defn should-notify?
   [environment-name]
   (when-let [e (environment environment-name)]
