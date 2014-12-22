@@ -16,7 +16,7 @@ or:
 
 ```
 lein uberjar
-java -jar maestro.jar
+java -jar target/maestro.jar
 ```
 
 ## Configuration
