@@ -47,6 +47,7 @@
 
   :env {:aws-key-name "maestro"
         :aws-required-security-groups "maestro-healthcheck"
+        :aws-role-name "maestro"
         :disable-caching true
         :elasticsearch-index-name "maestro"
         :elasticsearch-url "http://localhost:9200"

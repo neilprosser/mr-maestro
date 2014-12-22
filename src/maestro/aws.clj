@@ -22,10 +22,14 @@
   "The queue name we'll use for sending announcements."
   "autoscale-announcements")
 
+(def ^:private role-name
+  "The role name we'll assume in other accounts"
+  (env :aws-role-name "maestro"))
+
 (defn- role-arn
   "Creates the role ARN for a given account ID."
   [account-id]
-  (format "arn:aws:iam::%s:role/maestro" account-id))
+  (format "arn:aws:iam::%s:role/%s" account-id role-name))
 
 (defn alternative-credentials-if-necessary
   "Attempts to assume a role, if necessary, returning the credentials or nil if current role is to be used."
