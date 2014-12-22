@@ -6,6 +6,7 @@
             [maestro
              [elasticsearch :as elasticsearch]
              [environments :as environments]
+             [identity :as id]
              [messages :as messages]
              [redis :as redis]
              [web :as web]]
@@ -55,6 +56,7 @@
   (elasticsearch/init)
   (ttlr/init :cpu-count 1)
   (environments/init)
+  (id/init)
   (reset! server (start-server)))
 
 (defn stop

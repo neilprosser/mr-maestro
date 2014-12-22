@@ -7,6 +7,7 @@
              [deployments :as deployments]
              [elasticsearch :as es]
              [environments :as environments]
+             [identity :as id]
              [info :as info]
              [redis :as redis]
              [util :as util]
@@ -54,6 +55,7 @@
       (provided
        (environments/healthy?) => true
        (es/healthy?) => true
+       (id/healthy?) => true
        (redis/healthy?) => true))
 
 (fact "that our healthcheck gives 500 when something is sad"
@@ -61,6 +63,7 @@
       (provided
        (environments/healthy?) => false
        (es/healthy?) => true
+       (id/healthy?) => true
        (redis/healthy?) => true))
 
 (fact "that we can retrieve the queue status"

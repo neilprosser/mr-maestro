@@ -17,6 +17,7 @@
              [deployments :as deployments]
              [elasticsearch :as es]
              [environments :as environments]
+             [identity :as id]
              [info :as info]
              [jsonp :refer [wrap-json-with-padding]]
              [redis :as redis]
@@ -88,13 +89,15 @@
        []
        (let [elasticsearch-ok? (es/healthy?)
              environments-ok? (environments/healthy?)
+             identity-ok? (id/healthy?)
              redis-ok? (redis/healthy?)
-             success (and elasticsearch-ok? environments-ok? redis-ok?)]
+             success (and elasticsearch-ok? environments-ok? identity-ok? redis-ok?)]
          (response {:name "maestro"
                     :version version
                     :success success
                     :dependencies [{:name "elasticsearch" :success elasticsearch-ok?}
                                    {:name "environments" :success environments-ok?}
+                                   {:name "identity" :success identity-ok?}
                                    {:name "redis" :success redis-ok?}]}
                    "application/json"
                    (if success 200 500))))
