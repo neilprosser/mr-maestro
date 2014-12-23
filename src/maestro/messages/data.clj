@@ -403,8 +403,8 @@
     (success (assoc-in parameters [:new-state :tyranitar :deployment-params :selected-security-groups] (apply merge (or selected-security-groups []) required-security-group-names)))))
 
 (defn- is-security-group-id?
-  [name]
-  (re-find #"^sg-" name))
+  [group-name]
+  (re-find #"^sg-" group-name))
 
 (defn map-security-group-ids
   [{:keys [parameters]}]

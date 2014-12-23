@@ -10,8 +10,8 @@
                                  :volume-type (or type "standard")})})
 
 (defn instance-store-block-device-mappings
-  [count]
-  (map (fn [i] {:virtual-name (str "ephemeral" i)}) (range count)))
+  [device-count]
+  (map (fn [i] {:virtual-name (str "ephemeral" i)}) (range device-count)))
 
 (defn device-name
   [index virtualisation-type]

@@ -48,8 +48,8 @@
   {:term {:user user}})
 
 (defn parent-filter
-  [type parent-id]
-  {:has_parent {:type type
+  [document-type parent-id]
+  {:has_parent {:type document-type
                 :query {:term {:_id {:value parent-id}}}}})
 
 (defn upsert-deployment

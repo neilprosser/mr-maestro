@@ -93,11 +93,11 @@
 (defn describe-instances
   "Returns a json object describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
-  [environment region name state]
-  (let [pattern-name (str name "-" environment "-*")
+  [environment region application state]
+  (let [pattern-name (str application "-" environment "-*")
         state (or state "running")
         config (config environment region)
-        registrations (when name (map-by-instance-id (numel/application-registrations environment name)))]
+        registrations (when application (map-by-instance-id (numel/application-registrations environment application)))]
     (->> (ec2/describe-instances config
                                  :filters [{:name "tag:Name" :values [pattern-name]}
                                            {:name "instance-state-name" :values [state]}])
@@ -109,8 +109,8 @@
 (defn describe-instances-plain
   "Returns a column formatted string describing the instances in the supplied environment
    with the given name and optional state (defaults to running)"
-  [environment region name state]
-  (util/as-table [:name :instance-id :image-id :launch-time :numel-id :private-ip] (describe-instances environment region name state)))
+  [environment region application state]
+  (util/as-table [:name :instance-id :image-id :launch-time :numel-id :private-ip] (describe-instances environment region application state)))
 
 (def auto-scaling-groups
   (fn [environment region]

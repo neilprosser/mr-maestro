@@ -43,7 +43,7 @@
      :successful? (ok-response? url)}))
 
 (defn- check-instances-health
-  [ip-addresses port healthcheck-path min]
+  [ip-addresses port healthcheck-path]
   (let [check-results (map #(check-instance-health % port healthcheck-path) ip-addresses)]
     (log/write (format "%s came back [%s]." (util/pluralise (count check-results) "Healthcheck") (str/join ", " (map (fn [r] (format "%s => %s" (:url r) (:successful? r))) check-results))))
     check-results))
@@ -90,7 +90,7 @@
                     instances (aws/instances environment region instance-ids)]
                 (log/write (format "Checking health of %s [%s] using port %s and path /%s." (util/pluralise (count instances) "instance") (str/join ", " instance-ids) service-port healthcheck-path))
                 (let [ip-addresses (map :private-ip-address instances)
-                      check-results (check-instances-health ip-addresses service-port healthcheck-path min)
+                      check-results (check-instances-health ip-addresses service-port healthcheck-path)
                       successful-results (count (filter :successful? check-results))]
                   (if (>= successful-results min)
                     (do

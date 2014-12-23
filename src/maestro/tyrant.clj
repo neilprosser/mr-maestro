@@ -91,8 +91,8 @@
 
 (defn verify-commit-hash
   "Verifies that the given hash exists for an application and environment."
-  [environment application-name hash]
-  (contains? (apply hash-set (map :hash (commits environment application-name))) hash))
+  [environment application-name commit-hash]
+  (contains? (apply hash-set (map :hash (commits environment application-name))) commit-hash))
 
 (defn create-application
   "Creates an application in Tyrant. Will fail if the application already

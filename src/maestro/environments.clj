@@ -8,8 +8,8 @@
   (ttlr/state :environments))
 
 (defn- map-by-name-kw
-  [list]
-  (apply merge (map (fn [v] {(keyword (:name v)) v}) list)))
+  [values]
+  (apply merge (map (fn [v] {(keyword (:name v)) v}) values)))
 
 (defn environment
   [environment-name]

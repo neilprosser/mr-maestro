@@ -91,8 +91,8 @@
   ([rows] (as-table (keys (first rows)) rows)))
 
 (defn map-by-property
-  [property list]
-  (apply merge (map (fn [v] {(property v) v}) list)))
+  [property values]
+  (apply merge (map (fn [v] {(property v) v}) values)))
 
 (defn pluralise
   [value word]
