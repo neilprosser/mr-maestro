@@ -2,12 +2,12 @@
   :description "Maestro service"
   :license  "https://github.com/mixradio/mr-maestro/blob/master/LICENSE"
 
-  :dependencies [[amazonica "0.3.6" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
+  :dependencies [[amazonica "0.3.12" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
                  [bouncer "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.4.0"]
                  [clj-http "1.0.1"]
-                 [clj-time "0.8.0"]
+                 [clj-time "0.9.0"]
                  [clojurewerkz/elastisch "2.1.0"]
                  [com.cemerick/url "0.1.1"]
                  [com.draines/postal "1.11.3"]
@@ -19,11 +19,11 @@
                  [dire "0.5.3"]
                  [environ "1.0.0"]
                  [io.clj/logging "0.8.1"]
-                 [joda-time "2.6"]
+                 [joda-time "2.7"]
                  [mixradio/graphite-filter "1.0.0"]
                  [mixradio/instrumented-ring-jetty-adapter "1.0.4"]
                  [mixradio/radix "1.0.9"]
-                 [net.logstash.logback/logstash-logback-encoder "3.4"]
+                 [net.logstash.logback/logstash-logback-encoder "3.5"]
                  [org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.tobereplaced/lettercase "1.0.0"]
@@ -43,7 +43,7 @@
             [lein-environ "1.0.0"]
             [lein-marginalia "0.8.0"]
             [lein-release "1.0.5"]
-            [lein-ring "0.8.13"]]
+            [lein-ring "0.9.0"]]
 
   :env {:aws-key-name "maestro"
         :aws-required-security-groups "maestro-healthcheck"
