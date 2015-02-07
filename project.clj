@@ -56,6 +56,7 @@
         :graphite-host "carbon.brislabs.com"
         :graphite-port 2003
         :graphite-post-interval-seconds 60
+        :hubot-deployments-room "deployments"
         :hubot-url "http://hubot"
         :logging-consolethreshold "off"
         :logging-filethreshold "info"

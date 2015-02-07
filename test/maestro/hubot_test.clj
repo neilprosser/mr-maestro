@@ -28,7 +28,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak "503594" "user is deploying application v1.34 (image-id) to environment. Some message.") => nil))
+       (speak "deployments" "user is deploying application v1.34 (image-id) to environment. Some message.") => nil))
 
 (fact "that making Hubot speak about a silent deployment being started does nothing"
       (speak-about-deployment-start {:application "application"
@@ -52,7 +52,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak "503594" "user is rolling back application to v1.34 (image-id) in environment. Some message.") => nil))
+       (speak "deployments" "user is rolling back application to v1.34 (image-id) in environment. Some message.") => nil))
 
 (fact "that making Hubot speak about a silent deployment which is a rollback has the right message"
       (speak-about-deployment-start {:application "application"
@@ -81,7 +81,7 @@
                                     :user "user"})
       => nil
       (provided
-       (speak "503594" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment and replacing it with v2.51 (old-image-id). Some undo message.") => nil))
+       (speak "deployments" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment and replacing it with v2.51 (old-image-id). Some undo message.") => nil))
 
 (fact "that making Hubot speak about a deployment being undone with no previous state has the right message"
       (speak-about-deployment-undo {:application "application"
@@ -95,7 +95,7 @@
                                     :user "user"})
       => nil
       (provided
-       (speak "503594" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment. Some undo message.") => nil))
+       (speak "deployments" "otheruser is undoing deployment of application v2.52 (new-image-id) in environment. Some undo message.") => nil))
 
 (fact "that making Hubot speak about a silent undo has the right message"
       (speak-about-deployment-undo {:application "application"

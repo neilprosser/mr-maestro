@@ -5,8 +5,8 @@
             [environ.core :refer [env]]
             [maestro.http :as http]))
 
-(def ^:private general
-  "503594")
+(def ^:private deployments-room
+  (env :hubot-deployments-room))
 
 (def ^:private timeout
   5000)
@@ -33,10 +33,10 @@
     (let [image-id (get-in deployment [:new-state :image-details :id])
           version (get-in deployment [:new-state :image-details :version])]
       (if-not rollback
-        (speak general (format "%s is deploying %s v%s (%s) to %s. %s"
-                               user application version image-id environment message))
-        (speak general (format "%s is rolling back %s to v%s (%s) in %s. %s"
-                               user application version image-id environment message))))))
+        (speak deployments-room (format "%s is deploying %s v%s (%s) to %s. %s"
+                                        user application version image-id environment message))
+        (speak deployments-room (format "%s is rolling back %s to v%s (%s) in %s. %s"
+                                        user application version image-id environment message))))))
 
 (defn speak-about-deployment-undo
   [{:keys [application environment undo-message undo-silent undo-user] :as deployment}]
@@ -47,5 +47,5 @@
           old-version (get-in deployment [:previous-state :image-details :version])]
       (if (and old-image-id
                old-version)
-        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" undo-user application new-version new-image-id environment old-version old-image-id undo-message))
-        (speak general (format "%s is undoing deployment of %s v%s (%s) in %s. %s" undo-user application new-version new-image-id environment undo-message))))))
+        (speak deployments-room (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" undo-user application new-version new-image-id environment old-version old-image-id undo-message))
+        (speak deployments-room (format "%s is undoing deployment of %s v%s (%s) in %s. %s" undo-user application new-version new-image-id environment undo-message))))))
