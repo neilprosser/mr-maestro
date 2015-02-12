@@ -39,6 +39,10 @@
   []
   {:term {:status "completed"}})
 
+(defn failed-status-filter
+  []
+  {:or [{:term {:status "failed"}} {:and [{:term {:status "completed"}} {:term {:undo true}}]}]})
+
 (defn environment-filter
   [environment]
   {:term {:environment environment}})
@@ -159,6 +163,12 @@
 (defn deployments-by-user
   []
   (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})
+        facets (get-in result [:facets :user :terms])]
+    (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
+
+(defn failed-deployments-by-user
+  []
+  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (failed-status-filter)) :size 0 :facets {:user (user-facet)})
         facets (get-in result [:facets :user :terms])]
     (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
 

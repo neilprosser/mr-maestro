@@ -56,7 +56,7 @@
 
 (defn- skip-instance-healthcheck?
   [application-properties deployment-params]
-  (let [standard (get deployment-params :skip-instance-healthcheck)
+  (let [standard (get deployment-params :skip.instance.healthcheck)
         legacy (get application-properties :service.healthcheck.skip)]
     (or standard legacy default-healthcheck-skip)))
 
