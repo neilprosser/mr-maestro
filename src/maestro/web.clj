@@ -18,6 +18,7 @@
              [elasticsearch :as es]
              [environments :as environments]
              [identity :as id]
+             [images :as images]
              [info :as info]
              [jsonp :refer [wrap-json-with-padding]]
              [redis :as redis]
@@ -181,6 +182,10 @@
   (GET "/applications/:application"
        [application]
        (response (info/application application)))
+
+  (GET "/applications/:application/prohibited-images"
+       [application region]
+       (response {:images (images/prohibited-images application default-region)}))
 
   (PUT "/applications/:application"
        [application email]

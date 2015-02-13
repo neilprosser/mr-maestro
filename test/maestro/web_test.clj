@@ -8,6 +8,7 @@
              [elasticsearch :as es]
              [environments :as environments]
              [identity :as id]
+             [images :as images]
              [info :as info]
              [redis :as redis]
              [util :as util]
@@ -321,6 +322,13 @@
                     :status 200})
       (provided
        (info/application "application") => {:application "details"}))
+
+(fact "that getting the prohibited images for an application does what we expect"
+      (request :get "/applications/application/prohibited-images")
+      => (contains {:status 200
+                    :body {:images ["ami-1" "ami-2"]}})
+      (provided
+       (images/prohibited-images "application" "eu-west-1") => ["ami-1" "ami-2"]))
 
 (fact "that creating an application with an illegal name returns 400"
       (request :put "/applications/my-application")
