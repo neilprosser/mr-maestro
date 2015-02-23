@@ -190,6 +190,49 @@
                                     :undo-silent true
                                     :undo-user "user"}}) => ..enqueue-result..))
 
+(def redeploy-params
+  {:application "application"
+   :environment "environment"
+   :id "id"
+   :message "Redeploy message"
+   :region "region"
+   :user "user"})
+
+(fact "that redeploying an application when no suitable completed deployment exists throws an exception"
+      (redeploy redeploy-params) => (throws ExceptionInfo "No previous completed deployment could be found")
+      (provided
+       (es/get-deployments {:application "application"
+                            :environment "environment"
+                            :from 0
+                            :region "region"
+                            :size 1
+                            :status "completed"}) => []))
+
+(fact "that redeploying an application with a suitable previous deployment does the right thing"
+      (redeploy redeploy-params) => ..begin-result..
+      (provided
+       (es/get-deployments {:application "application"
+                            :environment "environment"
+                            :from 0
+                            :region "region"
+                            :size 1
+                            :status "completed"})
+       => [{:application "application"
+            :environment "environment"
+            :id "old-id"
+            :new-state {:hash "old-hash"
+                        :image-details {:id "image"}}
+            :region "region"
+            :status "completed"
+            :user "original-user"}]
+       (begin {:application "application"
+               :environment "environment"
+               :id "id"
+               :message "Redeploy message"
+               :new-state {:image-details {:id "image"}}
+               :region "region"
+               :user "user"}) => ..begin-result..))
+
 (def rollback-params
   {:application "application"
    :environment "environment"
@@ -199,7 +242,7 @@
    :rollback true
    :user "user"})
 
-(fact "that rolling back a deployment when a no suitable completed deployment exists throws an exception"
+(fact "that rolling back a deployment when no suitable completed deployment exists throws an exception"
       (rollback rollback-params) => (throws ExceptionInfo "No previous completed deployment could be found")
       (provided
        (es/get-deployments {:application "application"

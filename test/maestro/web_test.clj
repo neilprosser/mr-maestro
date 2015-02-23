@@ -396,6 +396,22 @@
                           :silent false
                           :user "user"}) => ..undo-result..))
 
+(fact "that redeploying an application calls through to deployments"
+      (request :post "/applications/application/environment/redeploy" (json-body {:message "message"
+                                                                                  :silent false
+                                                                                  :user "user"}))
+      => (contains {:status 200})
+      (provided
+       (deployments/locked?) => false
+       (util/generate-id) => "id"
+       (deployments/redeploy {:application "application"
+                              :environment "environment"
+                              :id "id"
+                              :message "message"
+                              :region "eu-west-1"
+                              :silent false
+                              :user "user"}) => ..redeploy-result..))
+
 (fact "that rolling-back a deployment calls through to deployments"
       (request :post "/applications/application/environment/rollback" (json-body {:message "message"
                                                                                   :silent false

@@ -89,6 +89,25 @@
                                                      :environment environment
                                                      :region region}))))
 
+(defn redeploy
+  [{:keys [application environment id message region user]}]
+  (if-let [previous (first (es/get-deployments {:application application
+                                                :environment environment
+                                                :from 0
+                                                :region region
+                                                :size 1
+                                                :status "completed"}))]
+    (begin {:application application
+            :environment environment
+            :id id
+            :message message
+            :new-state {:image-details {:id (get-in previous [:new-state :image-details :id])}}
+            :region region
+            :user user})
+    (throw (ex-info "No previous completed deployment could be found" {:type ::previous-completed-deployment-not-found
+                                                                       :application application
+                                                                       :environment environment}))))
+
 (defn rollback
   [{:keys [application environment id message region user]}]
   (if-let [previous (first (es/get-deployments {:application application

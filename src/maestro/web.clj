@@ -233,6 +233,19 @@
                                      :user user})]
            (response {:id id}))))
 
+  (POST "/applications/:application/:environment/redeploy"
+        [application environment message silent user]
+        (guarded
+         (let [id (util/generate-id)]
+           (deployments/redeploy {:application application
+                                  :environment environment
+                                  :id id
+                                  :message message
+                                  :region default-region
+                                  :silent silent
+                                  :user user})
+           (response {:id id}))))
+
   (POST "/applications/:application/:environment/rollback"
         [application environment message silent user]
         (guarded
