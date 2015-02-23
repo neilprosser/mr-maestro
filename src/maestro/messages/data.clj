@@ -31,6 +31,11 @@
    "c3.2xlarge" {:instance-stores 2}
    "c3.4xlarge" {:instance-stores 2}
    "c3.8xlarge" {:instance-stores 2}
+   "c4.large" {:instance-stores 0}
+   "c4.xlarge" {:instance-stores 0}
+   "c4.2xlarge" {:instance-stores 0}
+   "c4.4xlarge" {:instance-stores 0}
+   "c4.8xlarge" {:instance-stores 0}
    "cc2.8xlarge" {:instance-stores 4}
    "cg1.4xlarge" {:instance-stores 2}
    "cr1.8xlarge" {:instance-stores 2}
