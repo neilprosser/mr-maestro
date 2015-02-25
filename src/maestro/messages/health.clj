@@ -42,9 +42,16 @@
     {:url url
      :successful? (ok-response? url)}))
 
+(defn- choose-map-fn
+  [ip-addresses]
+  (if (> (count ip-addresses) 1)
+    pmap
+    map))
+
 (defn- check-instances-health
   [ip-addresses port healthcheck-path]
-  (let [check-results (map #(check-instance-health % port healthcheck-path) ip-addresses)]
+  (let [map-fn (choose-map-fn ip-addresses)
+        check-results (map-fn #(check-instance-health % port healthcheck-path) ip-addresses)]
     (log/write (format "%s came back [%s]." (util/pluralise (count check-results) "Healthcheck") (str/join ", " (map (fn [r] (format "%s => %s" (:url r) (:successful? r))) check-results))))
     check-results))
 
