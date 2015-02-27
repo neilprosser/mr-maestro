@@ -142,6 +142,7 @@
 (def default-deployment-params
   {:default-cooldown 10
    :desired-capacity 1
+   :ebs-optimized false
    :health-check-grace-period 600
    :health-check-type "EC2"
    :instance-healthy-attempts 50
