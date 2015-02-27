@@ -33,7 +33,7 @@
         state (state-key parameters)
         {:keys [block-device-mappings image-details launch-configuration-name selected-security-group-ids tyranitar user-data]} state
         {:keys [deployment-params]} tyranitar
-        {:keys [instance-type]} deployment-params
+        {:keys [ebs-optimized instance-type]} deployment-params
         image-id (:id image-details)]
     (if-not state
       (do
@@ -49,6 +49,7 @@
             (auto/create-launch-configuration (aws/config environment region)
                                               :launch-configuration-name launch-configuration-name
                                               :block-device-mappings (vec block-device-mappings)
+                                              :ebs-optimized ebs-optimized
                                               :iam-instance-profile application
                                               :image-id image-id
                                               :instance-type instance-type

@@ -17,7 +17,8 @@
                :launch-configuration-name "lc"
                :selected-security-group-ids ["sg-1" "sg-2"]
                :tyranitar {:application-properties {}
-                           :deployment-params {:instance-type "instance"}
+                           :deployment-params {:ebs-optimized true
+                                               :instance-type "instance"}
                            :launch-data []}
                :user-data "user-data"}})
 
@@ -29,6 +30,7 @@
        (auto/create-launch-configuration anything
                                          :launch-configuration-name "lc"
                                          :block-device-mappings [{:a "device"}]
+                                         :ebs-optimized true
                                          :iam-instance-profile "application"
                                          :image-id "image"
                                          :instance-type "instance"
@@ -51,6 +53,7 @@
        (auto/create-launch-configuration anything
                                          :launch-configuration-name "lc"
                                          :block-device-mappings [{:a "device"}]
+                                         :ebs-optimized true
                                          :iam-instance-profile "application"
                                          :image-id "image"
                                          :instance-type "instance"
