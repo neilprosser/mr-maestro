@@ -67,6 +67,12 @@
    "t2.micro" {:instance-stores 0}
    "t2.medium" {:instance-stores 0}})
 
+(def previous-application-properties-keys
+  [:healthcheck.path
+   :service.healthcheck.path
+   :service.healthcheck.skip
+   :service.port])
+
 (defn start-deployment-preparation
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters]
@@ -270,7 +276,7 @@
     (if state
       (try
         (log/write "Populating previous application-properties.")
-        (success (assoc-in parameters [:previous-state :tyranitar :application-properties] (select-keys (tyr/application-properties environment application hash) [:service.healthcheck.path :service.healthcheck.skip :service.port])))
+        (success (assoc-in parameters [:previous-state :tyranitar :application-properties] (select-keys (tyr/application-properties environment application hash) previous-application-properties-keys)))
         (catch Exception e
           (error-with e)))
       (success parameters))))

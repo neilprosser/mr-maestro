@@ -243,12 +243,32 @@
       (provided
        (aws/last-application-auto-scaling-group "application" "environment" "region") => nil))
 
-(fact "that populating previous Tyranit application properties when no previous state exists succeeds"
+(fact "that populating previous Tyrant application properties when no previous state exists succeeds"
       (populate-previous-tyrant-application-properties {:parameters {:application "application"
-                                                                        :environment "environment"}})
+                                                                     :environment "environment"}})
       => {:parameters {:application "application"
                        :environment "environment"}
           :status :success})
+
+(fact "that populating previous Tyrant application properties populates the right keys"
+      (populate-previous-tyrant-application-properties {:parameters {:application "application"
+                                                                     :environment "environment"
+                                                                     :previous-state {:hash "previous-hash"}}})
+      => {:parameters {:application "application"
+                       :environment "environment"
+                       :previous-state {:hash "previous-hash"
+                                        :tyranitar {:application-properties {:healthcheck.path "healthcheck.path"
+                                                                             :service.healthcheck.path "service.healthcheck.path"
+                                                                             :service.healthcheck.skip "service.healthcheck.skip"
+                                                                             :service.port "service.port"}}}}
+          :status :success}
+      (provided
+       (tyr/application-properties "environment" "application" "previous-hash")
+       => {:healthcheck.path "healthcheck.path"
+           :service.healthcheck.path "service.healthcheck.path"
+           :service.healthcheck.skip "service.healthcheck.skip"
+           :service.port "service.port"
+           :something-else "something-else"}))
 
 (fact "that getting previous image details when no previous state exists succeeds"
       (get-previous-image-details {:parameters {:environment "environment"
