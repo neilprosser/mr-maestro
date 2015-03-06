@@ -35,9 +35,9 @@
           rooms (get-in deployment [:new-state :onix :rooms])
           all-rooms (cons deployments-room rooms)]
       (if-not rollback
-        (speak all-rooms (format "%s is deploying %s v%s (%s) to %s. %s"
+        (speak all-rooms (format "*%s* is deploying *%s* v%s (%s) to *%s*\n> %s"
                                  user application version image-id environment message))
-        (speak all-rooms (format "%s is rolling back %s to v%s (%s) in %s. %s"
+        (speak all-rooms (format "*%s* is rolling back *%s* to v%s (%s) in *%s*\n> %s"
                                  user application version image-id environment message))))))
 
 (defn speak-about-deployment-undo
@@ -51,5 +51,5 @@
           all-rooms (cons deployments-room rooms)]
       (if (and old-image-id
                old-version)
-        (speak all-rooms (format "%s is undoing deployment of %s v%s (%s) in %s and replacing it with v%s (%s). %s" undo-user application new-version new-image-id environment old-version old-image-id undo-message))
-        (speak all-rooms (format "%s is undoing deployment of %s v%s (%s) in %s. %s" undo-user application new-version new-image-id environment undo-message))))))
+        (speak all-rooms (format "*%s* is undoing deployment of *%s* v%s (%s) in *%s* and replacing it with v%s (%s)\n> %s" undo-user application new-version new-image-id environment old-version old-image-id undo-message))
+        (speak all-rooms (format "*%s* is undoing deployment of *%s* v%s (%s) in *%s*\n> %s" undo-user application new-version new-image-id environment undo-message))))))

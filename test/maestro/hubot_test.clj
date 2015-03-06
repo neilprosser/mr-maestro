@@ -28,7 +28,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak ["deployments"] "user is deploying application v1.34 (image-id) to environment. Some message.") => nil))
+       (speak ["deployments"] "*user* is deploying *application* v1.34 (image-id) to *environment*\n> Some message.") => nil))
 
 (fact "that making Hubot speak about a deployment being started for an application with an additional channel, includes that channel"
       (speak-about-deployment-start {:application "application"
@@ -40,7 +40,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak ["deployments" "another"] "user is deploying application v1.34 (image-id) to environment. Some message.") => nil))
+       (speak ["deployments" "another"] "*user* is deploying *application* v1.34 (image-id) to *environment*\n> Some message.") => nil))
 
 (fact "that making Hubot speak about a silent deployment being started does nothing"
       (speak-about-deployment-start {:application "application"
@@ -64,7 +64,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak ["deployments"] "user is rolling back application to v1.34 (image-id) in environment. Some message.") => nil))
+       (speak ["deployments"] "*user* is rolling back *application* to v1.34 (image-id) in *environment*\n> Some message.") => nil))
 
 (fact "that making Hubot speak about a silent deployment which is a rollback has the right message"
       (speak-about-deployment-start {:application "application"
@@ -93,7 +93,7 @@
                                     :user "user"})
       => nil
       (provided
-       (speak ["deployments"] "otheruser is undoing deployment of application v2.52 (new-image-id) in environment and replacing it with v2.51 (old-image-id). Some undo message.") => nil))
+       (speak ["deployments"] "*otheruser* is undoing deployment of *application* v2.52 (new-image-id) in *environment* and replacing it with v2.51 (old-image-id)\n> Some undo message.") => nil))
 
 (fact "that making Hubot speak about a deployment being undone with no previous state has the right message"
       (speak-about-deployment-undo {:application "application"
@@ -107,7 +107,7 @@
                                     :user "user"})
       => nil
       (provided
-       (speak ["deployments"] "otheruser is undoing deployment of application v2.52 (new-image-id) in environment. Some undo message.") => nil))
+       (speak ["deployments"] "*otheruser* is undoing deployment of *application* v2.52 (new-image-id) in *environment*\n> Some undo message.") => nil))
 
 (fact "that making Hubot speak about a silent undo has the right message"
       (speak-about-deployment-undo {:application "application"
