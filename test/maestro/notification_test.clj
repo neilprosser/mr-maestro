@@ -83,6 +83,14 @@
       (provided
        (mail/send-message anything anything) => nil :times 0))
 
+(fact "that we don't send if we haven't got an SMTP host"
+      (send-completion-message deployment)
+      => nil
+      (provided
+       (environments/should-notify? "prod") => true
+       (env :mail-smtp-host) => nil
+       (mail/send-message anything anything) => nil :times 0))
+
 (fact "that an exception while sending the completion message doesn't screw things up"
       (send-completion-message deployment)
       => nil

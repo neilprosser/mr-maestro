@@ -72,10 +72,9 @@
   [{:keys [environment undo] :as deployment}]
   (when (and (not undo)
              (environments/should-notify? environment))
-    (let [host (env :mail-smtp-host)]
-      (when (seq host)
-        (try
-          (mail/send-message {:host host} (build-message deployment))
-          (catch javax.mail.MessagingException e
-            (log/write "Failed to send completion message.")
-            (warn e "Failed to send completion message")))))))
+    (when-let [host (env :mail-smtp-host)]
+      (try
+        (mail/send-message {:host host} (build-message deployment))
+        (catch javax.mail.MessagingException e
+          (log/write "Failed to send completion message.")
+          (warn e "Failed to send completion message"))))))
