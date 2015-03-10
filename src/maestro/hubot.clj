@@ -36,7 +36,7 @@
 
 (defn- ui-url
   [id]
-  (str ui-base-url "/deployments/" id))
+  (str ui-base-url "/#/deployments/" id))
 
 (defn- bold
   [s]

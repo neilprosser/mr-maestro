@@ -45,7 +45,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak ["room"] "*user* is deploying *application* v1.34 to *environment*\n>>> Some message.\nhttp://maestro-ui/deployments/id") => nil))
+       (speak ["room"] "*user* is deploying *application* v1.34 to *environment*\n>>> Some message.\nhttp://maestro-ui/#/deployments/id") => nil))
 
 (fact "that making Hubot speak about a deployment being started for an application with an additional channel, includes that channel"
       (speak-about-deployment-start {:application "application"
@@ -57,7 +57,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak ["room"] "*user* is deploying *application* v1.34 to *environment*\n>>> Some message.\nhttp://maestro-ui/deployments/id") => nil))
+       (speak ["room"] "*user* is deploying *application* v1.34 to *environment*\n>>> Some message.\nhttp://maestro-ui/#/deployments/id") => nil))
 
 (fact "that making Hubot speak about a silent deployment being started does nothing"
       (speak-about-deployment-start {:silent true})
@@ -76,7 +76,7 @@
                                      :user "user"})
       => nil
       (provided
-       (speak ["room"] "*user* is rolling back *application* to v1.34 in *environment*\n>>> Some message.\nhttp://maestro-ui/deployments/id") => nil))
+       (speak ["room"] "*user* is rolling back *application* to v1.34 in *environment*\n>>> Some message.\nhttp://maestro-ui/#/deployments/id") => nil))
 
 (fact "that making Hubot speak about a silent deployment which is a rollback has the right message"
       (speak-about-deployment-start {:application "application"
@@ -136,7 +136,7 @@
       => nil
       (provided
        (speak ["room"] "*user* has deployed *application* v2.52 to *environment*") => nil
-       (speak ["deployments"] "*user* has deployed *application* v2.52 to *environment*\n>>> Some message.\nhttp://maestro-ui/deployments/id") => nil))
+       (speak ["deployments"] "*user* has deployed *application* v2.52 to *environment*\n>>> Some message.\nhttp://maestro-ui/#/deployments/id") => nil))
 
 (fact "that making Hubot speak about a silent deployment completion doesn't do anything"
       (speak-about-deployment-completion {:silent true})
