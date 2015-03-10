@@ -554,12 +554,8 @@
   [{:keys [parameters]}]
   (let [{:keys [application environment undo]} parameters]
     (if-not undo
-      (do
-        (hubot/speak-about-deployment-start parameters)
-        (log/write (format "Starting deployment of '%s' to '%s'." application environment)))
-      (do
-        (hubot/speak-about-deployment-undo parameters)
-        (log/write (format "Starting undo of '%s' in '%s'." application environment))))
+      (log/write (format "Starting deployment of '%s' to '%s'." application environment))
+      (log/write (format "Starting undo of '%s' in '%s'." application environment)))
     (success (-> parameters
                  (assoc :phase "deployment")
                  (assoc :status "running")

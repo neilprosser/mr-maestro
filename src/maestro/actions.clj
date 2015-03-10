@@ -37,6 +37,7 @@
    :maestro.messages.data/create-auto-scaling-group-tags
    :maestro.messages.data/generate-user-data
    :maestro.messages.data/complete-deployment-preparation
+   :maestro.messages.notification/send-start-notification
    :maestro.messages.data/start-deployment
    :maestro.messages.asg/create-launch-configuration
    :maestro.messages.asg/create-auto-scaling-group

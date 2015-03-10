@@ -10,7 +10,6 @@
                  [clj-time "0.9.0"]
                  [clojurewerkz/elastisch "2.1.0"]
                  [com.cemerick/url "0.1.1"]
-                 [com.draines/postal "1.11.3"]
                  [com.ninjakoala/aws-instance-metadata "1.0.0"]
                  [com.ninjakoala/monotony "1.0"]
                  [com.ninjakoala/ttlr "1.0.1"]
@@ -63,9 +62,6 @@
         :logging-level "info"
         :logging-path "/tmp"
         :logging-stashthreshold "warn"
-        :mail-from-address "maestro@somewhere.com"
-        :mail-smtp-host ""
-        :mail-to-address "deployments@somewhere.com"
         :numel-poke-baseurl "http://numelpoke"
         :numel-prod-baseurl "http://numelprod"
         :lister-baseurl "http://lister"
