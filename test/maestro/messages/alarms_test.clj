@@ -13,7 +13,8 @@
    :region "region"})
 
 (fact "that we don't do anything if there are no alarms to create"
-      (create-cloudwatch-alarms {:parameters {}}) => (contains {:status :success})
+      (create-cloudwatch-alarms {:parameters {:new-state {:cloudwatch-alarms nil}}}) => (contains {:status :success})
+      (create-cloudwatch-alarms {:parameters {:new-state {:cloudwatch-alarms []}}}) => (contains {:status :success})
       (provided
        (cw/describe-alarms anything :alarm-name-prefix anything) => nil :times 0))
 

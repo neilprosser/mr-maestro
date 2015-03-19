@@ -14,7 +14,7 @@
         state (state-key parameters)
         {:keys [auto-scaling-group-name cloudwatch-alarms]} state]
     (try
-      (when cloudwatch-alarms
+      (if (seq cloudwatch-alarms)
         (let [existing-alarms (:metric-alarms (cw/describe-alarms (aws/config environment region)
                                                                   :alarm-name-prefix (str auto-scaling-group-name "-")))
               existing-alarm-names (into (hash-set) (map :alarm-name existing-alarms))]
@@ -23,7 +23,8 @@
               (do
                 (log/write (format "Creating CloudWatch alarm %s" alarm-name))
                 (apply cw/put-metric-alarm (cons (aws/config environment region) (util/to-params alarm))))
-              (log/write (format "CloudWatch alarm %s already exists" alarm-name))))))
+              (log/write (format "CloudWatch alarm %s already exists" alarm-name)))))
+        (log/write "No CloudWatch alarms to add"))
       (success parameters)
       (catch Exception e
         (error-with e)))))
