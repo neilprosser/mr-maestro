@@ -42,8 +42,8 @@
           (when-not (zero? (count old-alarm-names))
             (log/write (format "Deleting existing CloudWatch alarms %s" old-alarm-names))
             (cw/delete-alarms (aws/config environment region)
-                              :alarm-names (vec old-alarm-names)))
-          (success parameters))
+                              :alarm-names (vec old-alarm-names))))
+        (success parameters)
         (catch Exception e
           (error-with e)))
       (success parameters))))
