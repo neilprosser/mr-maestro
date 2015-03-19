@@ -7,6 +7,17 @@
             [org.tobereplaced.lettercase :refer [lower-hyphen-keyword]])
   (:import java.util.UUID))
 
+(defn to-params
+  [m]
+  (mapcat (fn [[k v]] [k v]) m))
+
+(def t2-pattern
+  #"^t2\..+$")
+
+(defn has-cpu-credits?
+  [instance-type]
+  (re-matches t2-pattern instance-type))
+
 (defn char-for-index
   [index]
   (char (+ 97 index)))

@@ -4,6 +4,16 @@
             [midje.sweet :refer :all])
   (:import java.util.UUID))
 
+(fact "that we can turn a map into params"
+      (to-params {:one 1 :two 2 :three 3}) => [:one 1 :three 3 :two 2])
+
+(fact "that we can tell an instance which has CPU credits"
+      (has-cpu-credits? "t2.micro") => truthy
+      (has-cpu-credits? "t2.small") => truthy
+      (has-cpu-credits? "t2.medium") => truthy
+      (has-cpu-credits? "m1.small") => falsey
+      (has-cpu-credits? "t1.micro") => falsey)
+
 (fact "that we generate the correct character for an index"
       (char-for-index 0) => \a
       (char-for-index 22) => \w)

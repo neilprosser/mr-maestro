@@ -37,6 +37,16 @@
        (environments) => {:env1 ..env1..
                           :env2 ..env2..}))
 
+(fact "that we get nil for an alert topic if the environment doesn't exist"
+      (alert-topic "unknown") => nil
+      (provided
+       (environment "unknown") => nil))
+
+(fact "that we get the correct alert topic back for an environment which does exist"
+      (alert-topic "env") => "alert-topic"
+      (provided
+       (environment "env") => {:metadata {:alert-topic "alert-topic"}}))
+
 (fact "that an environment should notify when specified"
       (should-notify? "env") => truthy
       (provided

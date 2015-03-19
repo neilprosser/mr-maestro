@@ -1,6 +1,7 @@
 (ns maestro.actions
   (:require [clojure.string :as str]
             [maestro.messages
+             [alarms :as alarms]
              [asg :as asg]
              [data :as data]
              [health :as health]
@@ -36,6 +37,7 @@
    :maestro.messages.data/populate-termination-policies
    :maestro.messages.data/create-auto-scaling-group-tags
    :maestro.messages.data/generate-user-data
+   :maestro.messages.data/generate-cloudwatch-alarms
    :maestro.messages.data/complete-deployment-preparation
    :maestro.messages.notification/send-start-notification
    :maestro.messages.data/start-deployment
@@ -55,11 +57,13 @@
    :maestro.messages.asg/enable-adding-instances
    :maestro.messages.asg/register-instances-with-load-balancers
    :maestro.messages.health/wait-for-load-balancers-to-be-healthy
+   ;:maestro.messages.alarms/create-cloudwatch-alarms
    :maestro.messages.asg/add-scheduled-actions
    :maestro.messages.asg/disable-old-instance-launching
    :maestro.messages.asg/disable-old-instance-termination
    :maestro.messages.asg/disable-old-adding-instances
    :maestro.messages.asg/deregister-old-instances-from-load-balancers
+   ;:maestro.messages.alarms/remove-old-cloudwatch-alarms
    :maestro.messages.asg/notify-of-auto-scaling-group-deletion
    :maestro.messages.asg/delete-old-auto-scaling-group
    :maestro.messages.asg/wait-for-old-auto-scaling-group-deletion

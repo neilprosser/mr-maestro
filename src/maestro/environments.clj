@@ -34,6 +34,11 @@
   (when-let [e (environment environment-name)]
     (get-in e [:metadata :autoscaling-topic])))
 
+(defn alert-topic
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (get-in e [:metadata :alert-topic])))
+
 (defn should-notify?
   [environment-name]
   (when-let [e (environment environment-name)]

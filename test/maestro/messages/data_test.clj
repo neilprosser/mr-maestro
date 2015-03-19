@@ -2,6 +2,7 @@
   (:require [bouncer.core :as b]
             [clj-time.core :as time]
             [maestro
+             [alarms :as alarms]
              [aws :as aws]
              [block-devices :as dev]
              [lister :as lister]
@@ -468,6 +469,20 @@
        (to-auto-scaling-group-tag "new-asg" [:Environment "environment"]) => "environment-tag"
        (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => "name-tag"
        (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
+
+(fact "that generating CloudWatch alarms populates both new- and previous-states"
+      (generate-cloudwatch-alarms {:parameters {:environment ..environment..
+                                                :new-state {:new "state"}
+                                                :previous-state {:previous "state"}
+                                                :region ..region..}})
+      => {:status :success
+          :parameters {:environment ..environment..
+                       :new-state {:cloudwatch-alarms ..new-cloudwatch-alarms.. :new "state"}
+                       :previous-state {:cloudwatch-alarms ..previous-cloudwatch-alarms.. :previous "state"}
+                       :region ..region..}}
+      (provided
+       (alarms/standard-alarms ..environment.. ..region.. {:new "state"}) => ..new-cloudwatch-alarms..
+       (alarms/standard-alarms ..environment.. ..region.. {:previous "state"}) => ..previous-cloudwatch-alarms..))
 
 (fact "that completing the deployment adds an end key to our parameters"
       (complete-deployment {:parameters {:application "application"

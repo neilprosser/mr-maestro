@@ -6,6 +6,7 @@
              [string :as str]]
             [environ.core :refer [env]]
             [maestro
+             [alarms :as alarms]
              [aws :as aws]
              [block-devices :as dev]
              [hubot :as hubot]
@@ -543,6 +544,14 @@
   [{:keys [parameters]}]
   (log/write "Generating user data.")
   (success (assoc-in parameters [:new-state :user-data] (ud/create-user-data parameters))))
+
+(defn generate-cloudwatch-alarms
+  [{:keys [parameters]}]
+  (log/write "Generating CloudWatch alarms.")
+  (let [{:keys [environment new-state previous-state region]} parameters]
+    (success (-> parameters
+                 (assoc-in [:new-state :cloudwatch-alarms] (alarms/standard-alarms environment region new-state))
+                 (assoc-in [:previous-state :cloudwatch-alarms] (alarms/standard-alarms environment region previous-state))))))
 
 (defn complete-deployment-preparation
   [{:keys [parameters]}]
