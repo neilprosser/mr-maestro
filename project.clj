@@ -52,7 +52,7 @@
         :elasticsearch-url "http://localhost:9200"
         :environment-name "dev"
         :graphite-enabled false
-        :graphite-host "carbon.brislabs.com"
+        :graphite-host "carbon"
         :graphite-port 2003
         :graphite-post-interval-seconds 60
         :hubot-deployments-room "deployments"
