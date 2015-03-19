@@ -491,7 +491,7 @@
       (if (has-required-zones? subnets availability-zones)
         (success (-> parameters
                      (assoc-in [:new-state :selected-subnets] (map :subnet-id subnets))
-                     (assoc-in [:new-state :availability-zones] (map :availability-zone subnets))))
+                     (assoc-in [:new-state :availability-zones] (into (hash-set) (map :availability-zone subnets)))))
         (error-with (ex-info (format "Availability zone requirement of %s cannot be satisfied by subnets with purpose '%s'." selected-zones subnet-purpose) {:type ::zone-to-subnet-mismatch
                                                                                                                                                              :purpose subnet-purpose
                                                                                                                                                              :selected-zones selected-zones})))

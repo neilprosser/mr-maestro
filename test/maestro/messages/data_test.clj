@@ -418,17 +418,24 @@
 
 (fact "that populating subnets uses all subnets found when `selected-zones` has not been given"
       (:new-state (:parameters (populate-subnets {:parameters populate-subnets-params})))
-      => (contains {:availability-zones ["regiona" "regionb"]
+      => (contains {:availability-zones #{"regiona" "regionb"}
                     :selected-subnets ["1" "2"]})
       (provided
        (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regiona"} {:subnet-id "2" :availability-zone "regionb"}]))
 
 (fact "that populating subnets correctly filters the subnets based on the contents of `availability-zones` when `selected-zones` has been given"
       (:new-state (:parameters (populate-subnets {:parameters (assoc-in populate-subnets-params [:new-state :tyranitar :deployment-params :selected-zones] ["b"])})))
-      => (contains {:availability-zones ["regionb"]
+      => (contains {:availability-zones #{"regionb"}
                     :selected-subnets ["2"]})
       (provided
        (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regiona"} {:subnet-id "2" :availability-zone "regionb"}]))
+
+(fact "that populating subnets dedupes the availability zones"
+      (:new-state (:parameters (populate-subnets {:parameters (assoc-in populate-subnets-params [:new-state :tyranitar :deployment-params :selected-zones] ["b"])})))
+      => (contains {:availability-zones #{"regionb"}
+                    :selected-subnets ["1" "2"]})
+      (provided
+       (aws/subnets-by-purpose "environment" "region" "internal") => [{:subnet-id "1" :availability-zone "regionb"} {:subnet-id "2" :availability-zone "regionb"}]))
 
 (fact "that populating subnets gives an error when the subnets cannot match the provided demands of `selected-zones`"
       (populate-subnets {:parameters (assoc-in populate-subnets-params [:new-state :tyranitar :deployment-params :selected-zones] ["a" "c"])})
