@@ -170,7 +170,7 @@
        (tyr/launch-data "environment" "application" "hash") => nil))
 
 (fact "that validating Tyrant deployment params is successful if the validation succeeds"
-      (validate-deployment-params {:parameters {:new-state {:tyranitar {:deployment-params {}}}}})
+      (validate-deployment-params {:parameters {:new-state {:tyranitar {:deployment-params {:instance-type "t1.micro"}}}}})
       => (contains {:status :success}))
 
 (fact "that an error while getting Tyrant launch data is an error"

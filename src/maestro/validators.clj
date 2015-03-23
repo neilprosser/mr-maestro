@@ -136,7 +136,7 @@
   [input]
   (if input
     (contains? instance-types input)
-    true))
+    false))
 
 (defn valid-availability-zone?
   [input]

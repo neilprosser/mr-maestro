@@ -113,9 +113,9 @@
       (valid-instance-type? "m1.small")
       => truthy)
 
-(fact "that `valid-instance-type?` is happy with `nil`"
+(fact "that `valid-instance-type?` is unhappy with `nil`"
       (valid-instance-type? nil)
-      => truthy)
+      => falsey)
 
 (fact "that `valid-instance-type?` is unhappy with garbage"
       (valid-instance-type? "adkjlasd")
