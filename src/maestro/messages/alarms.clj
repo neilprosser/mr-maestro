@@ -1,5 +1,6 @@
 (ns maestro.messages.alarms
   (:require [amazonica.aws.cloudwatch :as cw]
+            [clojure.string :as str]
             [maestro
              [alarms :as alarms]
              [aws :as aws]
@@ -40,7 +41,7 @@
                                                              :alarm-name-prefix (str old-auto-scaling-group-name "-")))
               old-alarm-names (map :alarm-name old-alarms)]
           (when-not (zero? (count old-alarm-names))
-            (log/write (format "Deleting existing CloudWatch alarms %s" old-alarm-names))
+            (log/write (format "Deleting existing CloudWatch alarms [%s]" (str/join ", " old-alarm-names)))
             (cw/delete-alarms (aws/config environment region)
                               :alarm-names (vec old-alarm-names))))
         (success parameters)
