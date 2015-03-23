@@ -117,8 +117,8 @@
 
 (fact "that getting Tyrant application properties works"
       (get-tyrant-application-properties {:parameters {:application "application"
-                                                          :environment "environment"
-                                                          :new-state {:hash "hash"}}})
+                                                       :environment "environment"
+                                                       :new-state {:hash "hash"}}})
       => {:status :success
           :parameters {:application "application"
                        :environment "environment"
@@ -137,16 +137,16 @@
 
 (fact "that an error while getting Tyrant deployment params is an error"
       (get-tyrant-deployment-params {:parameters {:application "application"
-                                                     :environment "environment"
-                                                     :new-state {:hash "hash"}}})
+                                                  :environment "environment"
+                                                  :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/deployment-params "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
 (fact "that getting Tyrant deployment params adds in defaults where a value hasn't been specified"
       (get-in (get-tyrant-deployment-params {:parameters {:application "application"
-                                                             :environment "environment"
-                                                             :new-state {:hash "hash"}}}) [:parameters :new-state :tyranitar :deployment-params])
+                                                          :environment "environment"
+                                                          :new-state {:hash "hash"}}}) [:parameters :new-state :tyranitar :deployment-params])
       => (contains {:default-cooldown 10
                     :desired-capacity 23})
       (provided
@@ -163,8 +163,8 @@
 
 (fact "that getting no Tyrant launch data is an error"
       (get-tyrant-launch-data {:parameters {:application "application"
-                                               :environment "environment"
-                                               :new-state {:hash "hash"}}})
+                                            :environment "environment"
+                                            :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/launch-data "environment" "application" "hash") => nil))
@@ -175,16 +175,16 @@
 
 (fact "that an error while getting Tyrant launch data is an error"
       (get-tyrant-launch-data {:parameters {:application "application"
-                                               :environment "environment"
-                                               :new-state {:hash "hash"}}})
+                                            :environment "environment"
+                                            :new-state {:hash "hash"}}})
       => (contains {:status :error})
       (provided
        (tyr/launch-data "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
 (fact "that getting Tyrant launch data works"
       (get-tyrant-launch-data {:parameters {:application "application"
-                                               :environment "environment"
-                                               :new-state {:hash "hash"}}})
+                                            :environment "environment"
+                                            :new-state {:hash "hash"}}})
       => {:status :success
           :parameters {:application "application"
                        :environment "environment"
