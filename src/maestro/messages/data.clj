@@ -546,11 +546,14 @@
 
 (defn filter-alarm
   [alarm]
-  (util/remove-nil-values (select-keys alarm [:actions-enabled :alarm-actions :alarm-description
-                                              :alarm-name :comparison-operator :dimensions
-                                              :evaluation-periods :insufficient-data-actions
-                                              :metric-name :namespace :ok-actions
-                                              :period :statistic :threshold :unit])))
+  ( -> alarm
+       (select-keys [:actions-enabled :alarm-actions :alarm-description
+                     :alarm-name :comparison-operator :dimensions
+                     :evaluation-periods :insufficient-data-actions
+                     :metric-name :namespace :ok-actions :okactions
+                     :period :statistic :threshold :unit])
+       (set/rename-keys {:okactions :ok-actions})
+       util/remove-nil-values))
 
 (defn populate-previous-cloudwatch-alarms
   [{:keys [parameters]}]

@@ -29,7 +29,7 @@
 
 (defn remove-nil-values
   [m]
-  (apply hash-map (flatten (remove (fn [[k v]] (nil? v)) m))))
+  (into {} (remove (comp nil? second) m)))
 
 (defn string->int
   "Attempts to turn a string into an integer, or nil if not an integer."

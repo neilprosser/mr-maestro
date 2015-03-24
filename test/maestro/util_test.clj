@@ -18,6 +18,9 @@
       (char-for-index 0) => \a
       (char-for-index 22) => \w)
 
+(fact "that remove nil values works properly"
+      (remove-nil-values {:a ["some" "values"] :b nil :c "something"}) => {:a ["some" "values"] :c "something"})
+
 (fact "that extracting details from an image without tags gives no tags"
       (image-details {:name "hvm-ent-graphite-1.0-1-2014-05-22_13-02-05"
                       :tags []})

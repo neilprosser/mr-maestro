@@ -478,7 +478,7 @@
        (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
 
 (fact "that filtering CloudWatch alarms turns them into something we can use as a parameter"
-      (filter-alarm {:excluded true :actions-enabled true :unit nil}) => {:actions-enabled true})
+      (filter-alarm {:excluded true :actions-enabled true :okactions ["action"] :unit nil}) => {:actions-enabled true :ok-actions ["action"]})
 
 (fact "that populating previous CloudWatch alarms does what we need"
       (populate-previous-cloudwatch-alarms {:parameters {:environment ..environment..
