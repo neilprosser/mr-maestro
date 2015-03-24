@@ -11,10 +11,10 @@
       => :maestro.messages.data/get-image-details)
 
 (fact "that getting the sequence number of a legacy action works"
-      (sequence-number :exploud.messages.health/wait-for-load-balancers-to-be-healthy) => 48)
+      (sequence-number :exploud.messages.health/wait-for-load-balancers-to-be-healthy) => 49)
 
 (fact "that getting the sequence number works"
-      (sequence-number :maestro.messages.health/wait-for-load-balancers-to-be-healthy) => 48)
+      (sequence-number :maestro.messages.health/wait-for-load-balancers-to-be-healthy) => 49)
 
 (fact "that getting the resume action for a running task gives the action of that task"
       (resume-action [{} {:action "action" :status "running"}]) => :action)

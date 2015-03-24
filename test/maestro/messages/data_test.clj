@@ -477,19 +477,36 @@
        (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => "name-tag"
        (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
 
-(fact "that generating CloudWatch alarms populates both new- and previous-states"
+(fact "that filtering CloudWatch alarms turns them into something we can use as a parameter"
+      (filter-alarm {:excluded true :actions-enabled true :unit nil}) => {:actions-enabled true})
+
+(fact "that populating previous CloudWatch alarms does what we need"
+      (populate-previous-cloudwatch-alarms {:parameters {:environment ..environment..
+                                                         :previous-state {:auto-scaling-group-name ..previous-asg..
+                                                                          :previous "state"}
+                                                         :region ..region..}})
+      => {:status :success
+          :parameters {:environment ..environment..
+                       :previous-state {:auto-scaling-group-name ..previous-asg..
+                                        :cloudwatch-alarms [..alarm-1.. ..alarm-2..]
+                                        :previous "state"}
+                       :region ..region..}}
+      (provided
+       (alarms/alarms-for-auto-scaling-group ..environment.. ..region.. ..previous-asg..) => [..full-alarm-1.. ..full-alarm-2..]
+       (filter-alarm ..full-alarm-1..) => ..alarm-1..
+       (filter-alarm ..full-alarm-2..) => ..alarm-2..))
+
+(fact "that generating CloudWatch alarms populates the new-state"
       (generate-cloudwatch-alarms {:parameters {:environment ..environment..
                                                 :new-state {:new "state"}
-                                                :previous-state {:previous "state"}
                                                 :region ..region..}})
       => {:status :success
           :parameters {:environment ..environment..
-                       :new-state {:cloudwatch-alarms ..new-cloudwatch-alarms.. :new "state"}
-                       :previous-state {:cloudwatch-alarms ..previous-cloudwatch-alarms.. :previous "state"}
+                       :new-state {:cloudwatch-alarms ..cloudwatch-alarms..
+                                   :new "state"}
                        :region ..region..}}
       (provided
-       (alarms/standard-alarms ..environment.. ..region.. {:new "state"}) => ..new-cloudwatch-alarms..
-       (alarms/standard-alarms ..environment.. ..region.. {:previous "state"}) => ..previous-cloudwatch-alarms..))
+       (alarms/standard-alarms ..environment.. ..region.. {:new "state"}) => ..cloudwatch-alarms..))
 
 (fact "that completing the deployment adds an end key to our parameters"
       (complete-deployment {:parameters {:application "application"

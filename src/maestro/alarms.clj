@@ -1,5 +1,8 @@
 (ns maestro.alarms
-  (:require [maestro.environments :as environments]))
+  (:require [amazonica.aws.cloudwatch :as cw]
+            [maestro
+             [aws :as aws]
+             [environments :as environments]]))
 
 (def thresholds
   {"t2.micro" 15
@@ -40,3 +43,8 @@
         topic-arn (topic-arn-for environment)
         threshold (threshold-for instance-type)]
     (remove nil? [(cpu-credit-balance-low-alarm auto-scaling-group-name topic-arn threshold)])))
+
+(defn alarms-for-auto-scaling-group
+  [environment region auto-scaling-group-name]
+  (:metric-alarms (cw/describe-alarms (aws/config environment region)
+                                      :alarm-name-prefix (str auto-scaling-group-name "-"))))

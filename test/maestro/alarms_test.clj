@@ -1,6 +1,8 @@
 (ns maestro.alarms-test
-  (:require [maestro
+  (:require [amazonica.aws.cloudwatch :as cw]
+            [maestro
              [alarms :refer :all]
+             [aws :as aws]
              [environments :as environments]]
             [midje.sweet :refer :all]))
 
@@ -49,3 +51,9 @@
        (topic-arn-for ..environment..) => ..topic-arn..
        (threshold-for ..instance-type..) => ..threshold..
        (cpu-credit-balance-low-alarm ..auto-scaling-group-name.. ..topic-arn.. ..threshold..) => ..cpu-credit-balance-low..))
+
+(fact "that we can retrieve the alarms for an auto-scaling group"
+      (alarms-for-auto-scaling-group "environment" "region" "group-name") => ..alarms..
+      (provided
+       (aws/config "environment" "region") => ..config..
+       (cw/describe-alarms ..config.. :alarm-name-prefix "group-name-") => {:metric-alarms ..alarms..}))

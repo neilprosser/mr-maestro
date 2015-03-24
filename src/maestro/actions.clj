@@ -37,6 +37,7 @@
    :maestro.messages.data/populate-termination-policies
    :maestro.messages.data/create-auto-scaling-group-tags
    :maestro.messages.data/generate-user-data
+   :maestro.messages.data/populate-previous-cloudwatch-alarms
    :maestro.messages.data/generate-cloudwatch-alarms
    :maestro.messages.data/complete-deployment-preparation
    :maestro.messages.notification/send-start-notification

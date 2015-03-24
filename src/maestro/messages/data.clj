@@ -544,13 +544,33 @@
   (log/write "Generating user data.")
   (success (assoc-in parameters [:new-state :user-data] (ud/create-user-data parameters))))
 
+(defn filter-alarm
+  [alarm]
+  (util/remove-nil-values (select-keys alarm [:actions-enabled :alarm-actions :alarm-description
+                                              :alarm-name :comparison-operator :dimensions
+                                              :evaluation-periods :insufficient-data-actions
+                                              :metric-name :namespace :ok-actions
+                                              :period :statistic :threshold :unit])))
+
+(defn populate-previous-cloudwatch-alarms
+  [{:keys [parameters]}]
+  (let [{:keys [environment region]} parameters
+        state (:previous-state parameters)]
+    (if state
+      (let [{:keys [auto-scaling-group-name]} state]
+        (try
+          (log/write "Populating previous CloudWatch alarms.")
+          (success (assoc-in parameters [:previous-state :cloudwatch-alarms] (map filter-alarm (alarms/alarms-for-auto-scaling-group environment region auto-scaling-group-name))))
+          (catch Exception e
+            (error-with e))))
+      (success parameters))))
+
 (defn generate-cloudwatch-alarms
   [{:keys [parameters]}]
-  (log/write "Generating CloudWatch alarms.")
-  (let [{:keys [environment new-state previous-state region]} parameters]
-    (success (-> parameters
-                 (assoc-in [:new-state :cloudwatch-alarms] (alarms/standard-alarms environment region new-state))
-                 (assoc-in [:previous-state :cloudwatch-alarms] (alarms/standard-alarms environment region previous-state))))))
+  (let [{:keys [environment region]} parameters
+        state (:new-state parameters)]
+    (log/write "Generating CloudWatch alarms.")
+    (success (assoc-in parameters [:new-state :cloudwatch-alarms] (alarms/standard-alarms environment region state)))))
 
 (defn complete-deployment-preparation
   [{:keys [parameters]}]

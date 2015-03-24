@@ -16,8 +16,7 @@
         {:keys [auto-scaling-group-name cloudwatch-alarms]} state]
     (try
       (if (seq cloudwatch-alarms)
-        (let [existing-alarms (:metric-alarms (cw/describe-alarms (aws/config environment region)
-                                                                  :alarm-name-prefix (str auto-scaling-group-name "-")))
+        (let [existing-alarms (alarms/alarms-for-auto-scaling-group environment region auto-scaling-group-name)
               existing-alarm-names (into (hash-set) (map :alarm-name existing-alarms))]
           (doseq [{:keys [alarm-name] :as alarm} cloudwatch-alarms]
             (if-not (contains? existing-alarm-names alarm-name)
@@ -37,8 +36,7 @@
         state (state-key parameters)]
     (if-let [old-auto-scaling-group-name (:auto-scaling-group-name state)]
       (try
-        (let [old-alarms (:metric-alarms (cw/describe-alarms (aws/config environment region)
-                                                             :alarm-name-prefix (str old-auto-scaling-group-name "-")))
+        (let [old-alarms (alarms/alarms-for-auto-scaling-group environment region old-auto-scaling-group-name)
               old-alarm-names (map :alarm-name old-alarms)]
           (when-not (zero? (count old-alarm-names))
             (log/write (format "Deleting existing CloudWatch alarms [%s]" (str/join ", " old-alarm-names)))
