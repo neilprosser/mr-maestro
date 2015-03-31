@@ -40,6 +40,10 @@
    "cc2.8xlarge" {:instance-stores 4}
    "cg1.4xlarge" {:instance-stores 2}
    "cr1.8xlarge" {:instance-stores 2}
+   "d2.xlarge" {:instance-stores 3}
+   "d2.2xlarge" {:instance-stores 6}
+   "d2.4xlarge" {:instance-stores 12}
+   "d2.8xlarge" {:instance-stores 24}
    "g2.2xlarge" {:instance-stores 1}
    "hi1.4xlarge" {:instance-stores 2}
    "hs1.8xlarge" {:instance-stores 24}
