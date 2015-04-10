@@ -217,10 +217,25 @@
       (catch Exception e
         (error-with e)))))
 
-(defn- extract-hash
+(defn extract-hash
   [user-data]
   (when user-data
     (second (re-find #"export HASH=([^\s]+)" (String. (base64-decode user-data))))))
+
+(defn- assoc-launch-configuration-properties
+  [state {:keys [image-id launch-configuration-name security-groups user-data] :as launch-configuration} environment application]
+  (if launch-configuration
+    (let [hash (extract-hash user-data)
+          deployment-params (util/clojurize-keys (tyr/deployment-params environment application hash))]
+      (-> state
+          (assoc :launch-configuration-name launch-configuration-name
+                 :hash hash
+                 :selected-security-group-ids security-groups
+                 :user-data (String. (base64-decode user-data)))
+          (assoc-in [:tyranitar :deployment-params] (merge default-deployment-params
+                                                           (update-in deployment-params [:selected-load-balancers] (comp seq util/list-from))))
+          (assoc-in [:image-details :id] image-id)))
+    state))
 
 (defn- assoc-auto-scaling-group-properties
   [state {:keys [auto-scaling-group-name availability-zones default-cooldown desired-capacity health-check-grace-period health-check-type load-balancer-names max-size min-size tags termination-policies vpczone-identifier] :as auto-scaling-group}]
@@ -240,24 +255,12 @@
         (assoc-in [:tyranitar :deployment-params :selected-load-balancers] load-balancer-names))
     state))
 
-(defn- assoc-launch-configuration-properties
-  [state {:keys [image-id instance-type launch-configuration-name security-groups user-data] :as launch-configuration}]
-  (if launch-configuration
-    (-> state
-        (assoc :launch-configuration-name launch-configuration-name
-               :hash (extract-hash user-data)
-               :selected-security-group-ids security-groups
-               :user-data (String. (base64-decode user-data)))
-        (assoc-in [:tyranitar :deployment-params :instance-type] instance-type)
-        (assoc-in [:image-details :id] image-id))
-    state))
-
 (defn- assoc-previous-state
   [{:keys [application environment region] :as parameters} last-auto-scaling-group]
   (if last-auto-scaling-group
     (assoc parameters :previous-state (-> (:previous-status parameters)
-                                          (assoc-auto-scaling-group-properties last-auto-scaling-group)
-                                          (assoc-launch-configuration-properties (aws/launch-configuration (:launch-configuration-name last-auto-scaling-group) environment region))))
+                                          (assoc-launch-configuration-properties (aws/launch-configuration (:launch-configuration-name last-auto-scaling-group) environment region) environment application)
+                                          (assoc-auto-scaling-group-properties last-auto-scaling-group)))
     parameters))
 
 (defn populate-previous-state

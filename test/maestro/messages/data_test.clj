@@ -12,7 +12,8 @@
              [util :as util]
              [validators :as v]]
             [maestro.messages.data :refer :all]
-            [midje.sweet :refer :all]))
+            [midje.sweet :refer :all]
+            [ring.util.codec :refer [base64-encode]]))
 
 (fact "that preparing a deployment moves to the correct task"
       (start-deployment-preparation {:parameters {:application "application" :environment "environment"}})
@@ -233,6 +234,9 @@
       (provided
        (aws/security-groups "environment" "region") =throws=> (ex-info "Busted" {})))
 
+(fact "that extracting the Tyrant hash from user-data works"
+      (extract-hash (base64-encode (.getBytes "export HASH=hash"))) => "hash")
+
 (fact "that populating previous state when a previous one doesn't exist succeeds"
       (populate-previous-state {:parameters {:application "application"
                                              :environment "environment"
@@ -243,6 +247,68 @@
           :status :success}
       (provided
        (aws/last-application-auto-scaling-group "application" "environment" "region") => nil))
+
+(fact "that populating previous state reads the right stuff"
+      (let [last-auto-scaling-group {:auto-scaling-group-name ..auto-scaling-group-name..
+                                     :availability-zones ..availability-zones..
+                                     :default-cooldown ..default-cooldown..
+                                     :desired-capacity 6
+                                     :health-check-grace-period ..health-check-grace-period..
+                                     :health-check-type ..health-check-type..
+                                     :load-balancer-names ..load-balancer-names..
+                                     :max-size 6
+                                     :min-size 6
+                                     :tags ..tags..
+                                     :termination-policies ..termination-policies..
+                                     :vpczone-identifier ..vpczone-identifier..
+                                     :launch-configuration-name ..launch-configuration-name..}
+            launch-configuration {:image-id ..image-id..
+                                  :launch-configuration-name ..launch-configuration-name..
+                                  :security-groups ..security-groups..
+                                  :user-data (base64-encode (.getBytes "user-data"))}
+            deployment-params {:desired-capacity 3
+                               :load-balancer-healthy-attempts 34
+                               :max 3
+                               :min 3
+                               :random-property true
+                               :selected-load-balancers "lb"}]
+        (populate-previous-state {:parameters {:application "application"
+                                               :environment "environment"
+                                               :region "region"}})
+        => {:parameters {:application "application"
+                         :environment "environment"
+                         :previous-state {:auto-scaling-group-name ..auto-scaling-group-name..
+                                          :auto-scaling-group-tags ..tags..
+                                          :availability-zones ..availability-zones..
+                                          :hash ..hash..
+                                          :image-details {:id ..image-id..}
+                                          :launch-configuration-name ..launch-configuration-name..
+                                          :selected-security-group-ids ..security-groups..
+                                          :termination-policies ..termination-policies..
+                                          :tyranitar {:deployment-params {:default-cooldown ..default-cooldown..
+                                                                          :desired-capacity 6
+                                                                          :ebs-optimized false
+                                                                          :health-check-grace-period ..health-check-grace-period..
+                                                                          :health-check-type ..health-check-type..
+                                                                          :instance-healthy-attempts 50
+                                                                          :load-balancer-healthy-attempts 34
+                                                                          :max 6
+                                                                          :min 6
+                                                                          :pause-after-instances-healthy false
+                                                                          :pause-after-load-balancers-healthy false
+                                                                          :random-property true
+                                                                          :selected-load-balancers ..load-balancer-names..
+                                                                          :subnet-purpose "internal"
+                                                                          :termination-policy "Default"}}
+                                          :user-data "user-data"
+                                          :vpc-zone-identifier ..vpczone-identifier..}
+                         :region "region"}
+            :status :success}
+        (provided
+         (aws/last-application-auto-scaling-group "application" "environment" "region") => last-auto-scaling-group
+         (aws/launch-configuration ..launch-configuration-name.. "environment" "region") => launch-configuration
+         (extract-hash anything) => ..hash..
+         (tyr/deployment-params "environment" "application" ..hash..) => deployment-params)))
 
 (fact "that populating previous Tyrant application properties when no previous state exists succeeds"
       (populate-previous-tyrant-application-properties {:parameters {:application "application"
