@@ -121,6 +121,14 @@
                                                     {:auto-scaling-group-name "search-poke"}
                                                     {:auto-scaling-group-name "app2-poke-v000"}]))
 
+(fact "that getting the last auto scaling group for an application works when the environment of another group starts with the same string as our environment"
+      (last-application-auto-scaling-group "search" "poke" "eu-west-1") => {:auto-scaling-group-name "search-poke"}
+      (provided
+       (auto-scaling-groups "poke" "eu-west-1") => [{:auto-scaling-group-name "app1-something-v012"}
+                                                    {:auto-scaling-group-name "search-pokebackup-v000"}
+                                                    {:auto-scaling-group-name "search-poke"}
+                                                    {:auto-scaling-group-name "app2-poke-v000"}]))
+
 (fact "that getting the subnets for a specific purpose handles no subnets coming back"
       (subnets-by-purpose "environment" "region" "purpose")
       => nil

@@ -125,7 +125,7 @@
   [application environment region]
   (let [asgs (auto-scaling-groups environment region)
         asg-names (map :auto-scaling-group-name asgs)
-        pattern (re-pattern (str "^" application "-" environment))
+        pattern (re-pattern (str "^" application "-" environment "(?:-|$)"))
         last-name (last (sort (filter #(re-find pattern %) asg-names)))]
     (first (filter #(= last-name (:auto-scaling-group-name %)) asgs))))
 
