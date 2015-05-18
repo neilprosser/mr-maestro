@@ -19,7 +19,7 @@
   false)
 
 (def default-instances-maximum-attempts
-  50)
+  100)
 
 (def default-load-balancer-maximum-attempts
   150)

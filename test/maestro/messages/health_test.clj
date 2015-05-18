@@ -103,13 +103,13 @@
        (aws/auto-scaling-group-instances "asg" "environment" "region") =throws=> (ex-info "Busted" {})))
 
 (fact "that after the default maximum number of attempts we give up checking health and getting no instances"
-      (wait-for-instances-to-be-healthy {:attempt 50 :parameters wait-for-instances-to-be-healthy-params})
+      (wait-for-instances-to-be-healthy {:attempt 100 :parameters wait-for-instances-to-be-healthy-params})
       => (contains {:status :error})
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => []))
 
 (fact "that after the default maximum number of attempts we give up checking health and get an unsuccessful responses"
-      (wait-for-instances-to-be-healthy {:attempt 50 :parameters wait-for-instances-to-be-healthy-params})
+      (wait-for-instances-to-be-healthy {:attempt 100 :parameters wait-for-instances-to-be-healthy-params})
       => (contains {:status :error})
       (provided
        (aws/auto-scaling-group-instances "asg" "environment" "region") => [{:instance-id "i-1"}
