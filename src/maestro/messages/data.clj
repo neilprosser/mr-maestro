@@ -19,6 +19,7 @@
              [userdata :as ud]
              [util :as util]
              [validators :as v]]
+            [maestro.messages.health :as health]
             [ring.util.codec :refer [base64-decode]]))
 
 (def ^:private required-security-group-names
@@ -156,8 +157,8 @@
    :ebs-optimized false
    :health-check-grace-period 600
    :health-check-type "EC2"
-   :instance-healthy-attempts 50
-   :load-balancer-healthy-attempts 50
+   :instance-healthy-attempts health/default-instances-maximum-attempts
+   :load-balancer-healthy-attempts health/default-load-balancer-maximum-attempts
    :max 1
    :min 1
    :pause-after-instances-healthy false

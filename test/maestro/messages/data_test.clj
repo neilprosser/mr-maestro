@@ -290,7 +290,7 @@
                                                                           :ebs-optimized false
                                                                           :health-check-grace-period ..health-check-grace-period..
                                                                           :health-check-type ..health-check-type..
-                                                                          :instance-healthy-attempts 50
+                                                                          :instance-healthy-attempts 100
                                                                           :load-balancer-healthy-attempts 34
                                                                           :max 6
                                                                           :min 6

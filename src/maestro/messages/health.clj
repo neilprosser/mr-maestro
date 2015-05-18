@@ -22,7 +22,7 @@
   100)
 
 (def default-load-balancer-maximum-attempts
-  150)
+  50)
 
 (defn- create-url
   [ip port healthcheck-path]
