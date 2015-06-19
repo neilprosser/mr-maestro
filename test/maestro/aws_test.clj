@@ -87,6 +87,24 @@
                                (transform-instance-description ..instance1..) => {:name "one"}
                                (transform-instance-description ..instance2..) => {:name "two"}))
 
+(fact "that describe-instances-plain includes description when in results"
+      (describe-instances-plain "env" "region" nil nil) => (contains "description")
+      (provided
+       (config anything anything) => {}
+       (ec2/describe-instances anything
+                               anything
+                               anything)
+       => {:reservations [{:instances [{:tags [{} {:key "Description" :value "description"}]}]}]}))
+
+(fact "that describe-instances-plain doesn't include description when not in results"
+      (describe-instances-plain "env" "region" nil nil) =not=> (contains "description")
+      (provided
+       (config anything anything) => {}
+       (ec2/describe-instances anything
+                               anything
+                               anything)
+       => {:reservations [{:instances [{:tags [{} {}]}]}]}))
+
 (fact "that transform-instance-description returns a transformed description"
       (transform-instance-description
        {:tags [{:key "Name" :value ..name..}]
@@ -95,6 +113,17 @@
         :private-ip-address ..ip..
         :launch-time ..launch-time..})
       => {:name ..name.. :instance-id ..instance.. :image-id ..image.. :private-ip ..ip.. :launch-time ..launch-time..})
+
+(fact "that transform-instance-description returns a description when present in tags"
+      (transform-instance-description
+       {:tags [{:key "Name" :value ..name..}
+               {:key "Description" :value ..description..}]
+        :instance-id ..instance..
+        :image-id ..image..
+        :private-ip-address ..ip..
+        :description ""
+        :launch-time ..launch-time..})
+        => {:name ..name.. :instance-id ..instance.. :image-id ..image.. :private-ip ..ip.. :launch-time ..launch-time.. :description ..description..})
 
 (fact "that transform-instance-description handles missing Name tag"
       (transform-instance-description
