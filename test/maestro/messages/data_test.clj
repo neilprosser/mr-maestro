@@ -607,3 +607,18 @@
       (provided
        (log/write "Undo of 'application' in 'environment' complete.") => ..log..
        (time/now) => ..now..))
+
+(fact "that ensuring deployment is unblocked passes if no block blob detected with Lister"
+      (let [pipeline-data {:status     :success
+                           :parameters {:application "application"
+                                        :new-state   {:onix {}}}}]
+        (ensure-unblocked pipeline-data)))
+
+(fact "that ensuring deployment is unblocked causes an error status if block blob detected with Lister"
+      (let [pipeline-data {:status     :success
+                           :parameters {:application "application"
+                                        :new-state   {:onix {:blocked {:user   "myuser"
+                                                                       :reason "myreason"}}}}}
+            result (ensure-unblocked pipeline-data)]
+        result => (contains {:status :error})
+        (.getMessage (:throwable result)) => "Application is blocked from deployment by user 'myuser'. Reason: 'myreason'."))
