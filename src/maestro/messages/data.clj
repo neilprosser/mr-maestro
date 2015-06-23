@@ -105,6 +105,14 @@
       (catch Exception e
         (error-with e)))))
 
+(defn ensure-unblocked
+  [{:keys [parameters]}]
+  (if-let [blocked (get-in parameters [:new-state :onix :blocked])]
+    (error-with (ex-info
+                  (str "Application is blocked from deployment by user '" (:user blocked) "'. Reason: '" (:reason blocked) "'.")
+                  {:application (:application parameters)}))
+    (success parameters)))
+
 (defn ensure-tyrant-hash
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters

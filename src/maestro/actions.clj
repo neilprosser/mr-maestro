@@ -11,6 +11,7 @@
   [:maestro.messages.data/start-deployment-preparation
    :maestro.messages.data/validate-deployment
    :maestro.messages.data/get-lister-metadata
+   :maestro.messages.data/ensure-unblocked
    :maestro.messages.data/ensure-tyrant-hash
    :maestro.messages.data/verify-tyrant-hash
    :maestro.messages.data/get-tyrant-application-properties
