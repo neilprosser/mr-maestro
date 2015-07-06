@@ -154,8 +154,8 @@
        (tyr/deployment-params "environment" "application" "hash") => {:desiredCapacity 23}))
 
 (fact "that generating a validation message does what is required"
-      (generate-validation-message {:something '("something has one problem" "something has another problem")
-                                    :other ["other is broken"]})
+      (generate-deployment-params-validation-message {:something '("something has one problem" "something has another problem")
+                                                      :other ["other is broken"]})
       => "Validation result:\n* other is broken\n* something has one problem\n* something has another problem")
 
 (fact "that validating Tyrant deployment params is an error if the validation fails"
@@ -562,17 +562,41 @@
        (filter-alarm ..full-alarm-1..) => ..alarm-1..
        (filter-alarm ..full-alarm-2..) => ..alarm-2..))
 
-(fact "that generating CloudWatch alarms populates the new-state"
+(fact "that generating CloudWatch alarms populates the new-state with all alarms"
       (generate-cloudwatch-alarms {:parameters {:environment ..environment..
-                                                :new-state {:new "state"}
+                                                :new-state {:auto-scaling-group-name "asg"
+                                                            :tyranitar {:deployment-params {:alarms [..alarm-1.. ..alarm-2..]}}}
                                                 :region ..region..}})
       => {:status :success
           :parameters {:environment ..environment..
-                       :new-state {:cloudwatch-alarms ..cloudwatch-alarms..
-                                   :new "state"}
+                       :new-state {:auto-scaling-group-name "asg"
+                                   :cloudwatch-alarms [..standard-alarm-1.. ..standard-alarm-2.. {:alarm-name "asg-alarm-1"} {:alarm-name "asg-alarm-2"}]
+                                   :tyranitar {:deployment-params {:alarms [..alarm-1.. ..alarm-2..]}}}
                        :region ..region..}}
       (provided
-       (alarms/standard-alarms ..environment.. ..region.. {:new "state"}) => ..cloudwatch-alarms..))
+       (alarms/standard-alarms ..environment.. ..region.. {:auto-scaling-group-name "asg"
+                                                           :tyranitar {:deployment-params {:alarms [..alarm-1.. ..alarm-2..]}}}) => [..standard-alarm-1.. ..standard-alarm-2..]
+       (filter-alarm ..alarm-1..) => {:alarm-name "alarm-1"}
+       (filter-alarm ..alarm-2..) => {:alarm-name "alarm-2"}))
+
+(fact "that validating a CloudWatch alarm combines the messages correctly"
+      (apply hash-set (validate-cloudwatch-alarm {:statistic "broken"
+                                                  :unit "broken"})) => #{"unit must be a valid unit" "statistic must be a valid statistic"})
+
+(fact "that validating CloudWatch alarms generates the right message"
+      (validate-cloudwatch-alarms {:parameters {:new-state {:cloudwatch-alarms [{:alarm-name "alarm-1"} {:alarm-name "alarm-2"}]}}}) => (contains {:status :error})
+      (provided
+       (validate-cloudwatch-alarm {:alarm-name "alarm-1"}) => nil
+       (validate-cloudwatch-alarm {:alarm-name "alarm-2"}) => ["Message 1", "Message 2"]
+       (log/write "Validating CloudWatch alarms.") => nil
+       (log/write "Validation result:\n* alarm-2 - [\"Message 1\" \"Message 2\"]") => nil))
+
+(fact "that validating CloudWatch alarms generates no message when everything is good"
+      (validate-cloudwatch-alarms {:parameters {:new-state {:cloudwatch-alarms [{:alarm-name "alarm-1"} {:alarm-name "alarm-2"}]}}}) => (contains {:status :success})
+      (provided
+       (validate-cloudwatch-alarm {:alarm-name "alarm-1"}) => nil
+       (validate-cloudwatch-alarm {:alarm-name "alarm-2"}) => nil
+       (log/write "Validating CloudWatch alarms.") => nil))
 
 (fact "that completing the deployment adds an end key to our parameters"
       (complete-deployment {:parameters {:application "application"

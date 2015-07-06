@@ -1,8 +1,20 @@
 (ns maestro.alarms
   (:require [amazonica.aws.cloudwatch :as cw]
+            [bouncer
+             [core :as b]
+             [validators :as v]]
             [maestro
              [aws :as aws]
              [environments :as environments]]))
+
+(def comparison-operators
+  (apply hash-set (map str (com.amazonaws.services.cloudwatch.model.ComparisonOperator/values))))
+
+(def statistics
+  (apply hash-set (map str (com.amazonaws.services.cloudwatch.model.Statistic/values))))
+
+(def units
+  (apply hash-set (map str (com.amazonaws.services.cloudwatch.model.StandardUnit/values))))
 
 (def thresholds
   {"t2.micro" 15
@@ -49,3 +61,29 @@
   [environment region auto-scaling-group-name]
   (:metric-alarms (cw/describe-alarms (aws/config environment region)
                                       :alarm-name-prefix (str auto-scaling-group-name "-"))))
+
+(v/defvalidator valid-comparison-operator?
+  {:default-message-format "%s must be a valid comparison operator"}
+  [input]
+  (if input
+    (contains? comparison-operators input)
+    true))
+
+(v/defvalidator valid-statistic?
+  {:default-message-format "%s must be a valid statistic"}
+  [input]
+  (if input
+    (contains? statistics input)
+    true))
+
+(v/defvalidator valid-unit?
+  {:default-message-format "%s must be a valid unit"}
+  [input]
+  (if input
+    (contains? units input)
+    true))
+
+(def alarm-validators
+  {:comparison-operator valid-comparison-operator?
+   :statistic valid-statistic?
+   :unit valid-unit?})

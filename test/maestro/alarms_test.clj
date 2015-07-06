@@ -1,5 +1,7 @@
 (ns maestro.alarms-test
   (:require [amazonica.aws.cloudwatch :as cw]
+            [bouncer
+             [core :as b]]
             [maestro
              [alarms :refer :all]
              [aws :as aws]
@@ -57,3 +59,11 @@
       (provided
        (aws/config "environment" "region") => ..config..
        (cw/describe-alarms ..config.. :alarm-name-prefix "group-name-") => {:metric-alarms ..alarms..}))
+
+(fact "that validating an alarm works"
+      (first (b/validate {:comparison-operator "whatever"} alarm-validators)) =not=> nil
+      (first (b/validate {:statistic "whatever"} alarm-validators)) =not=> nil
+      (first (b/validate {:unit "whatever"} alarm-validators)) =not=> nil
+      (first (b/validate {:comparison-operator "GreaterThanThreshold"
+                          :statistic "Average"
+                          :unit "Bytes"} alarm-validators)) => nil)

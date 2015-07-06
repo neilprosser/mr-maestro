@@ -40,6 +40,7 @@
    :maestro.messages.data/generate-user-data
    :maestro.messages.data/populate-previous-cloudwatch-alarms
    :maestro.messages.data/generate-cloudwatch-alarms
+   :maestro.messages.data/validate-cloudwatch-alarms
    :maestro.messages.data/complete-deployment-preparation
    :maestro.messages.notification/send-start-notification
    :maestro.messages.data/start-deployment

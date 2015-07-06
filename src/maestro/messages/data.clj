@@ -190,7 +190,7 @@
       (catch Exception e
         (error-with e)))))
 
-(defn generate-validation-message
+(defn generate-deployment-params-validation-message
   [result]
   (str/trim (str "Validation result:\n"
                  (with-out-str
@@ -207,7 +207,7 @@
     (log/write "Validating deployment params.")
     (if-let [details (first validation-result)]
       (do
-        (log/write (generate-validation-message details))
+        (log/write (generate-deployment-params-validation-message details))
         (error-with (ex-info "Deployment params are invalid." {:type ::invalid-deployment-params})))
       (success parameters))))
 
@@ -562,14 +562,14 @@
 
 (defn filter-alarm
   [alarm]
-  ( -> alarm
-       (select-keys [:actions-enabled :alarm-actions :alarm-description
-                     :alarm-name :comparison-operator :dimensions
-                     :evaluation-periods :insufficient-data-actions
-                     :metric-name :namespace :ok-actions :okactions
-                     :period :statistic :threshold :unit])
-       (set/rename-keys {:okactions :ok-actions})
-       util/remove-nil-values))
+  (-> alarm
+      (select-keys [:actions-enabled :alarm-actions :alarm-description
+                    :alarm-name :comparison-operator :dimensions
+                    :evaluation-periods :insufficient-data-actions
+                    :metric-name :namespace :ok-actions :okactions
+                    :period :statistic :threshold :unit])
+      (set/rename-keys {:okactions :ok-actions})
+      util/remove-nil-values))
 
 (defn populate-previous-cloudwatch-alarms
   [{:keys [parameters]}]
@@ -587,9 +587,38 @@
 (defn generate-cloudwatch-alarms
   [{:keys [parameters]}]
   (let [{:keys [environment region]} parameters
-        state (:new-state parameters)]
+        state (:new-state parameters)
+        {:keys [auto-scaling-group-name tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [alarms]} deployment-params
+        name-fn (fn [{:keys [alarm-name] :as alarm}] (assoc alarm :alarm-name (str auto-scaling-group-name "-" alarm-name)))]
     (log/write "Generating CloudWatch alarms.")
-    (success (assoc-in parameters [:new-state :cloudwatch-alarms] (alarms/standard-alarms environment region state)))))
+    (success (assoc-in parameters [:new-state :cloudwatch-alarms] (concat (alarms/standard-alarms environment region state)
+                                                                          (map (comp name-fn filter-alarm) alarms))))))
+
+(defn validate-cloudwatch-alarm
+  [alarm]
+  (let [validation-result (b/validate alarm alarms/alarm-validators)]
+    (seq (mapcat (fn [[k v]] v) (first validation-result)))))
+
+(defn generate-cloudwatch-alarms-validation-message
+  [result]
+  (str/trim (str "Validation result:\n"
+                 (with-out-str
+                   (doseq [[alarm-name messages] result]
+                     (println (str "* " alarm-name " - " messages)))))))
+
+(defn validate-cloudwatch-alarms
+  [{:keys [parameters]}]
+  (let [state (:new-state parameters)
+        alarms (:cloudwatch-alarms state)]
+    (log/write "Validating CloudWatch alarms.")
+    (let [result (util/remove-nil-values (map (fn [a] (let [result (validate-cloudwatch-alarm a)] [(:alarm-name a) result])) alarms))]
+      (if (zero? (count result))
+        (success parameters)
+        (do
+          (log/write (generate-cloudwatch-alarms-validation-message result))
+          (error-with (ex-info "CloudWatch alarms are invalid." {:type ::invalid-cloudwatch-alarms})))))))
 
 (defn complete-deployment-preparation
   [{:keys [parameters]}]
