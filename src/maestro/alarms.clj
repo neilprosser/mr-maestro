@@ -7,7 +7,8 @@
 (def thresholds
   {"t2.micro" 15
    "t2.small" 15
-   "t2.medium" 30})
+   "t2.medium" 30
+   "t2.large" 30})
 
 (defn cpu-credit-balance-low-alarm
   [auto-scaling-group-name topic-arn threshold]
