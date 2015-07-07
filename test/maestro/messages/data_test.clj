@@ -523,6 +523,40 @@
                                                            :resource-type "auto-scaling-group"
                                                            :resource-id "asg"})
 
+(fact "that populating previous scaling policies works"
+      (populate-previous-scaling-policies {:parameters {:environment "environment"
+                                                        :previous-state {:auto-scaling-group-name "asg"}
+                                                        :region "region"}})
+      => {:status :success
+          :parameters {:environment "environment"
+                       :previous-state {:auto-scaling-group-name "asg"
+                                        :scaling-policies [{:policy-name "policy-1"}
+                                                           {:policy-name "policy-2"}]}
+                       :region "region"}}
+      (provided
+       (policies/policies-for-auto-scaling-group "environment" "region" "asg") => [{:policy-name "policy-1"} {:policy-name "policy-2"}]))
+
+(fact "that an error while populating previous scaling policies is handled"
+      (populate-previous-scaling-policies {:parameters {:environment "environment"
+                                                        :previous-state {:auto-scaling-group-name "asg"}
+                                                        :region "region"}})
+      => (contains {:status :error})
+      (provided
+       (policies/policies-for-auto-scaling-group "environment" "region" "asg") =throws=> (ex-info "Busted" {})))
+
+(fact "that populating previous scaling policies does nothing if there's no previous state"
+      (populate-previous-scaling-policies {:parameters {:environment "environment"
+                                                        :region "region"}})
+      => (contains {:status :success})
+      (provided
+       (policies/policies-for-auto-scaling-group "environment" "region" anything) => nil :times 0))
+
+(fact "that generating scaling policies work"
+      (generate-scaling-policies {:parameters {:new-state {:tyranitar {:deployment-params {:policies ..policies..}}}}})
+      => {:status :success
+          :parameters {:new-state {:scaling-policies ..policies..
+                                   :tyranitar {:deployment-params {:policies ..policies..}}}}})
+
 (def create-auto-scaling-group-tags-params
   {:application "application"
    :environment "environment"
@@ -599,6 +633,15 @@
        (validate-cloudwatch-alarm {:alarm-name "alarm-2"}) => nil
        (log/write "Validating CloudWatch alarms.") => nil))
 
+(fact "that ensuring known policies fails if any policies are not present"
+      (ensure-known-policies {:parameters {:new-state {:cloudwatch-alarms [{:alarm-actions ["arn1" {:policy "policy-1"}]}]}}})
+      => (contains {:status :error}))
+
+(fact "that ensuring known policies succeeds if all policies are present"
+      (ensure-known-policies {:parameters {:new-state {:cloudwatch-alarms [{:alarm-actions ["arn1" {:policy "policy-1"}]}]
+                                                       :scaling-policies [{:policy-name "policy-1"}]}}})
+      => (contains {:status :success}))
+
 (fact "that completing the deployment adds an end key to our parameters"
       (complete-deployment {:parameters {:application "application"
                                          :environment "environment"}})
@@ -608,34 +651,6 @@
                        :environment "environment"}}
       (provided
        (time/now) => ..now..))
-
-(fact "that populating previous scaling policies does nothing if there's no previous state"
-      (populate-previous-scaling-policies {:parameters {:environment "environment"
-                                                        :region "region"}})
-      => (contains {:status :success})
-      (provided
-       (policies/policies-for-auto-scaling-group "environment" "region" anything) => nil :times 0))
-
-(fact "that populating previous scaling policies works"
-      (populate-previous-scaling-policies {:parameters {:environment "environment"
-                                                        :previous-state {:auto-scaling-group-name "asg"}
-                                                        :region "region"}})
-      => {:status :success
-          :parameters {:environment "environment"
-                       :previous-state {:auto-scaling-group-name "asg"
-                                        :scaling-policies [{:policy-name "policy-1"}
-                                                           {:policy-name "policy-2"}]}
-                       :region "region"}}
-      (provided
-       (policies/policies-for-auto-scaling-group "environment" "region" "asg") => [{:policy-name "policy-1"} {:policy-name "policy-2"}]))
-
-(fact "that an error while populating previous scaling policies is handled"
-      (populate-previous-scaling-policies {:parameters {:environment "environment"
-                                                        :previous-state {:auto-scaling-group-name "asg"}
-                                                        :region "region"}})
-      => (contains {:status :error})
-      (provided
-       (policies/policies-for-auto-scaling-group "environment" "region" "asg") =throws=> (ex-info "Busted" {})))
 
 (fact "that completing a deployment writes the correct message"
       (complete-deployment {:parameters {:application "application"
@@ -647,12 +662,6 @@
       (provided
        (log/write "Deployment of 'application' to 'environment' complete.") => ..log..
        (time/now) => ..now..))
-
-(fact "that generating scaling policies work"
-      (generate-scaling-policies {:parameters {:new-state {:tyranitar {:deployment-params {:policies ..policies..}}}}})
-      => {:status :success
-          :parameters {:new-state {:scaling-policies ..policies..
-                                   :tyranitar {:deployment-params {:policies ..policies..}}}}})
 
 (fact "that completing an undone deployment writes the correct message"
       (complete-deployment {:parameters {:application "application"

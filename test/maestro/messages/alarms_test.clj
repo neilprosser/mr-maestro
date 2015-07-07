@@ -7,6 +7,45 @@
             [maestro.messages.alarms :refer :all]
             [midje.sweet :refer :all]))
 
+(fact "that swap-policy-arn does what it should when faced with a string"
+      (swap-policy-arn {"bizzle" "arn2"} "arn1") => "arn1")
+
+(fact "that swap-policy-arn does what it should when faced with a map"
+      (swap-policy-arn {"bizzle" "arn2"} {:policy "bizzle"}) => "arn2")
+
+(fact "that swap-policy-arns replaces maps with the relevant arn"
+      (swap-policy-arns {"bizzle" "arn2"} ["arn1" {:policy "bizzle"}]) => ["arn1" "arn2"])
+
+(fact "that ensure-action-arn works on all alarms"
+      (ensure-action-arn {"bizzle" "arn2"} {:alarm-actions [{:policy "bizzle"}]
+                                            :insufficient-data-actions [{:policy "bizzle"}]
+                                            :ok-actions [{:policy "bizzle"}]})
+      => {:alarm-actions ["arn2"]
+          :insufficient-data-actions ["arn2"]
+          :ok-actions ["arn2"]})
+
+(fact "that ensure-action-arn ignores actions if there aren't any"
+      (ensure-action-arn {"bizzle" "arn2"} {:alarm-actions []
+                                            :ok-actions [{:policy "bizzle"}]})
+      => {:alarm-actions []
+          :ok-actions ["arn2"]})
+
+(fact "that ensure-action-arns works through all alarms"
+      (ensure-action-arns {:cloudwatch-alarms [{:alarm-actions [{:policy "bizzle"}]}
+                                               {:alarm-actions [{:policy "bizzle"}]}
+                                               {:alarm-actions ["arn1"]}]
+                           :scaling-policy-arns {"bizzle" "arn2"}})
+      => [{:alarm-actions ["arn2"]}
+          {:alarm-actions ["arn2"]}
+          {:alarm-actions ["arn1"]}])
+
+(fact "that populating action ARNs amends the parameters correctly"
+      (populate-action-arns {:parameters {:new-state {:cloudwatch-alarms [{:alarm-actions [{:policy "policy-1"} "arn2"]}]
+                                                      :scaling-policy-arns {"policy-1" "arn1"}}}})
+      => {:status :success
+          :parameters {:new-state {:cloudwatch-alarms [{:alarm-actions ["arn1" "arn2"]}]
+                                   :scaling-policy-arns {"policy-1" "arn1"}}}})
+
 (def create-cloudwatch-alarms-parameters
   {:environment "environment"
    :new-state {:auto-scaling-group-name "auto-scaling-group"

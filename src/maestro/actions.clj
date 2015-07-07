@@ -39,11 +39,11 @@
    :maestro.messages.data/populate-termination-policies
    :maestro.messages.data/create-auto-scaling-group-tags
    :maestro.messages.data/generate-user-data
+   :maestro.messages.data/populate-previous-scaling-policies
+   :maestro.messages.data/generate-scaling-policies
    :maestro.messages.data/populate-previous-cloudwatch-alarms
    :maestro.messages.data/generate-cloudwatch-alarms
    :maestro.messages.data/validate-cloudwatch-alarms
-   :maestro.messages.data/populate-previous-scaling-policies
-   :maestro.messages.data/generate-scaling-policies
    :maestro.messages.data/complete-deployment-preparation
    :maestro.messages.notification/send-start-notification
    :maestro.messages.data/start-deployment
@@ -64,6 +64,7 @@
    :maestro.messages.asg/register-instances-with-load-balancers
    :maestro.messages.health/wait-for-load-balancers-to-be-healthy
    :maestro.messages.policies/create-scaling-policies
+   :maestro.messages.alarms/populate-action-arns
    :maestro.messages.alarms/create-cloudwatch-alarms
    :maestro.messages.asg/add-scheduled-actions
    :maestro.messages.asg/disable-old-instance-launching

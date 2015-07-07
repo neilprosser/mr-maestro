@@ -67,3 +67,11 @@
       (first (b/validate {:comparison-operator "GreaterThanThreshold"
                           :statistic "Average"
                           :unit "Bytes"} alarm-validators)) => nil)
+
+(fact "that obtaining referenced policies works"
+      (referenced-policies {:alarm-actions [{:policy "beast"}]
+                            :ok-actions [{:policy "woo"}
+                                         "arn"]
+                            :insufficient-data-actions ["huff"
+                                                        {:policy "arnold"}]})
+      => #{"arnold" "beast" "woo"})

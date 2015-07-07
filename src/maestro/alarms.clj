@@ -87,3 +87,10 @@
   {:comparison-operator valid-comparison-operator?
    :statistic valid-statistic?
    :unit valid-unit?})
+
+(defn referenced-policies
+  [{:keys [alarm-actions insufficient-data-actions ok-actions]}]
+  (let [alarm-arns (remove nil? (map :policy alarm-actions))
+        ok-arns (remove nil? (map :policy ok-actions))
+        insufficient-data-arns (remove nil? (map :policy insufficient-data-actions))]
+    (apply hash-set (concat alarm-arns ok-arns insufficient-data-arns))))
