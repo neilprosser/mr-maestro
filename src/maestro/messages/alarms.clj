@@ -30,7 +30,7 @@
 
 (defn ensure-action-arns
   [{:keys [cloudwatch-alarms scaling-policy-arns]}]
-  (when cloudwatch-alarms
+  (when (seq cloudwatch-alarms)
     (map (partial ensure-action-arn scaling-policy-arns) cloudwatch-alarms)))
 
 (defn populate-action-arns

@@ -46,6 +46,16 @@
           :parameters {:new-state {:cloudwatch-alarms [{:alarm-actions ["arn1" "arn2"]}]
                                    :scaling-policy-arns {"policy-1" "arn1"}}}})
 
+(fact "that populating action ARNs when there are no CloudWatch alarms leaves the parameters as they are"
+      (populate-action-arns {:parameters {:new-state {:cloudwatch-alarms []
+                                                      :scaling-policy-arns {"policy-1" "arn1"}}}})
+      => {:status :success
+          :parameters {:new-state {:cloudwatch-alarms []
+                                   :scaling-policy-arns {"policy-1" "arn1"}}}}
+      (populate-action-arns {:parameters {:new-state {:scaling-policy-arns {"policy-1" "arn1"}}}})
+      => {:status :success
+          :parameters {:new-state {:scaling-policy-arns {"policy-1" "arn1"}}}})
+
 (def create-cloudwatch-alarms-parameters
   {:environment "environment"
    :new-state {:auto-scaling-group-name "auto-scaling-group"
