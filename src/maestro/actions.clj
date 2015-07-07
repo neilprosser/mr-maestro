@@ -5,7 +5,8 @@
              [asg :as asg]
              [data :as data]
              [health :as health]
-             [notification :as notification]]))
+             [notification :as notification]
+             [policies :as policies]]))
 
 (def ^:private action-ordering
   [:maestro.messages.data/start-deployment-preparation
@@ -41,6 +42,8 @@
    :maestro.messages.data/populate-previous-cloudwatch-alarms
    :maestro.messages.data/generate-cloudwatch-alarms
    :maestro.messages.data/validate-cloudwatch-alarms
+   :maestro.messages.data/populate-previous-scaling-policies
+   :maestro.messages.data/generate-scaling-policies
    :maestro.messages.data/complete-deployment-preparation
    :maestro.messages.notification/send-start-notification
    :maestro.messages.data/start-deployment
@@ -60,6 +63,7 @@
    :maestro.messages.asg/enable-adding-instances
    :maestro.messages.asg/register-instances-with-load-balancers
    :maestro.messages.health/wait-for-load-balancers-to-be-healthy
+   :maestro.messages.policies/create-scaling-policies
    :maestro.messages.alarms/create-cloudwatch-alarms
    :maestro.messages.asg/add-scheduled-actions
    :maestro.messages.asg/disable-old-instance-launching

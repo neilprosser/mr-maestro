@@ -8,6 +8,7 @@
              [lister :as lister]
              [log :as log]
              [pedantic :as pedantic]
+             [policies :as policies]
              [tyrant :as tyr]
              [util :as util]
              [validators :as v]]
@@ -608,6 +609,34 @@
       (provided
        (time/now) => ..now..))
 
+(fact "that populating previous scaling policies does nothing if there's no previous state"
+      (populate-previous-scaling-policies {:parameters {:environment "environment"
+                                                        :region "region"}})
+      => (contains {:status :success})
+      (provided
+       (policies/policies-for-auto-scaling-group "environment" "region" anything) => nil :times 0))
+
+(fact "that populating previous scaling policies works"
+      (populate-previous-scaling-policies {:parameters {:environment "environment"
+                                                        :previous-state {:auto-scaling-group-name "asg"}
+                                                        :region "region"}})
+      => {:status :success
+          :parameters {:environment "environment"
+                       :previous-state {:auto-scaling-group-name "asg"
+                                        :scaling-policies [{:policy-name "policy-1"}
+                                                           {:policy-name "policy-2"}]}
+                       :region "region"}}
+      (provided
+       (policies/policies-for-auto-scaling-group "environment" "region" "asg") => [{:policy-name "policy-1"} {:policy-name "policy-2"}]))
+
+(fact "that an error while populating previous scaling policies is handled"
+      (populate-previous-scaling-policies {:parameters {:environment "environment"
+                                                        :previous-state {:auto-scaling-group-name "asg"}
+                                                        :region "region"}})
+      => (contains {:status :error})
+      (provided
+       (policies/policies-for-auto-scaling-group "environment" "region" "asg") =throws=> (ex-info "Busted" {})))
+
 (fact "that completing a deployment writes the correct message"
       (complete-deployment {:parameters {:application "application"
                                          :environment "environment"}})
@@ -618,6 +647,12 @@
       (provided
        (log/write "Deployment of 'application' to 'environment' complete.") => ..log..
        (time/now) => ..now..))
+
+(fact "that generating scaling policies work"
+      (generate-scaling-policies {:parameters {:new-state {:tyranitar {:deployment-params {:policies ..policies..}}}}})
+      => {:status :success
+          :parameters {:new-state {:scaling-policies ..policies..
+                                   :tyranitar {:deployment-params {:policies ..policies..}}}}})
 
 (fact "that completing an undone deployment writes the correct message"
       (complete-deployment {:parameters {:application "application"

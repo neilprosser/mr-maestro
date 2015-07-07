@@ -14,6 +14,7 @@
              [log :as log]
              [naming :as naming]
              [pedantic :as pedantic]
+             [policies :as policies]
              [responses :refer :all]
              [tyrant :as tyr]
              [userdata :as ud]
@@ -619,6 +620,36 @@
         (do
           (log/write (generate-cloudwatch-alarms-validation-message result))
           (error-with (ex-info "CloudWatch alarms are invalid." {:type ::invalid-cloudwatch-alarms})))))))
+
+(defn- filter-policy
+  [policy]
+  (-> policy
+      (select-keys [:adjustment-type :auto-scaling-group-name
+                    :cooldown :min-adjustment-type
+                    :policy-name :scaling-adjustment])
+      util/remove-nil-values))
+
+(defn populate-previous-scaling-policies
+  [{:keys [parameters]}]
+  (let [{:keys [environment region]} parameters
+        state (:previous-state parameters)]
+    (if state
+      (let [{:keys [auto-scaling-group-name]} state]
+        (try
+          (log/write "Populating previous scaling policies")
+          (success (assoc-in parameters [:previous-state :scaling-policies] (map filter-policy (policies/policies-for-auto-scaling-group environment region auto-scaling-group-name))))
+          (catch Exception e
+            (error-with e))))
+      (success parameters))))
+
+(defn generate-scaling-policies
+  [{:keys [parameters]}]
+  (let [state (:new-state parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [policies]} deployment-params]
+    (log/write "Generating scaling policies.")
+    (success (assoc-in parameters [:new-state :scaling-policies] policies))))
 
 (defn complete-deployment-preparation
   [{:keys [parameters]}]
