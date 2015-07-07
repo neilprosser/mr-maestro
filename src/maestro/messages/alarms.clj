@@ -18,7 +18,7 @@
 (defn swap-policy-arns
   [scaling-policy-arns action-arns]
   (when action-arns
-    (map (partial swap-policy-arn scaling-policy-arns) action-arns)))
+    (vec (map (partial swap-policy-arn scaling-policy-arns) action-arns))))
 
 (defn ensure-action-arn
   [scaling-policy-arns {:keys [alarm-actions insufficient-data-actions ok-actions] :as alarm}]
@@ -31,7 +31,7 @@
 (defn ensure-action-arns
   [{:keys [cloudwatch-alarms scaling-policy-arns]}]
   (when (seq cloudwatch-alarms)
-    (map (partial ensure-action-arn scaling-policy-arns) cloudwatch-alarms)))
+    (vec (map (partial ensure-action-arn scaling-policy-arns) cloudwatch-alarms))))
 
 (defn populate-action-arns
   [{:keys [parameters]}]
