@@ -552,10 +552,17 @@
        (policies/policies-for-auto-scaling-group "environment" "region" anything) => nil :times 0))
 
 (fact "that generating scaling policies work"
-      (generate-scaling-policies {:parameters {:new-state {:tyranitar {:deployment-params {:policies ..policies..}}}}})
+      (generate-scaling-policies {:parameters {:new-state {:auto-scaling-group-name "asg"
+                                                           :tyranitar {:deployment-params {:policies [{:policy-name "policy-1"}
+                                                                                                      {:policy-name "policy-2"}]}}}}})
       => {:status :success
-          :parameters {:new-state {:scaling-policies ..policies..
-                                   :tyranitar {:deployment-params {:policies ..policies..}}}}})
+          :parameters {:new-state {:auto-scaling-group-name "asg"
+                                   :scaling-policies [{:auto-scaling-group-name "asg"
+                                                       :policy-name "policy-1"}
+                                                      {:auto-scaling-group-name "asg"
+                                                       :policy-name "policy-2"}]
+                                   :tyranitar {:deployment-params {:policies [{:policy-name "policy-1"}
+                                                                              {:policy-name "policy-2"}]}}}}})
 
 (def create-auto-scaling-group-tags-params
   {:application "application"

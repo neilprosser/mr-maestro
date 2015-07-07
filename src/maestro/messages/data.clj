@@ -585,11 +585,12 @@
 (defn generate-scaling-policies
   [{:keys [parameters]}]
   (let [state (:new-state parameters)
-        {:keys [tyranitar]} state
+        {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [deployment-params]} tyranitar
-        {:keys [policies]} deployment-params]
+        {:keys [policies]} deployment-params
+        updated-policies (map #(assoc % :auto-scaling-group-name auto-scaling-group-name) policies)]
     (log/write "Generating scaling policies.")
-    (success (assoc-in parameters [:new-state :scaling-policies] policies))))
+    (success (assoc-in parameters [:new-state :scaling-policies] updated-policies))))
 
 (defn filter-alarm
   [alarm]
