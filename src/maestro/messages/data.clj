@@ -565,8 +565,10 @@
   [policy]
   (-> policy
       (select-keys [:adjustment-type :auto-scaling-group-name
-                    :cooldown :min-adjustment-type
-                    :policy-name :scaling-adjustment])
+                    :cooldown :estimated-instance-warmup
+                    :metric-aggregation-type :min-adjustment-magnitude
+                    :min-adjustment-step :policy-name :policy-type
+                    :scaling-adjustment :step-adjustments])
       util/remove-nil-values))
 
 (defn populate-previous-scaling-policies
