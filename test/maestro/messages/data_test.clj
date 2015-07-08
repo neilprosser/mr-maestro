@@ -612,7 +612,10 @@
       => {:status :success
           :parameters {:environment ..environment..
                        :new-state {:auto-scaling-group-name "asg"
-                                   :cloudwatch-alarms [..standard-alarm-1.. ..standard-alarm-2.. {:alarm-name "asg-alarm-1"} {:alarm-name "asg-alarm-2"}]
+                                   :cloudwatch-alarms [..standard-alarm-1..
+                                                       ..standard-alarm-2..
+                                                       {:alarm-name "asg-alarm-1" :dimensions [{:name "AutoScalingGroupName" :value "asg"}]}
+                                                       {:alarm-name "asg-alarm-2" :dimensions [{:name "AutoScalingGroupName" :value "asg"}]}]
                                    :tyranitar {:deployment-params {:alarms [..alarm-1.. ..alarm-2..]}}}
                        :region ..region..}}
       (provided

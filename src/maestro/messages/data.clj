@@ -611,7 +611,7 @@
       (let [{:keys [auto-scaling-group-name]} state]
         (try
           (log/write "Populating previous CloudWatch alarms.")
-          (success (assoc-in parameters [:previous-state :cloudwatch-alarms] (map filter-alarm (alarms/alarms-for-auto-scaling-group environment region auto-scaling-group-name))))
+          (success (assoc-in parameters [:previous-state :cloudwatch-alarms] (vec (map filter-alarm (alarms/alarms-for-auto-scaling-group environment region auto-scaling-group-name)))))
           (catch Exception e
             (error-with e))))
       (success parameters))))
@@ -623,10 +623,11 @@
         {:keys [auto-scaling-group-name tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [alarms]} deployment-params
-        name-fn (fn [{:keys [alarm-name] :as alarm}] (assoc alarm :alarm-name (str auto-scaling-group-name "-" alarm-name)))]
+        name-fn (fn [{:keys [alarm-name] :as alarm}] (assoc alarm :alarm-name (str auto-scaling-group-name "-" alarm-name)))
+        dimensions-fn (fn [alarm] (assoc alarm :dimensions [{:name "AutoScalingGroupName" :value auto-scaling-group-name}]))]
     (log/write "Generating CloudWatch alarms.")
     (success (assoc-in parameters [:new-state :cloudwatch-alarms] (concat (alarms/standard-alarms environment region state)
-                                                                          (map (comp name-fn filter-alarm) alarms))))))
+                                                                          (vec (map (comp dimensions-fn name-fn filter-alarm) alarms)))))))
 
 (defn validate-cloudwatch-alarm
   [alarm]
