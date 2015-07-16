@@ -160,6 +160,19 @@
       (catch Exception e
         (error-with e)))))
 
+(defn get-tyrant-application-config
+  [{:keys [parameters]}]
+  (let [{:keys [application environment]} parameters
+        state (:new-state parameters)
+        {:keys [hash]} state]
+    (try
+      (log/write "Retrieving application-config.")
+      (success (if-let [application-config (tyr/application-config environment application hash)]
+                 (assoc-in parameters [:new-state :tyranitar :application-config] application-config)
+                 parameters))
+      (catch Exception e
+        (error-with e)))))
+
 (def default-deployment-params
   {:default-cooldown 10
    :desired-capacity 1

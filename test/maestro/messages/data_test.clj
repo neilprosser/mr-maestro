@@ -129,6 +129,35 @@
       (provided
        (tyr/application-properties "environment" "application" "hash") => {:tyranitar :properties}))
 
+(fact "that getting no Tyrant application config is a noop"
+  (let [parameters {:parameters {:application "application"
+                                 :environment "environment"
+                                 :new-state {:hash "hash"}}}]
+    (get-tyrant-application-config parameters)
+    => (contains {:status :success})
+    (provided
+     (tyr/application-config "environment" "application" "hash") => nil)))
+
+(fact "that an error while getting Tyrant application config is an error"
+  (get-tyrant-application-config {:parameters {:application "application"
+                                               :environment "environment"
+                                               :new-state {:hash "hash"}}})
+  => (contains {:status :error})
+  (provided
+   (tyr/application-config "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
+
+(fact "that getting Tyrant application config works"
+      (get-tyrant-application-config {:parameters {:application "application"
+                                                   :environment "environment"
+                                                   :new-state {:hash "hash"}}})
+      => {:status :success
+          :parameters {:application "application"
+                       :environment "environment"
+                       :new-state {:hash "hash"
+                                   :tyranitar {:application-config {:tyranitar :config}}}}}
+      (provided
+       (tyr/application-config "environment" "application" "hash") => {:tyranitar :config}))
+
 (fact "that getting no Tyrant deployment params is an error"
       (get-tyrant-deployment-params {:parameters {:application "application"
                                                   :environment "environment"

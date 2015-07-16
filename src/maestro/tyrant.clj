@@ -54,6 +54,7 @@
         {:keys [body status] :as response} (http/simple-get url {:socket-timeout get-timeout})]
     (cond (= status 200) (json/parse-string body true)
           (= status 500) (throw (ex-info "Error retrieving file content - is the JSON valid?" {:type ::file-invalid :response response}))
+          (= status 404) (throw (ex-info "Resource was not found." {:type ::resource-not-found :response response}))
           :else (throw (ex-info "Unexpected response" {:type ::unexpected-response :response response})))))
 
 (defn application-properties
@@ -61,6 +62,16 @@
    particular commit hash."
   [environment application-name commit-hash]
   (:data (get-file-content environment application-name commit-hash "application-properties")))
+
+(defn application-config
+  "Gets the application config for an application and environment with a
+   particular commit hash. Returns nil if it doesn't exist."
+  [environment application-name commit-hash]
+  (try
+    (:data (get-file-content environment application-name commit-hash "application-config"))
+    (catch Exception e
+      (when-not (= (:type (ex-data e)) ::resource-not-found)
+        (throw e)))))
 
 (defn deployment-params
   "Gets the deployment parameters for an application and environment with a

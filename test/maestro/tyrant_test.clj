@@ -36,6 +36,45 @@
         {:socket-timeout 30000})
        => {:status 500}))
 
+(fact "that getting application config does the right thing"
+      (application-config "environment" "application" "hash")
+      => ..config..
+      (provided
+       (http/simple-get
+        "http://tyrant/applications/environment/application/hash/application-config"
+        {:socket-timeout 30000})
+       => {:status 200
+           :body ..body..}
+       (json/parse-string ..body.. true)
+       => {:data ..config..}))
+
+(fact "that getting application config which fails throws an exception"
+      (application-config "environment" "application" "hash")
+      => (throws ExceptionInfo "Unexpected response")
+      (provided
+       (http/simple-get
+        "http://tyrant/applications/environment/application/hash/application-config"
+        {:socket-timeout 30000})
+       => {:status 503}))
+
+(fact "that getting a non-existent application config returns nil"
+      (application-config "environment" "application" "hash")
+      => nil
+      (provided
+       (http/simple-get
+        "http://tyrant/applications/environment/application/hash/application-config"
+        {:socket-timeout 30000})
+       => {:status 404}))
+
+(fact "that getting application config which fails with a 500 throws an exception"
+      (application-config "environment" "application" "hash")
+      => (throws ExceptionInfo "Error retrieving file content - is the JSON valid?")
+      (provided
+       (http/simple-get
+        "http://tyrant/applications/environment/application/hash/application-config"
+        {:socket-timeout 30000})
+       => {:status 500}))
+
 (fact "that getting deployment params does the right thing"
       (deployment-params "environment" "application" "hash")
       => ..properties..
