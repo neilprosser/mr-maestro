@@ -2,7 +2,7 @@
   :description "Maestro service"
   :license  "https://github.com/mixradio/mr-maestro/blob/master/LICENSE"
 
-  :dependencies [[amazonica "0.3.12" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
+  :dependencies [[amazonica "0.3.29" :exclusions [com.fasterxml.jackson.core/jackson-annotations]]
                  [bouncer "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.2"]
                  [cheshire "5.4.0"]
