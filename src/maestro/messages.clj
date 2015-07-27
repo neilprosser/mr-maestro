@@ -165,5 +165,6 @@
              enqueue-next-task
              end-deployment-if-allowed
              :result)
-        (error-with (ex-info "Unknown action" {:type ::unknown-action
-                                               :action action}))))))
+        (do
+          (log/write "Unknown action")
+          (capped-retry-after 5000 attempt 10))))))
