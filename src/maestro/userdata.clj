@@ -9,6 +9,10 @@
                                 lines
                                 ["EOF"]))))
 
+(defn- symlink-file
+  [source-path dest-path]
+  (format "ln -s %s %s" source-path dest-path))
+
 (defn- export
   [var value]
   (format "export %s=%s" var value))
@@ -60,7 +64,21 @@
 
 (defn- link-application-properties
   [{:keys [application]}]
-  (format "ln -s /var/encrypted/properties/%s.properties /etc/%s.properties" application application))
+  (let [application-properties-path (format "/var/encrypted/properties/%s.properties" application)]
+    (symlink-file application-properties-path "/etc/")))
+
+(defn- create-optional-application-config
+  [{:keys [application] :as parameters}]
+  (let [state-key (util/new-state-key parameters)
+        state (state-key parameters)]
+    (when-let [application-config (get-in state [:tyranitar :application-config])]
+      (let [application-config-directory "/var/encrypted/config"
+            application-config-filename (format "%s-config.json" application)
+            application-config-path (format "%s/%s" application-config-directory application-config-filename)]
+        (str/join "\n" [(str "mkdir -p " application-config-directory)
+                        (write-to-file application-config-path (json/generate-string application-config))
+                        (symlink-file application-config-path "/etc/")
+                        (export (name :APP_CONFIG_PATH) (str "/etc/" application-config-filename))])))))
 
 (defn- create-launch-data
   [parameters]
@@ -77,4 +95,6 @@
                                (create-subscriptions parameters)
                                (create-application-properties parameters)
                                (link-application-properties parameters)
+                               (create-optional-application-config parameters)
                                (create-launch-data parameters)])))
+
