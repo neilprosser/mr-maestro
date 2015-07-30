@@ -16,7 +16,6 @@
    :maestro.messages.data/ensure-tyrant-hash
    :maestro.messages.data/verify-tyrant-hash
    :maestro.messages.data/get-tyrant-application-properties
-   :maestro.messages.data/get-tyrant-application-config
    :maestro.messages.data/get-tyrant-deployment-params
    :maestro.messages.data/validate-deployment-params
    :maestro.messages.data/get-tyrant-launch-data
