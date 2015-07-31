@@ -20,12 +20,24 @@
 (def ^:private subscriptions-directory
   "/etc/sensu/conf.d/subscriptions.d")
 
+(defn get-application-config
+  [parameters]
+  (-> (util/new-state-key parameters)
+      parameters
+      (get-in [:tyranitar :application-config])))
+
+(defn build-app-config-path
+  [{:keys [application] :as parameters}]
+  (when (get-application-config parameters)
+    (format "/etc/%s-config.json" application)))
+
 (defn- create-environment-variables
   [{:keys [application environment region] :as parameters}]
   (let [state-key (util/new-state-key parameters)
         state (state-key parameters)
         {:keys [auto-scaling-group-name hash launch-configuration-name]} state]
-    (->> {:CLOUD_APP application
+    (->> {:APP_CONFIG_PATH (build-app-config-path parameters)
+          :CLOUD_APP application
           :CLOUD_STACK environment
           :CLOUD_CLUSTER (format "%s-%s" application environment)
           :CLOUD_AUTO_SCALE_GROUP auto-scaling-group-name
@@ -69,16 +81,13 @@
 
 (defn- create-optional-application-config
   [{:keys [application] :as parameters}]
-  (let [state-key (util/new-state-key parameters)
-        state (state-key parameters)]
-    (when-let [application-config (get-in state [:tyranitar :application-config])]
-      (let [application-config-directory "/var/encrypted/config"
-            application-config-filename (format "%s-config.json" application)
-            application-config-path (format "%s/%s" application-config-directory application-config-filename)]
-        (str/join "\n" [(str "mkdir -p " application-config-directory)
-                        (write-to-file application-config-path (json/generate-string application-config))
-                        (symlink-file application-config-path "/etc/")
-                        (export (name :APP_CONFIG_PATH) (str "/etc/" application-config-filename))])))))
+  (when-let [application-config (get-application-config parameters)]
+    (let [application-config-directory "/var/encrypted/config"
+          application-config-filename (format "%s-config.json" application)
+          application-config-path (format "%s/%s" application-config-directory application-config-filename)]
+      (str/join "\n" [(str "mkdir -p " application-config-directory)
+                      (write-to-file application-config-path (json/generate-string application-config))
+                      (symlink-file application-config-path "/etc/")]))))
 
 (defn- create-launch-data
   [parameters]
@@ -97,4 +106,3 @@
                                (link-application-properties parameters)
                                (create-optional-application-config parameters)
                                (create-launch-data parameters)])))
-
