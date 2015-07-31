@@ -59,6 +59,7 @@ echo business")
                                                  :launch-data ["echo business"]}}})
       => "#!/bin/bash
 cat > /etc/profile.d/asgard.sh <<EOF
+export APP_CONFIG_PATH=/etc/application-config.json
 export CLOUD_APP=application
 export CLOUD_CLUSTER=application-environment
 export CLOUD_STACK=environment
@@ -73,5 +74,4 @@ cat > /var/encrypted/config/application-config.json <<EOF
 {\"use-local-cache?\":true}
 EOF
 ln -s /var/encrypted/config/application-config.json /etc/
-export APP_CONFIG_PATH=/etc/application-config.json
 echo business")
