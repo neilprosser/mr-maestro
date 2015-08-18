@@ -47,6 +47,16 @@
       (provided
        (environment "env") => {:metadata {:alert-topic "alert-topic"}}))
 
+(fact "that we get nil for the Healthy URL if the environment doesn't exist"
+      (healthy-url "unknown") => nil
+      (provided
+       (environment "unknown") => nil))
+
+(fact "that we get the correct Healthy URL for an environment which exists"
+      (healthy-url "env") => "healthy-url"
+      (provided
+       (environment "env") => {:metadata {:healthy-url "healthy-url"}}))
+
 (fact "that an environment should notify when specified"
       (should-notify? "env") => truthy
       (provided

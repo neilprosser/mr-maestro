@@ -39,6 +39,11 @@
   (when-let [e (environment environment-name)]
     (get-in e [:metadata :alert-topic])))
 
+(defn healthy-url
+  [environment-name]
+  (when-let [e (environment environment-name)]
+    (get-in e [:metadata :healthy-url])))
+
 (defn should-notify?
   [environment-name]
   (when-let [e (environment environment-name)]

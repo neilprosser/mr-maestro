@@ -11,7 +11,7 @@
              [util :as util]]))
 
 (def healthcheck-types
-  #{"EC2" "ELB"})
+  #{"EC2" "ELB" "EC2+healthy"})
 
 (def para-instance-types
   #{"c1.medium"

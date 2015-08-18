@@ -5,6 +5,7 @@
              [asg :as asg]
              [data :as data]
              [health :as health]
+             [healthy :as healthy]
              [notification :as notification]
              [policies :as policies]]))
 
@@ -68,6 +69,7 @@
    :maestro.messages.alarms/populate-action-arns
    :maestro.messages.alarms/create-cloudwatch-alarms
    :maestro.messages.asg/add-scheduled-actions
+   :maestro.messages.healthy/register-with-healthy
    :maestro.messages.asg/disable-old-instance-launching
    :maestro.messages.asg/disable-old-instance-termination
    :maestro.messages.asg/disable-old-adding-instances
@@ -75,6 +77,7 @@
    :maestro.messages.alarms/remove-old-cloudwatch-alarms
    :maestro.messages.asg/notify-of-auto-scaling-group-deletion
    :maestro.messages.asg/delete-old-auto-scaling-group
+   :maestro.messages.healthy/deregister-from-healthy
    :maestro.messages.asg/wait-for-old-auto-scaling-group-deletion
    :maestro.messages.asg/delete-old-launch-configuration
    :maestro.messages.asg/scale-down-after-deployment
