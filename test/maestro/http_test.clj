@@ -103,3 +103,34 @@
       => (throws ExceptionInfo "Busted")
       (provided
        (http/put ..url.. anything) =throws=> (java.net.UnknownHostException. "Busted")))
+
+(fact "that performing a DELETE does what we want"
+      (simple-delete ..url.. {:extra :params})
+      => ..response..
+      (provided
+       (merge-with-default-params {:extra :params}) => ..params..
+       (http/delete ..url.. ..params..) => ..response..))
+
+(fact "that getting a ConnectException when performing a DELETE converts it to an ExceptionInfo"
+      (simple-delete ..url..)
+      => (throws ExceptionInfo "Busted")
+      (provided
+       (http/delete ..url.. anything) =throws=> (java.net.ConnectException. "Busted")))
+
+(fact "that getting a ConnectTimeoutException when performing a DELETE converts it to an ExceptionInfo"
+      (simple-delete ..url..)
+      => (throws ExceptionInfo "Busted")
+      (provided
+       (http/delete ..url.. anything) =throws=> (org.apache.http.conn.ConnectTimeoutException. "Busted")))
+
+(fact "that getting a SocketTimeoutException when performing a DELETE converts it to an ExceptionInfo"
+      (simple-delete ..url..)
+      => (throws ExceptionInfo "Busted")
+      (provided
+       (http/delete ..url.. anything) =throws=> (java.net.SocketTimeoutException. "Busted")))
+
+(fact "that getting a UnknownHostException when performing a DELETE converts it to an ExceptionInfo"
+      (simple-delete ..url..)
+      => (throws ExceptionInfo "Busted")
+      (provided
+       (http/delete ..url.. anything) =throws=> (java.net.UnknownHostException. "Busted")))
