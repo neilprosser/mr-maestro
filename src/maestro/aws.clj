@@ -188,7 +188,7 @@
   [environment region names]
   (when (seq names)
     (let [load-balancers-by-name (util/map-by-property :load-balancer-name (load-balancers environment region))]
-      (apply merge (map (fn [n] {n (get load-balancers-by-name n)}) names)))))
+      (into {} (map (fn [n] {n (get load-balancers-by-name n)}) names)))))
 
 (defn load-balancer-health
   [environment region load-balancer-name]

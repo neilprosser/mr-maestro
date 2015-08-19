@@ -521,12 +521,33 @@
       (provided
        (es/deployments-by-user) => {:stats "business"}))
 
+(fact "that getting our by-user failed deployment stats works"
+      (request :get "/stats/deployments/failed-by-user")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/failed-deployments-by-user) => {:stats "business"}))
+
+(fact "that getting our by-application deployment stats for a user works"
+      (request :get "/stats/deployments/by-user/user/by-application")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-by-user-by-application "user") => {:stats "business"}))
+
 (fact "that getting our by-application deployment stats works"
       (request :get "/stats/deployments/by-application")
       => (contains {:body {:result {:stats "business"}}
                     :status 200})
       (provided
        (es/deployments-by-application) => {:stats "business"}))
+
+(fact "that getting our by-year deployment stats works"
+      (request :get "/stats/deployments/by-year")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-by-year) => {:stats "business"}))
 
 (fact "that getting our by-month deployment stats works"
       (request :get "/stats/deployments/by-month")
@@ -541,6 +562,13 @@
                     :status 200})
       (provided
        (es/deployments-by-day) => {:stats "business"}))
+
+(fact "that getting our by-year and environment deployment stats works"
+      (request :get "/stats/deployments/by-year/environment/something")
+      => (contains {:body {:result {:stats "business"}}
+                    :status 200})
+      (provided
+       (es/deployments-in-environment-by-year "something") => {:stats "business"}))
 
 (fact "that getting our by-month and environment deployment stats works"
       (request :get "/stats/deployments/by-month/environment/something")

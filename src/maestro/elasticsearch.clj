@@ -140,7 +140,7 @@
   [log-id deployment-id document]
   (esd/put @conn index-name log-type log-id (dissoc document :id) :parent deployment-id :refresh true))
 
-(defn nil-if-no-deployment
+(defn- nil-if-no-deployment
   [deployment-id results]
   (when (or (seq results)
             (deployment deployment-id))

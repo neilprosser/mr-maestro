@@ -1,6 +1,8 @@
 (ns maestro.aws-test
   (:require [amazonica.aws
+             [autoscaling :as auto]
              [ec2 :as ec2]
+             [elasticloadbalancing :as elb]
              [securitytoken :as sts]]
             [cheshire.core :as json]
             [environ.core :refer :all]
@@ -134,6 +136,16 @@
         :launch-time ..launch-time..})
       => {:name "none" :instance-id ..instance.. :image-id ..image.. :private-ip ..ip.. :launch-time ..launch-time..})
 
+(fact "that getting auto-scaling-groups successfully flattens out pages"
+      (auto-scaling-groups "environment" "region")
+      => [..asg-one.. ..asg-two.. ..asg-three..]
+      (provided
+       (auto/describe-auto-scaling-groups anything) => {:auto-scaling-groups [..asg-one..]
+                                                                    :next-token "next1"}
+       (auto/describe-auto-scaling-groups anything :next-token "next1") => {:auto-scaling-groups [..asg-two..]
+                                                                                        :next-token "next2"}
+       (auto/describe-auto-scaling-groups anything :next-token "next2") => {:auto-scaling-groups [..asg-three..]}))
+
 (fact "that getting the last auto scaling group for an application works"
       (last-application-auto-scaling-group "search" "poke" "eu-west-1") => {:auto-scaling-group-name "search-poke-v023"}
       (provided
@@ -157,6 +169,42 @@
                                                     {:auto-scaling-group-name "search-pokebackup-v000"}
                                                     {:auto-scaling-group-name "search-poke"}
                                                     {:auto-scaling-group-name "app2-poke-v000"}]))
+
+(fact "that getting a launch configuration works"
+      (launch-configuration "lc" "environment" "region")
+      => ..lc..
+      (provided
+       (auto/describe-launch-configurations anything :launch-configuration-names ["lc"]) => {:launch-configurations [..lc..]}))
+
+(fact "that getting an image works"
+      (image "image" "environment" "region")
+      => ..image..
+      (provided
+       (ec2/describe-images anything :image-ids ["image"]) => {:images [..image..]}))
+
+(fact "that getting security groups works"
+      (security-groups "environment" "region")
+      => [..sg-one.. ..sg-two..]
+      (provided
+       (ec2/describe-security-groups anything) => {:security-groups [..sg-one.. ..sg-two..]}))
+
+(fact "that getting load balancers works"
+      (load-balancers "environment" "region")
+      => [..load-balancer-one.. ..load-balancer-two..]
+      (provided
+       (elb/describe-load-balancers anything) => {:load-balancer-descriptions [..load-balancer-one.. ..load-balancer-two..]}))
+
+(fact "that getting load balancers with names maps missing load balancers to a nil value"
+      (load-balancers-with-names "environment" "region" ["name1" "name2"])
+      => {"name1" {:load-balancer-name "name1"} "name2" nil}
+      (provided
+       (load-balancers "environment" "region") => [{:load-balancer-name "name1"}]))
+
+(fact "that getting load balancer health works"
+      (load-balancer-health "environment" "region" "elb")
+      => ..instance-states..
+      (provided
+       (elb/describe-instance-health anything :load-balancer-name "elb") => {:instance-states ..instance-states..}))
 
 (fact "that getting the subnets for a specific purpose handles no subnets coming back"
       (subnets-by-purpose "environment" "region" "purpose")
@@ -190,3 +238,9 @@
 (fact "that filtering subnets by availability zone gives back everything when nil is specified"
       (filter-by-availability-zones nil [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
       => [{:subnet-id "1" :availability-zone "eu-west-1a"} {:subnet-id "2" :availability-zone "eu-west-1b"}])
+
+(fact "that getting instances works"
+      (instances "environment" "region" [..id-one.. ..id-two..])
+      => [..instance-one.. ..instance-two..]
+      (provided
+       (ec2/describe-instances anything :instance-ids [..id-one.. ..id-two..]) => {:reservations [{:instances [..instance-one..]} {:instances [..instance-two..]}]}))

@@ -3,7 +3,20 @@
             [maestro
              [environments :as environments]
              [validators :refer :all]]
-            [midje.sweet :refer :all]))
+            [midje.sweet :refer :all])
+  (:import clojure.lang.ExceptionInfo))
+
+(fact "that allowed-instances throws up if we provide an unknown virtualisation type"
+      (allowed-instances "whatever")
+      => (throws ExceptionInfo "Unknown virtualisation type 'whatever'."))
+
+(fact "that asking for paravirtual allowed instances gives the right set"
+      (allowed-instances "para")
+      => para-instance-types)
+
+(fact "that asking for HVM allowed instances gives the right set"
+      (allowed-instances "hvm")
+      => hvm-instance-types)
 
 (fact "that `zero-or-more?` is happy with nil input"
       (zero-or-more? nil)

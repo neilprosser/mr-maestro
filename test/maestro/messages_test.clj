@@ -1,11 +1,16 @@
 (ns maestro.messages-test
-  (:require [maestro
-             [bindings :refer [*deployment-id*]]
+  (:require [clj-time.core :as time]
+            [maestro
+             [actions :as actions]
+             [bindings :refer :all]
              [deployments :as deployments]
              [elasticsearch :as es]
+             [log :as log]
              [messages :refer :all]
-             [redis :as redis]]
-            [midje.sweet :refer :all]))
+             [redis :as redis]
+             [responses :refer :all]]
+            [midje.sweet :refer :all])
+  (:import clojure.lang.ExceptionInfo))
 
 (fact "that rewrapping the message does what we want"
       (binding [*deployment-id* ..deployment-id..]
@@ -45,6 +50,161 @@
 
 (fact "that a non-errored deployment has a running status"
       (deployment-status-for {:status :whatever}) => "running")
+
+(fact "that ensuring a task which has already been attempted does nothing"
+      (ensure-task {:attempt 2}) => {:attempt 2}
+      (provided
+       (es/create-task anything anything anything) => nil :times 0))
+
+(fact "that ensuring a task which is on its first attempt creates the task"
+      (binding [*deployment-id* "deployment-id"
+                *task-id* "task-id"]
+        (def details {:attempt 1
+                      :message {:action ..action..}})
+        (ensure-task details) => details
+        (provided
+         (actions/sequence-number ..action..) => ..sequence..
+         (time/now) => ..now..
+         (es/create-task "task-id" "deployment-id" {:action ..action..
+                                                    :sequence ..sequence..
+                                                    :start ..now..
+                                                    :status "running"}) => ..create-resut..)))
+
+(fact "that we use the result from the action is it's there"
+      (binding [*deployment-id* "deployment-id"]
+        (perform-action (fn [x] (success (:parameters x))) {:attempt 1
+                                                           :message {:parameters {:some "parameters"}}
+                                                           :mid "message-id"})
+        => {:attempt 1
+            :message {:parameters {:some "parameters"}}
+            :mid "message-id"
+            :result {:parameters {:id "deployment-id"
+                                  :some "parameters"
+                                  :status "running"}
+                     :status :success}}))
+
+(fact "that we assume success if nothing is returned from the action function"
+      (binding [*deployment-id* "deployment-id"]
+        (perform-action (fn [x] nil) {:attempt 1
+                                     :message {:parameters {:some "parameters"}}
+                                     :mid "message-id"})
+        => {:attempt 1
+            :message {:parameters {:some "parameters"}}
+            :mid "message-id"
+            :result {:parameters {:id "deployment-id"
+                                  :some "parameters"
+                                  :status "running"}
+                     :status :success}}))
+
+(fact "that an uncaught exception while performing an action results in an error"
+      (def exception (ex-info "Busted" {}))
+      (perform-action (fn [x] (throw exception)) {:attempt 1
+                                                 :message {:parameters {:some "parameters"}}
+                                                 :mid "message-id"})
+      => {:attempt 1
+          :message {:parameters {:some "parameters"}}
+          :mid "message-id"
+          :result {:status :error
+                   :throwable exception}})
+
+(fact "that nothing happens when attempting to log an error for a successful result"
+      (def details {:result {:status :success}})
+      (log-error-if-necessary details) => details
+      (provided
+       (log/write anything) => nil :times 0))
+
+(fact "that we write the message from a throwable if present"
+      (def details {:result {:status :error
+                             :throwable (ex-info "Busted" {})}})
+      (log-error-if-necessary details) => details
+      (provided
+       (log/write "Busted") => nil))
+
+(fact "that we write a generic message if no throwable is present"
+      (def details {:result {:status :error}})
+      (log-error-if-necessary details) => details
+      (provided
+       (log/write "An unspecified error has occurred. It might be worth checking Maestro's logs.") => nil))
+
+(fact "that we can determine the next action correctly"
+      (determine-next-action {:message {:action ..action..}})
+      => {:message {:action ..action..}
+          :next-action ..next-action..}
+      (provided
+       (actions/action-after ..action..) => ..next-action..))
+
+(fact "that updating a task when the result isn't terminal does nothing"
+      (update-task {:result ..result..})
+      => {:result ..result..}
+      (provided
+       (terminal? ..result..) => false
+       (es/update-task anything anything anything) => nil :times 0))
+
+(fact "that updating a task when the result is terminal calls Elasticsearch"
+      (binding [*deployment-id* "deployment-id"
+                *task-id* "task-id"]
+        (update-task {:result ..result..})
+        => {:result ..result..}
+        (provided
+         (terminal? ..result..) => true
+         (task-status-for ..result..) => ..status..
+         (time/now) => ..now..
+         (es/update-task "task-id" "deployment-id" {:end ..now..
+                                                    :status ..status..}) => ..update-result..)))
+
+(fact "that a deployment in the preparation phase gets a failure status of invalid"
+      (failure-status {:message {:parameters {:phase "preparation"}}}) => "invalid")
+
+(fact "that a deployment in any other phase gets a failure status of failed"
+      (failure-status {:message {:parameters {:phase "anything"}}}) => "failed")
+
+(fact "that updating a deployment after a successful task, with another to follow, does the right thing"
+      (binding [*deployment-id* "deployment-id"]
+        (update-deployment {:message {:parameters {:old "parameters"}}
+                            :next-action ..next-action..
+                            :result {:parameters {:new "parameters"}
+                                     :status :success}})
+        => {:message {:parameters {:new "parameters"
+                                   :status "running"}}
+            :next-action ..next-action..
+            :result {:parameters {:new "parameters"}
+                     :status :success}}
+        (provided
+         (es/upsert-deployment "deployment-id" {:new "parameters"
+                                                :status "running"}) => ..upsert-result..)))
+
+(fact "that updating a deployment after a successful task, with no another to follow, does the right thing"
+      (binding [*deployment-id* "deployment-id"]
+        (update-deployment {:message {:parameters {:old "parameters"}}
+                            :result {:parameters {:new "parameters"}
+                                     :status :success}})
+        => {:message {:parameters {:new "parameters"
+                                   :status "completed"}}
+            :result {:parameters {:new "parameters"}
+                     :status :success}}
+        (provided
+         (es/upsert-deployment "deployment-id" {:new "parameters"
+                                                :status "completed"}) => ..upsert-result..)))
+
+(fact "that updating a deployment after a failed task does the right thing"
+      (binding [*deployment-id* "deployment-id"]
+        (update-deployment {:message {:parameters {:old "parameters"}}
+                            :result {:status :error}})
+        => {:message {:parameters {:end ..now..
+                                   :old "parameters"
+                                   :status "failed"}}
+            :result {:status :error}}
+        (provided
+         (time/now) => ..now..
+         (es/upsert-deployment "deployment-id" {:end ..now..
+                                                :old "parameters"
+                                                :status "failed"}) => ..upsert-result..)))
+
+(fact "that updating a deployment after a task which needs to retry does nothing"
+      (update-deployment {:result {:status :retry}})
+      => {:result {:status :retry}}
+      (provided
+       (es/upsert-deployment anything anything) => nil :times 0))
 
 (fact "that we should pause when the deployment has a pause registered"
       (def params {:parameters {:application "application"
@@ -198,3 +358,42 @@
        (finishing? anything) => false
        (safely-failed? anything) => false
        (deployments/end anything) => :whatever :times 0))
+
+(fact "that our handler will throw up when no deployment ID is provided"
+      (handler {:attempt 1
+                :message {:action "action"
+                          :parameters {:id nil}}
+                :mid "message-id"})
+      => (throws ExceptionInfo "No deployment ID provided"))
+
+(fact "that our handler will perform a capped retry on an unknown action"
+      (handler {:attempt 1
+                :message {:action "action"
+                          :parameters {:id "deployment-id"}}
+                :mid "message-id"})
+      => {:backoff-ms 5000
+          :status :retry}
+      (provided
+       (log/write "Unknown action") => nil
+       (actions/to-function "action") => nil))
+
+(fact "that our handler goes through all the functions in the correct order"
+      (handler {:attempt 1
+                :message {:action "action"
+                          :parameters {:id "deployment-id"}}
+                :mid "message-id"})
+      => ..result..
+      (provided
+       (actions/to-function "action") => ..action..
+       (ensure-task {:attempt 1
+                     :message {:action "action"
+                               :parameters {:id "deployment-id"}}
+                     :mid "message-id"})
+       => ..after-ensure..
+       (perform-action ..action.. ..after-ensure..) => ..after-perform..
+       (log-error-if-necessary ..after-perform..) => ..after-log..
+       (determine-next-action ..after-log..) => ..after-determine..
+       (update-task ..after-determine..) => ..after-update-task..
+       (update-deployment ..after-update-task..) => ..after-update-deployment..
+       (enqueue-next-task ..after-update-deployment..) => ..after-enqueue..
+       (end-deployment-if-allowed ..after-enqueue..) => {:result ..result..}))

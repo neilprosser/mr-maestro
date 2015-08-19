@@ -10,6 +10,7 @@
              [pedantic :as pedantic]
              [policies :as policies]
              [tyrant :as tyr]
+             [userdata :as ud]
              [util :as util]
              [validators :as v]]
             [maestro.messages.data :refer :all]
@@ -49,6 +50,21 @@
                                                                                                   :new-state {:onix ..lister..}}})
       (provided
        (lister/application "application") => ..lister..))
+
+(fact "that ensuring deployment is unblocked passes if no block blob detected with Lister"
+      (let [pipeline-data {:status     :success
+                           :parameters {:application "application"
+                                        :new-state   {:onix {}}}}]
+        (ensure-unblocked pipeline-data)))
+
+(fact "that ensuring deployment is unblocked causes an error status if block blob detected with Lister"
+      (let [pipeline-data {:status     :success
+                           :parameters {:application "application"
+                                        :new-state   {:onix {:blocked {:user   "myuser"
+                                                                       :reason "myreason"}}}}}
+            result (ensure-unblocked pipeline-data)]
+        result => (contains {:status :error})
+        (.getMessage (:throwable result)) => "Application is blocked from deployment by user 'myuser'. Reason: 'myreason'."))
 
 (fact "that ensuring the Tyrant hash doesn't go to Tyrant if the hash is present"
       (ensure-tyrant-hash {:parameters {:application "application"
@@ -267,6 +283,16 @@
 (fact "that extracting the Tyrant hash from user-data works"
       (extract-hash (base64-encode (.getBytes "export HASH=hash"))) => "hash")
 
+(fact "that getting an error while populating previous state fails the task"
+      (def exception (ex-info "Busted" {}))
+      (populate-previous-state {:parameters {:application "application"
+                                             :environment "environment"
+                                             :region "region"}})
+      => {:status :error
+          :throwable exception}
+      (provided
+       (aws/last-application-auto-scaling-group "application" "environment" "region") =throws=> exception))
+
 (fact "that populating previous state when a previous one doesn't exist succeeds"
       (populate-previous-state {:parameters {:application "application"
                                              :environment "environment"
@@ -340,6 +366,16 @@
          (extract-hash anything) => ..hash..
          (tyr/deployment-params "environment" "application" ..hash..) => deployment-params)))
 
+(fact "that getting an error while populating previous Tyrant application properties fails the task"
+      (def exception (ex-info "Busted" {}))
+      (populate-previous-tyrant-application-properties {:parameters {:application "application"
+                                                                     :environment "environment"
+                                                                     :previous-state {:hash "hash"}}})
+      => {:status :error
+          :throwable exception}
+      (provided
+       (tyr/application-properties "environment" "application" "hash") =throws=> exception))
+
 (fact "that populating previous Tyrant application properties when no previous state exists succeeds"
       (populate-previous-tyrant-application-properties {:parameters {:application "application"
                                                                      :environment "environment"}})
@@ -373,6 +409,29 @@
       => {:parameters {:environment "environment"
                        :region "region"}
           :status :success})
+
+(fact "that getting an error while getting previous image details fails the task"
+      (def exception (ex-info "Busted" {}))
+      (get-previous-image-details {:parameters {:environment "environment"
+                                                :previous-state {:image-details {:id "image-id"}}
+                                                :region "region"}})
+      => {:status :error
+          :throwable exception}
+      (provided
+       (aws/image "image-id" "environment" "region") =throws=> exception))
+
+(fact "that getting previous image details works"
+      (get-previous-image-details {:parameters {:environment "environment"
+                                                :previous-state {:image-details {:id "image-id"}}
+                                                :region "region"}})
+      => {:parameters {:environment "environment"
+                       :previous-state {:image-details {:id "image-id"
+                                                        :details "details"}}
+                       :region "region"}
+          :status :success}
+      (provided
+       (aws/image "image-id" "environment" "region") => {:name "image-name"}
+       (util/image-details "image-name") => {:details "details"}))
 
 (fact "that creating names for something without any previous state works"
       (create-names {:parameters {:application "application"
@@ -414,6 +473,21 @@
       (provided
        (aws/image "image-id" "environment" "region") => nil))
 
+(fact "that a matching image application and application is allowed when verifying an image"
+      (verify-image {:parameters {:application "application"
+                                  :new-state {:image-details {:application "application"
+                                                              :image-name "image-name"}}}})
+      => {:parameters {:application "application"
+                       :new-state {:image-details {:application "application"
+                                                   :image-name "image-name"}}}
+          :status :success})
+
+(fact "that a non-matching image application and application isn't allowed when verifying an image"
+      (verify-image {:parameters {:application "application"
+                                  :new-state {:image-details {:application "different"
+                                                              :image-name "image-name"}}}})
+      => (contains {:status :error}))
+
 (fact "that checking for an embargo is successful no embargo tag is present"
       (check-for-embargo {:parameters {:environment "environment"
                                        :new-state {:image-details {:tags {}}}}})
@@ -438,6 +512,16 @@
       (check-instance-type-compatibility {:parameters {:new-state {:image-details {:virt-type "para"}
                                                                    :tyranitar {:deployment-params {:instance-type "t2.micro"}}}}})
       => (contains {:status :error}))
+
+(fact "that an application with no contact property set errors the task"
+      (check-contact-property {:parameters {:application "application"
+                                            :new-state {:onix {}}}})
+      => (contains {:status :error}))
+
+(fact "that an application with a contact property set is allowed"
+      (check-contact-property {:parameters {:application "application"
+                                            :new-state {:onix {:contact "hello"}}}})
+      => (contains {:status :success}))
 
 (fact "that checking Pedantic configuration succeeds when Pedantic configuration exists"
       (check-pedantic-configuration {:parameters {:application "application"
@@ -495,6 +579,55 @@
       (provided
        (dev/create-mappings {:size 12} 2 [{:size 20 :type "gp2"}] "hvm") => ..block-devices..))
 
+(fact "that adding required security groups includes them in the parameters when there are no security groups present"
+      (add-required-security-groups {:parameters {:new-state {:tyranitar {:deployment-params {:selected-security-groups nil}}}}})
+      => {:parameters {:new-state {:tyranitar {:deployment-params {:selected-security-groups ["maestro-healthcheck"]}}}}
+          :status :success})
+
+(fact "that adding required security groups includes them in the parameters when there are already security groups present"
+      (add-required-security-groups {:parameters {:new-state {:tyranitar {:deployment-params {:selected-security-groups ["security-group"]}}}}})
+      => {:parameters {:new-state {:tyranitar {:deployment-params {:selected-security-groups ["security-group" "maestro-healthcheck"]}}}} :status :success})
+
+(fact "that verifying a deployment with no load balancers does nothing"
+      (verify-load-balancers {:parameters {:environment "environment"
+                                           :new-state {:tyranitar {:deployment-params {:selected-load-balancers nil}}}
+                                           :region "region"}})
+      => (contains {:status :success})
+      (provided
+       (aws/load-balancers-with-names anything anything anything) => nil :times 0))
+
+(fact "that verifying a deployment with empty load balancers does nothing"
+      (verify-load-balancers {:parameters {:environment "environment"
+                                           :new-state {:tyranitar {:deployment-params {:selected-load-balancers []}}}
+                                           :region "region"}})
+      => (contains {:status :success})
+      (provided
+       (aws/load-balancers-with-names anything anything anything) => nil :times 0))
+
+(fact "that an error while verifying load balancers fails the task"
+      (verify-load-balancers {:parameters {:environment "environment"
+                                           :new-state {:tyranitar {:deployment-params {:selected-load-balancers ["elb"]}}}
+                                           :region "region"}})
+      => (contains {:status :error})
+      (provided
+       (aws/load-balancers-with-names "environment" "region" ["elb"]) =throws=> (ex-info "Busted" {})))
+
+(fact "that not finding all listed load balancers fails the task"
+      (verify-load-balancers {:parameters {:environment "environment"
+                                           :new-state {:tyranitar {:deployment-params {:selected-load-balancers ["elb1" "elb2"]}}}
+                                           :region "region"}})
+      => (contains {:status :error})
+      (provided
+       (aws/load-balancers-with-names "environment" "region" ["elb1" "elb2"]) => {"elb1" {} "elb2" nil}))
+
+(fact "that finding all listed load balancers means a successful task"
+      (verify-load-balancers {:parameters {:environment "environment"
+                                           :new-state {:tyranitar {:deployment-params {:selected-load-balancers ["elb1" "elb2"]}}}
+                                           :region "region"}})
+      => (contains {:status :success})
+      (provided
+       (aws/load-balancers-with-names "environment" "region" ["elb1" "elb2"]) => {"elb1" {} "elb2" {}}))
+
 (fact "that checking for deleted load balancers removes previously used load balancers which no longer exist"
       (check-for-deleted-load-balancers {:parameters {:environment "environment"
                                                       :region "region"
@@ -506,6 +639,18 @@
       (provided
        (aws/load-balancers-with-names "environment" "region" ["existing" "nonexistent"]) => {"existing" {}
                                                                                              "nonexistent" nil}))
+
+(fact "that checking for deleted load balancers is successful if there were no previous load balancers"
+      (check-for-deleted-load-balancers {:parameters {:previous-state {:tyranitar {:deployment-params {:selected-load-balancers nil}}}}})
+      => (contains {:status :success})
+      (provided
+       (aws/load-balancers-with-names anything anything anything) => nil :times 0))
+
+(fact "that checking for deleted load balancers is successful if there was an empty list of previous load balancers"
+      (check-for-deleted-load-balancers {:parameters {:previous-state {:tyranitar {:deployment-params {:selected-load-balancers []}}}}})
+      => (contains {:status :success})
+      (provided
+       (aws/load-balancers-with-names anything anything anything) => nil :times 0))
 
 (def populate-subnets-params
   {:environment "environment"
@@ -545,12 +690,53 @@
       (provided
        (aws/subnets-by-purpose "environment" "region" "internal") => []))
 
+(fact "that populating the VPC zone identifier joins the subnets"
+      (populate-vpc-zone-identifier {:parameters {:new-state {:selected-subnets ["subnet-1" "subnet-2"]}}})
+      => {:parameters {:new-state {:selected-subnets ["subnet-1" "subnet-2"]
+                                   :vpc-zone-identifier "subnet-1,subnet-2"}}
+          :status :success})
+
+(fact "that populating the termination policies does the right thing"
+      (populate-termination-policies {:parameters {:new-state {:tyranitar {:deployment-params {:termination-policy "Oldest"}}}}})
+      => {:parameters {:new-state {:termination-policies ["Oldest"]
+                                   :tyranitar {:deployment-params {:termination-policy "Oldest"}}}}
+          :status :success})
+
 (fact "that creating an auto scaling group tag works"
       (to-auto-scaling-group-tag "asg" [:Key "value"]) => {:key "Key"
                                                            :value "value"
                                                            :propagate-at-launch true
                                                            :resource-type "auto-scaling-group"
                                                            :resource-id "asg"})
+
+(def create-auto-scaling-group-tags-params
+  {:application "application"
+   :environment "environment"
+   :new-state {:auto-scaling-group-name "new-asg"
+               :image-details {:version "new-version"}
+               :onix {:contact "new-contact"}}
+   :user "user"})
+
+(fact "that creating auto scaling group tags creates the right data"
+      (sort (:auto-scaling-group-tags (:new-state (:parameters (create-auto-scaling-group-tags {:parameters create-auto-scaling-group-tags-params})))))
+      => ["application-tag" "contact-tag" "deployed-by-tag" "deployed-on-tag" "environment-tag" "name-tag" "version-tag"]
+      (provided
+       (time/now) => "time"
+       (to-auto-scaling-group-tag "new-asg" [:Application "application"]) => "application-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Contact "new-contact"]) => "contact-tag"
+       (to-auto-scaling-group-tag "new-asg" [:DeployedBy "user"]) => "deployed-by-tag"
+       (to-auto-scaling-group-tag "new-asg" [:DeployedOn "time"]) => "deployed-on-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Environment "environment"]) => "environment-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => "name-tag"
+       (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
+
+(fact "that generating user-data adds it to the parameters"
+      (generate-user-data {:parameters {:some "parameters"}})
+      => {:parameters {:new-state {:user-data ..user-data..}
+                       :some "parameters"}
+          :status :success}
+      (provided
+       (ud/create-user-data {:some "parameters"}) => ..user-data..))
 
 (fact "that populating previous scaling policies works"
       (populate-previous-scaling-policies {:parameters {:environment "environment"
@@ -593,29 +779,25 @@
                                    :tyranitar {:deployment-params {:policies [{:policy-name "policy-1"}
                                                                               {:policy-name "policy-2"}]}}}}})
 
-(def create-auto-scaling-group-tags-params
-  {:application "application"
-   :environment "environment"
-   :new-state {:auto-scaling-group-name "new-asg"
-               :image-details {:version "new-version"}
-               :onix {:contact "new-contact"}}
-   :user "user"})
-
-(fact "that creating auto scaling group tags creates the right data"
-      (sort (:auto-scaling-group-tags (:new-state (:parameters (create-auto-scaling-group-tags {:parameters create-auto-scaling-group-tags-params})))))
-      => ["application-tag" "contact-tag" "deployed-by-tag" "deployed-on-tag" "environment-tag" "name-tag" "version-tag"]
-      (provided
-       (time/now) => "time"
-       (to-auto-scaling-group-tag "new-asg" [:Application "application"]) => "application-tag"
-       (to-auto-scaling-group-tag "new-asg" [:Contact "new-contact"]) => "contact-tag"
-       (to-auto-scaling-group-tag "new-asg" [:DeployedBy "user"]) => "deployed-by-tag"
-       (to-auto-scaling-group-tag "new-asg" [:DeployedOn "time"]) => "deployed-on-tag"
-       (to-auto-scaling-group-tag "new-asg" [:Environment "environment"]) => "environment-tag"
-       (to-auto-scaling-group-tag "new-asg" [:Name "application-environment-new-version"]) => "name-tag"
-       (to-auto-scaling-group-tag "new-asg" [:Version "new-version"]) => "version-tag"))
-
 (fact "that filtering CloudWatch alarms turns them into something we can use as a parameter"
       (filter-alarm {:excluded true :actions-enabled true :okactions ["action"] :unit nil}) => {:actions-enabled true :ok-actions ["action"]})
+
+(fact "that getting an error while populating previous CloudWatch alarms fails the task"
+      (populate-previous-cloudwatch-alarms {:parameters {:environment ..environment..
+                                                         :previous-state {:auto-scaling-group-name ..previous-asg..
+                                                                          :previous "state"}
+                                                         :region ..region..}})
+      => (contains {:status :error})
+      (provided
+       (alarms/alarms-for-auto-scaling-group ..environment.. ..region.. ..previous-asg..) =throws=> (ex-info "Busted" {})))
+
+(fact "that populating previous CloudWatch alarms does nothing if there's no previous state"
+      (populate-previous-cloudwatch-alarms {:parameters {:environment ..environment..
+                                                         :previous-state nil
+                                                         :region ..region..}})
+      => (contains {:status :success})
+      (provided
+       (alarms/alarms-for-auto-scaling-group anything anything anything) => nil :times 0))
 
 (fact "that populating previous CloudWatch alarms does what we need"
       (populate-previous-cloudwatch-alarms {:parameters {:environment ..environment..
@@ -681,6 +863,37 @@
                                                        :scaling-policies [{:policy-name "policy-1"}]}}})
       => (contains {:status :success}))
 
+(fact "that completing deployment preparation works"
+      (complete-deployment-preparation {:parameters {:application "application"
+                                                     :environment "environment"}})
+      => (contains {:status :success}))
+
+(fact "that starting the deployment adds the required information to the parameters and removes any previous `:end` key"
+      (start-deployment {:parameters {:application "application"
+                                      :end "whatever"
+                                      :environment "environment"}})
+      => {:parameters {:application "application"
+                       :environment "environment"
+                       :phase "deployment"
+                       :status "running"}
+          :status :success}
+      (provided
+       (log/write "Starting deployment of 'application' to 'environment'.") => nil))
+
+(fact "that starting the deployment (when it is an undo) adds the required information to the parameters and removes any previous `:end` key"
+      (start-deployment {:parameters {:application "application"
+                                      :end "whatever"
+                                      :environment "environment"
+                                      :undo true}})
+      => {:parameters {:application "application"
+                       :environment "environment"
+                       :phase "deployment"
+                       :status "running"
+                       :undo true}
+          :status :success}
+      (provided
+       (log/write "Starting undo of 'application' in 'environment'.") => nil))
+
 (fact "that completing the deployment adds an end key to our parameters"
       (complete-deployment {:parameters {:application "application"
                                          :environment "environment"}})
@@ -714,18 +927,3 @@
       (provided
        (log/write "Undo of 'application' in 'environment' complete.") => ..log..
        (time/now) => ..now..))
-
-(fact "that ensuring deployment is unblocked passes if no block blob detected with Lister"
-      (let [pipeline-data {:status     :success
-                           :parameters {:application "application"
-                                        :new-state   {:onix {}}}}]
-        (ensure-unblocked pipeline-data)))
-
-(fact "that ensuring deployment is unblocked causes an error status if block blob detected with Lister"
-      (let [pipeline-data {:status     :success
-                           :parameters {:application "application"
-                                        :new-state   {:onix {:blocked {:user   "myuser"
-                                                                       :reason "myreason"}}}}}
-            result (ensure-unblocked pipeline-data)]
-        result => (contains {:status :error})
-        (.getMessage (:throwable result)) => "Application is blocked from deployment by user 'myuser'. Reason: 'myreason'."))

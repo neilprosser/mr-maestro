@@ -357,16 +357,13 @@
         state (:new-state parameters)
         {:keys [image-details]} state
         {:keys [image-name]} image-details]
-    (try
-      (log/write (format "Checking that image name '%s' matches application '%s'." image-name application))
-      (let [image-application (:application image-details)]
-        (if (= image-application application)
-          (success parameters)
-          (error-with (ex-info "Image name does not match application being deployed." {:type ::mismatched-image
-                                                                                        :application application
-                                                                                        :image-name image-name}))))
-      (catch Exception e
-        (error-with e)))))
+    (log/write (format "Checking that image name '%s' matches application '%s'." image-name application))
+    (let [image-application (:application image-details)]
+      (if (= image-application application)
+        (success parameters)
+        (error-with (ex-info "Image name does not match application being deployed." {:type ::mismatched-image
+                                                                                      :application application
+                                                                                      :image-name image-name}))))))
 
 (defn check-for-embargo
   [{:keys [parameters]}]
@@ -436,8 +433,7 @@
 
 (defn add-required-security-groups
   [{:keys [parameters]}]
-  (let [{:keys [environment region]} parameters
-        state (:new-state parameters)
+  (let [state (:new-state parameters)
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [selected-security-groups]} deployment-params]
@@ -480,13 +476,15 @@
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar]
     (if-let [selected-load-balancers (seq (:selected-load-balancers deployment-params))]
-      (do
+      (try
         (log/write "Verifying specified load balancers exist.")
         (let [found-load-balancers (aws/load-balancers-with-names environment region selected-load-balancers)]
-          (if (= (count found-load-balancers) (count selected-load-balancers))
+          (if (= (count (util/remove-nil-values found-load-balancers)) (count selected-load-balancers))
             (success parameters)
             (error-with (ex-info "One or more load balancers could not be found." {:type ::missing-load-balancers
-                                                                                   :load-balancers (filter (fn [[_ v]] (nil? v)) found-load-balancers)})))))
+                                                                                   :load-balancers (filter (fn [[_ v]] (nil? v)) found-load-balancers)}))))
+        (catch Exception e
+          (error-with e)))
       (success parameters))))
 
 (defn check-for-deleted-load-balancers
@@ -529,16 +527,14 @@
 
 (defn populate-vpc-zone-identifier
   [{:keys [parameters]}]
-  (let [{:keys [environment region]} parameters
-        state (:new-state parameters)
+  (let [state (:new-state parameters)
         {:keys [selected-subnets]} state]
     (log/write "Populating VPC zone identifier.")
     (success (assoc-in parameters [:new-state :vpc-zone-identifier] (str/join "," selected-subnets)))))
 
 (defn populate-termination-policies
   [{:keys [parameters]}]
-  (let [{:keys [region]} parameters
-        state (:new-state parameters)
+  (let [state (:new-state parameters)
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [termination-policy]} deployment-params]

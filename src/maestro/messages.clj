@@ -41,8 +41,8 @@
 
 (defn ensure-task
   [{:keys [attempt message] :as details}]
-  (let [{:keys [action]} message]
-    (when (= 1 attempt)
+  (when (= 1 attempt)
+    (let [{:keys [action]} message]
       (es/create-task *task-id* *deployment-id* {:action action
                                                  :sequence (actions/sequence-number action)
                                                  :start (time/now)
@@ -52,8 +52,10 @@
 (defn perform-action
   [action-fn details]
   (try
-    (let [result (action-fn (rewrap details))]
-      (assoc details :result result))
+    (let [rewrapped (rewrap details)]
+      (if-let [result (action-fn rewrapped)]
+        (assoc details :result result)
+        (assoc details :result (success (:parameters rewrapped)))))
     (catch Exception e
       (assoc details :result (error-with e)))))
 
@@ -71,7 +73,7 @@
     (assoc details :next-action (actions/action-after action))))
 
 (defn update-task
-  [{:keys [message result] :as details}]
+  [{:keys [result] :as details}]
   (when (terminal? result)
     (es/update-task *task-id* *deployment-id* {:end (time/now)
                                                :status (task-status-for result)}))
