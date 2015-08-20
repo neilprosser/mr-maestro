@@ -118,8 +118,9 @@
                          (map :description)
                          (filter identity)
                          seq)
-        headers (-> [:name :instance-id :image-id :launch-time :numel-id :private-ip]
-                    (cond-> description (conj :description)))]
+        headers (cond-> [:name :instance-id :image-id :launch-time :numel-id :private-ip]
+                  description
+                  (conj :description))]
     (util/as-table headers instances)))
 
 (def auto-scaling-groups

@@ -16,4 +16,4 @@
 (defn prohibited-images
   [application region]
   (let [environments (environments/environments)]
-    (into (hash-set) (apply concat (map #(last-two-completed-deployment-images application (name %) region) (keys environments))))))
+    (into (hash-set) (mapcat #(last-two-completed-deployment-images application (name %) region) (keys environments)))))
