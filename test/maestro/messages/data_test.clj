@@ -228,6 +228,26 @@
       (provided
        (tyr/launch-data "environment" "application" "hash") =throws=> (ex-info "Busted" {})))
 
+(fact "that validating capacity fails if min is higher than max"
+      (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 2
+                                                                                   :max 1
+                                                                                   :min 2}}}}}) => (contains {:status :error}))
+
+(fact "that validating capacity fails if desired capacity is not between min and max"
+      (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 6
+                                                                                   :max 3
+                                                                                   :min 1}}}}}) => (contains {:status :error}))
+
+(fact "that validating capacity succeeds if all three capacity parameters are equal"
+      (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 1
+                                                                                    :max 1
+                                                                                    :min 1}}}}}) => (contains {:status :success}))
+
+(fact "that validating capacity succeeds with ascending capacity parameters"
+      (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 2
+                                                                                   :max 3
+                                                                                   :min 1}}}}}) => (contains {:status :success}))
+
 (fact "that getting Tyrant launch data works"
       (get-tyrant-launch-data {:parameters {:application "application"
                                             :environment "environment"

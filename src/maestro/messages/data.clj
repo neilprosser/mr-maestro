@@ -225,6 +225,21 @@
         (error-with (ex-info "Deployment params are invalid." {:type ::invalid-deployment-params})))
       (success parameters))))
 
+(defn validate-capacity
+  [{:keys [parameters]}]
+  (let [state (:new-state parameters)
+        {:keys [tyranitar]} state
+        {:keys [deployment-params]} tyranitar
+        {:keys [desired-capacity max min]} deployment-params]
+    (cond (< max min)
+          (error-with (ex-info "Maximum capacity is lower than minimum capacity." {:type ::invalid-capacity}))
+          (< desired-capacity min)
+          (error-with (ex-info "Desired capacity is lower than minimum capacity." {:type ::invalid-capacity}))
+          (> desired-capacity max)
+          (error-with (ex-info "Desired capacity is higher than maximum capacity." {:type ::invalid-capacity}))
+          :else
+          (success parameters))))
+
 (defn get-tyrant-launch-data
   [{:keys [parameters]}]
   (let [{:keys [application environment]} parameters

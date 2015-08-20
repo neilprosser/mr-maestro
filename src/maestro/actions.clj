@@ -20,6 +20,7 @@
    :maestro.messages.data/get-tyrant-application-config
    :maestro.messages.data/get-tyrant-deployment-params
    :maestro.messages.data/validate-deployment-params
+   :maestro.messages.data/validate-capacity
    :maestro.messages.data/get-tyrant-launch-data
    :maestro.messages.data/populate-previous-state
    :maestro.messages.data/populate-previous-tyrant-application-properties
