@@ -115,6 +115,10 @@
                "new-state.hash" "new-state.image-details"
                "previous-state.hash" "previous-state.image-details"]}))
 
+(defn- map-to-source-with-id
+  [hits]
+  (map (fn [h] (assoc (:_source h) :id (:_id h))) hits))
+
 (defn get-deployments
   [{:keys [application environment full? from region size start-from start-to status]}]
   (let [filters (-> []
@@ -126,7 +130,7 @@
         response (esd/search @conn index-name deployment-type :filter {:and {:filters filters}} :size (or size 10) :from (or from 0) :sort {:start "desc"} :_source (source-filter full?))]
     (->> response
          esrsp/hits-from
-         (map (fn [h] (assoc (:_source h) :id (:_id h)))))))
+         map-to-source-with-id)))
 
 (defn create-task
   [task-id deployment-id document]
@@ -150,7 +154,7 @@
   [deployment-id]
   (nil-if-no-deployment deployment-id (->> (esd/search @conn index-name task-type :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
                                            esrsp/hits-from
-                                           (map (fn [h] (assoc (:_source h) :id (:_id h))))
+                                           map-to-source-with-id
                                            (map #(dissoc % :sequence)))))
 
 (defn deployment-logs
@@ -158,67 +162,59 @@
   (nil-if-no-deployment deployment-id (let [filters (add-since-date-filter [(parent-filter deployment-type deployment-id)] :date since)]
                                         (->> (esd/search @conn index-name log-type :query (q/match-all) :filter {:and {:filters filters}} :sort {:date "asc"} :size 10000)
                                              esrsp/hits-from
-                                             (map (fn [h] (assoc (:_source h) :id (:_id h))))))))
+                                             map-to-source-with-id))))
+
+(defn- map-user-facets
+  [result]
+  (map (fn [f] {:user (:term f) :count (:count f)}) (get-in result [:facets :user :terms])))
 
 (defn deployments-by-user
   []
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})
-        facets (get-in result [:facets :user :terms])]
-    (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
+  (map-user-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:user (user-facet)})))
 
 (defn failed-deployments-by-user
   []
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (failed-status-filter)) :size 0 :facets {:user (user-facet)})
-        facets (get-in result [:facets :user :terms])]
-    (map (fn [f] {:user (:term f) :count (:count f)}) facets)))
+  (map-user-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (failed-status-filter)) :size 0 :facets {:user (user-facet)})))
+
+(defn- map-application-facets
+  [result]
+  (map (fn [f] {:application (:term f) :count (:count f)}) (get-in result [:facets :application :terms])))
 
 (defn deployments-by-user-by-application
   [user]
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (user-filter user)]}}) :size 0 :facets {:application (application-facet)})
-        facets (get-in result [:facets :application :terms])]
-    (map (fn [f] {:application (:term f) :count (:count f)}) facets)))
+  (map-application-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (user-filter user)]}}) :size 0 :facets {:application (application-facet)})))
 
 (defn deployments-by-application
   []
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:application (application-facet)})
-        facets (get-in result [:facets :application :terms])]
-    (map (fn [f] {:application (:term f) :count (:count f)}) facets)))
+  (map-application-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:application (application-facet)})))
+
+(defn- map-date-facets
+  [result]
+  (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) (get-in result [:facets :date :entries])))
 
 (defn deployments-by-year
   []
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet "year")})
-        facets (get-in result [:facets :date :entries])]
-    (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+  (map-date-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet "year")})))
 
 (defn deployments-by-month
   []
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet "month")})
-        facets (get-in result [:facets :date :entries])]
-    (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+  (map-date-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet "month")})))
 
 (defn deployments-by-day
   []
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet "day")})
-        facets (get-in result [:facets :date :entries])]
-    (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+  (map-date-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter (completed-status-filter)) :size 0 :facets {:date (start-date-facet "day")})))
 
 (defn deployments-in-environment-by-year
   [environment]
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "year")})
-        facets (get-in result [:facets :date :entries])]
-    (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+  (map-date-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "year")})))
 
 (defn deployments-in-environment-by-month
   [environment]
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "month")})
-        facets (get-in result [:facets :date :entries])]
-    (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+  (map-date-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "month")})))
 
 (defn deployments-in-environment-by-day
   [environment]
-  (let [result (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "day")})
-        facets (get-in result [:facets :date :entries])]
-    (map (fn [f] {:date (str (c/from-long (:time f))) :count (:count f)}) facets)))
+  (map-date-facets (esd/search @conn index-name deployment-type :query (q/filtered :query (q/match-all) :filter {:and {:filters [(completed-status-filter) (environment-filter environment)]}}) :size 0 :facets {:date (start-date-facet "day")})))
 
 (defn healthy?
   []
