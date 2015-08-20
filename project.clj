@@ -11,6 +11,7 @@
                  [clojurewerkz/elastisch "2.1.0"]
                  [com.cemerick/url "0.1.1"]
                  [com.ninjakoala/aws-instance-metadata "1.0.0"]
+                 [com.ninjakoala/lamarck "1.0.5"]
                  [com.ninjakoala/monotony "1.0"]
                  [com.ninjakoala/ttlr "1.0.1"]
                  [com.taoensso/carmine "2.11.1"]
