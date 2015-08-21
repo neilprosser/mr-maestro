@@ -139,7 +139,7 @@
             (if (seq instances)
               (do
                 (when (= 1 attempt)
-                  (log/write (format "Waiting for health of %s [%s]" (util/pluralise (count selected-load-balancers) "load balancer") (str/join ", " selected-load-balancers))))
+                  (log/write (format "Waiting for health of %s [%s]." (util/pluralise (count selected-load-balancers) "load balancer") (str/join ", " selected-load-balancers))))
                 (let [instance-ids (map :instance-id instances)
                       all-healthy? (every? true? (map (partial load-balancer-healthy? environment region auto-scaling-group-name instance-ids) selected-load-balancers))]
                   (if all-healthy?

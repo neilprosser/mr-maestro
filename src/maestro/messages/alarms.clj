@@ -56,10 +56,10 @@
           (doseq [{:keys [alarm-name] :as alarm} cloudwatch-alarms]
             (if-not (contains? existing-alarm-names alarm-name)
               (do
-                (log/write (format "Creating CloudWatch alarm %s" alarm-name))
+                (log/write (format "Creating CloudWatch alarm '%s'." alarm-name))
                 (apply cw/put-metric-alarm (cons (aws/config environment region) (util/to-params alarm))))
-              (log/write (format "CloudWatch alarm %s already exists" alarm-name)))))
-        (log/write "No CloudWatch alarms to add"))
+              (log/write (format "CloudWatch alarm '%s' already exists." alarm-name)))))
+        (log/write "No CloudWatch alarms to add."))
       (success parameters)
       (catch Exception e
         (error-with e)))))
@@ -74,7 +74,7 @@
         (let [old-alarms (alarms/alarms-for-auto-scaling-group environment region old-auto-scaling-group-name)
               old-alarm-names (map :alarm-name old-alarms)]
           (when-not (zero? (count old-alarm-names))
-            (log/write (format "Deleting existing CloudWatch alarms [%s]" (str/join ", " old-alarm-names)))
+            (log/write (format "Deleting existing CloudWatch alarms [%s]." (str/join ", " old-alarm-names)))
             (cw/delete-alarms (aws/config environment region)
                               :alarm-names (vec old-alarm-names))))
         (success parameters)

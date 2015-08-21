@@ -65,9 +65,8 @@
 (defn ensure-unblocked
   [{:keys [parameters]}]
   (if-let [blocked (get-in parameters [:new-state :onix :blocked])]
-    (error-with (ex-info
-                  (str "Application is blocked from deployment by user '" (:user blocked) "'. Reason: '" (:reason blocked) "'.")
-                  {:application (:application parameters)}))
+    (error-with (ex-info (format "Application is blocked from deployment by user '%s'. Reason: '%s'." (:user blocked) (:reason blocked))
+                         {:application (:application parameters)}))
     (success parameters)))
 
 (defn ensure-tyrant-hash
@@ -94,7 +93,7 @@
         (success parameters)
         (do
           (log/write (format "Hash '%s' does not exist for application '%s' in environment '%s'." hash application environment))
-          (error-with (ex-info "Hash does not exist for application and environment" {:type ::hash-verification-failed
+          (error-with (ex-info "Hash does not exist for application and environment." {:type ::hash-verification-failed
                                                                                       :application application
                                                                                       :environment environment
                                                                                       :hash hash}))))
@@ -348,7 +347,7 @@
     (log/write "Checking for embargo.")
     (if (and (seq embargo) (some #(= environment %) (str/split embargo #",")))
       (do
-        (log/write (format "Image '%s' is embargoed in '%s'" image-id environment))
+        (log/write (format "Image '%s' is embargoed in '%s'." image-id environment))
         (error-with (ex-info "Attempt to use embargoed image." {:type ::embargoed-image
                                                                 :image-id image-id
                                                                 :environment environment
@@ -366,7 +365,7 @@
     (log/write "Checking instance type compatibility.")
     (if (contains? allowed-instances instance-type)
       (success parameters)
-      (error-with (ex-info (format "Instance type %s is incompatible with virtualisation type %s" instance-type virt-type) {:type ::unknown-virtualisation-type})))))
+      (error-with (ex-info (format "Instance type '%s' is incompatible with virtualisation type '%s'" instance-type virt-type) {:type ::unknown-virtualisation-type})))))
 
 (defn check-contact-property
   [{:keys [parameters]}]
@@ -561,7 +560,7 @@
     (if state
       (let [{:keys [auto-scaling-group-name]} state]
         (try
-          (log/write "Populating previous scaling policies")
+          (log/write "Populating previous scaling policies.")
           (success (assoc-in parameters [:previous-state :scaling-policies] (map filter-policy (policies/policies-for-auto-scaling-group environment region auto-scaling-group-name))))
           (catch Exception e
             (error-with e))))
@@ -650,7 +649,7 @@
       (if (zero? (count missing))
         (success parameters)
         (do
-          (log/write (str "One or more policies were referenced in alarms but are not configured to be created: [" (str/join "," missing) "]"))
+          (log/write (format "One or more policies were referenced in alarms but are not configured to be created: [%s]" (str/join "," missing)))
           (error-with (ex-info "Referencing non-existent policies." {:type ::missing-policies})))))))
 
 (defn complete-deployment-preparation

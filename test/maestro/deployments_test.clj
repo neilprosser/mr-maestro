@@ -430,7 +430,7 @@
        (es/deployment "id") => ..deployment..
        (es/deployment-tasks "id") => ..tasks..
        (actions/resume-action ..tasks..) => ..action..
-       (log/write* "id" "Resuming deployment") => anything
+       (log/write* "id" "Resuming deployment.") => anything
        (redis/enqueue {:action ..action.. :parameters ..deployment..}) => ..enqueue-result..
        (redis/resume "application" "environment" "region") => ..resume-result..))
 
@@ -458,7 +458,7 @@
        (redis/in-progress? "application" "environment" "region") => "id"
        (es/deployment "id") => {:id "id" :status "failed"}
        (es/deployment-tasks "id") => [{:action :not-this-one} {:action :some-action}]
-       (log/write* "id" "Retrying deployment") => nil
+       (log/write* "id" "Retrying deployment.") => nil
        (es/upsert-deployment "id" {:id "id" :status "running"}) => ..upsert-result..
        (redis/enqueue {:action :some-action
                        :parameters {:id "id" :status "running"}}) => ..enqueue-result..))

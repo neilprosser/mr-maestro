@@ -164,7 +164,7 @@
   (when-let [id (redis/in-progress? application environment region)]
     (let [deployment (es/deployment id)
           action (actions/resume-action (es/deployment-tasks id))]
-      (log/write* id "Resuming deployment")
+      (log/write* id "Resuming deployment.")
       (redis/enqueue {:action action
                       :parameters deployment})
       (redis/resume application environment region))))
@@ -175,7 +175,7 @@
     (if-let [deployment (es/deployment id)]
       (if-let [action (:action (last (es/deployment-tasks id)))]
         (let [updated-deployment (assoc deployment :status "running")]
-          (log/write* id "Retrying deployment")
+          (log/write* id "Retrying deployment.")
           (es/upsert-deployment id updated-deployment)
           (redis/enqueue {:action action
                           :parameters updated-deployment}))
