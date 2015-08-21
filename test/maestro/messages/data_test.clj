@@ -233,10 +233,15 @@
                                                                                    :max 1
                                                                                    :min 2}}}}}) => (contains {:status :error}))
 
-(fact "that validating capacity fails if desired capacity is not between min and max"
+(fact "that validating capacity fails if desired capacity is above max"
       (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 6
                                                                                    :max 3
                                                                                    :min 1}}}}}) => (contains {:status :error}))
+
+(fact "that validating capacity fails if desired capacity is below min"
+      (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 1
+                                                                                   :max 3
+                                                                                   :min 2}}}}}) => (contains {:status :error}))
 
 (fact "that validating capacity succeeds if all three capacity parameters are equal"
       (validate-capacity {:parameters {:new-state {:tyranitar {:deployment-params {:desired-capacity 1
