@@ -80,7 +80,7 @@
                                    :region "region"})
        => nil))
 
-(fact "that waiting for instances to be healthy isn't a retryable task when it isn't failed"
+(fact "that a valid task isn't retryable task when it isn't failed"
       (stopped-on-retryable-task? {:application "application"
                                    :environment "environment"
                                    :region "region"})
@@ -96,6 +96,38 @@
            {:action :maestro.messages.health/wait-for-instances-to-be-healthy
             :status "running"}]))
 
+(fact "that waiting for instances to exist is a retryable task when it has failed"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => truthy
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-this-one
+            :status "completed"}
+           {:action :maestro.messages.asg/wait-for-instances-to-exist
+            :status "failed"}]))
+
+(fact "that waiting for instances to be in service is a retryable task when it has failed"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => truthy
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-this-one
+            :status "completed"}
+           {:action :maestro.messages.asg/wait-for-instances-to-be-in-service
+            :status "failed"}]))
+
 (fact "that waiting for instances to be healthy is a retryable task when it has failed"
       (stopped-on-retryable-task? {:application "application"
                                    :environment "environment"
@@ -110,6 +142,38 @@
        => [{:action :not-this-one
             :status "completed"}
            {:action :maestro.messages.health/wait-for-instances-to-be-healthy
+            :status "failed"}]))
+
+(fact "that waiting for load balancers to be healthy is a retryable task when it has failed"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => truthy
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-this-one
+            :status "completed"}
+           {:action :maestro.messages.health/wait-for-load-balancers-to-be-healthy
+            :status "failed"}]))
+
+(fact "that waiting for the old ASG to be deleted is a retryable task when it has failed"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => truthy
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-this-one
+            :status "completed"}
+           {:action :maestro.messages.asg/wait-for-old-auto-scaling-group-deletion
             :status "failed"}]))
 
 (fact "that another action isn't a retryable task"

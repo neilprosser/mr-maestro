@@ -1,5 +1,6 @@
 (ns maestro.deployments
   (:require [clj-time.core :as time]
+            [clojure.string :as str]
             [maestro
              [actions :as actions]
              [elasticsearch :as es]
@@ -7,8 +8,19 @@
              [redis :as redis]]))
 
 (def ^:private retryable-tasks
-  #{:maestro.messages.health/wait-for-instances-to-be-healthy
-    :maestro.messages.health/wait-for-load-balancers-to-be-healthy})
+  #{:maestro.messages.asg/wait-for-instances-to-exist
+    :maestro.messages.asg/wait-for-instances-to-be-in-service
+    :maestro.messages.health/wait-for-instances-to-be-healthy
+    :maestro.messages.health/wait-for-load-balancers-to-be-healthy
+    :maestro.messages.asg/wait-for-old-auto-scaling-group-deletion})
+
+(defn- validate-retryable-tasks
+  []
+  (let [difference (clojure.set/difference retryable-tasks (set @#'maestro.actions/action-ordering))]
+    (when-not (zero? (count difference))
+      (throw (RuntimeException. (format "Unknown action(s): %s" (str/join "," difference)))))))
+
+(validate-retryable-tasks)
 
 (defn locked?
   []
