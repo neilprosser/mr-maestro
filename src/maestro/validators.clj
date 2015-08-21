@@ -186,7 +186,8 @@
   {:ami [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
    :application v/required
    :environment [v/required known-environment?]
-   :message v/required})
+   :message v/required
+   :user v/required})
 
 (def deployment-validators
   "The validators we should use to validate deployment parameters."

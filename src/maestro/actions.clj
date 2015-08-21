@@ -125,7 +125,7 @@
 (defn resume-action
   [tasks]
   (let [last-task (last tasks)
-        last-action (keyword (:action last-task))]
+        last-action (:action last-task)]
     (if (= "running" (:status last-task))
       last-action
       (action-after last-action))))

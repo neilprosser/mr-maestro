@@ -138,6 +138,58 @@
       (provided
        (esd/search anything "maestro" "deployment" :filter {:and {:filters [{:term {:application "application"}} {:term {:status "status"}} {:range {:start {:gte "start-from"}}}]}} :size 10 :from 0 :sort {:start "desc"} :_source {:include ["application" "end" "environment" "message" "phase" "region" "start" "status" "user" "new-state.hash" "new-state.image-details" "previous-state.hash" "previous-state.image-details"]}) => {:hits {:hits [{:_id "id" :_source {:some "field"}}]}}))
 
+(fact "that getting the last completed deployment works when one exists"
+      (last-completed-deployment {:application "application"
+                                  :environment "environment"
+                                  :region "region"})
+      => {:id "id" :some "field"}
+      (provided
+       (get-deployments {:application "application"
+                         :environment "environment"
+                         :from 0
+                         :region "region"
+                         :size 1
+                         :status "completed"}) => [{:id "id" :some "field"}]))
+
+(fact "that getting the last completed deployment gives nil when nothing exists"
+      (last-completed-deployment {:application "application"
+                                  :environment "environment"
+                                  :region "region"})
+      => nil
+      (provided
+       (get-deployments {:application "application"
+                         :environment "environment"
+                         :from 0
+                         :region "region"
+                         :size 1
+                         :status "completed"}) => []))
+
+(fact "that getting the last failed deployment works when one exists"
+      (last-failed-deployment {:application "application"
+                               :environment "environment"
+                               :region "region"})
+      => {:id "id" :some "field"}
+      (provided
+       (get-deployments {:application "application"
+                         :environment "environment"
+                         :from 0
+                         :region "region"
+                         :size 1
+                         :status "failed"}) => [{:id "id" :some "field"}]))
+
+(fact "that getting the last failed deployment gives nil when nothing exists"
+      (last-failed-deployment {:application "application"
+                               :environment "environment"
+                               :region "region"})
+      => nil
+      (provided
+       (get-deployments {:application "application"
+                         :environment "environment"
+                         :from 0
+                         :region "region"
+                         :size 1
+                         :status "failed"}) => []))
+
 (fact "that creating a task removes the ID from the document"
       (create-task "task-id" "deployment-id" {:id "document-id" :some "field"})
       => ..put-result..
@@ -172,9 +224,9 @@
 
 (fact "that getting deployment tasks includes the ID and removes the sequence from the hit when there are hits and doesn't ask for the deployment"
       (deployment-tasks "deployment-id")
-      => [{:id "task-id" :some "field"}]
+      => [{:id "task-id" :action :some-action}]
       (provided
-       (esd/search anything "maestro" "task" :query {:match_all {}} :filter (parent-filter "deployment" "deployment-id") :sort {:sequence "asc"} :size 10000) => {:hits {:hits [{:_id "task-id" :_source {:sequence 1 :some "field"}}]}}
+       (esd/search anything "maestro" "task" :query {:match_all {}} :filter (parent-filter "deployment" "deployment-id") :sort {:sequence "asc"} :size 10000) => {:hits {:hits [{:_id "task-id" :_source {:sequence 1 :action "some-action"}}]}}
        (deployment anything) => nil :times 0))
 
 (fact "that getting deployment logs returns nothing if the deployment doesn't exist"

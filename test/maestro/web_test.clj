@@ -59,13 +59,37 @@
        (id/healthy?) => true
        (redis/healthy?) => true))
 
-(fact "that our healthcheck gives 500 when something is sad"
+(fact "that our healthcheck gives 500 when environments are sad"
       (request :get "/healthcheck") => (contains {:status 500})
       (provided
        (environments/healthy?) => false
        (es/healthy?) => true
        (id/healthy?) => true
        (redis/healthy?) => true))
+
+(fact "that our healthcheck gives 500 when Elasticsearch is sad"
+      (request :get "/healthcheck") => (contains {:status 500})
+      (provided
+       (environments/healthy?) => true
+       (es/healthy?) => false
+       (id/healthy?) => true
+       (redis/healthy?) => true))
+
+(fact "that our healthcheck gives 500 when the instance metadata is sad"
+      (request :get "/healthcheck") => (contains {:status 500})
+      (provided
+       (environments/healthy?) => true
+       (es/healthy?) => true
+       (id/healthy?) => false
+       (redis/healthy?) => true))
+
+(fact "that our healthcheck gives 500 when Redis is sad"
+      (request :get "/healthcheck") => (contains {:status 500})
+      (provided
+       (environments/healthy?) => true
+       (es/healthy?) => true
+       (id/healthy?) => true
+       (redis/healthy?) => false))
 
 (fact "that we can retrieve the queue status"
       (request :get "/queue-status") => (contains {:body {:queue "status"}
@@ -330,6 +354,12 @@
       (provided
        (images/prohibited-images "application" "eu-west-1") => ["ami-1" "ami-2"]))
 
+(fact "that attempting to create an application while Maestro is locked gives 409"
+      (request :put "/applications/application")
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
+
 (fact "that creating an application with an illegal name returns 400"
       (request :put "/applications/my-application")
       => (contains {:status 400})
@@ -342,6 +372,16 @@
       (provided
        (deployments/locked?) => false
        (info/upsert-application anything "myapplication" anything) => {}))
+
+(fact "that attempting to deploy an application while Maestro is locked gives 409"
+      (request :post "/applications/application/environment/deploy" (json-body {:ami "ami"
+                                                                                :hash "hash"
+                                                                                :message "message"
+                                                                                :silent false
+                                                                                :user "user"}))
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
 
 (fact "that starting a deployment which is invalid gives a 400"
       (request :post "/applications/application/environment/deploy" (json-body {:ami "ami"
@@ -361,26 +401,34 @@
                     :user "user"}
                    v/deployment-request-validators) => ["busted"]))
 
-(fact "that starting a deployment without a user substitutes the default user"
-      (request :post "/applications/application/environment/deploy" (json-body {:ami "ami"
+(fact "that starting a deployment works"
+      (request :post "/applications/application/environment/deploy" (json-body {:ami "ami-00000000"
                                                                                 :hash "hash"
                                                                                 :message "message"
                                                                                 :silent false
-                                                                                :user nil}))
+                                                                                :user "user"}))
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
-       (b/validate anything v/deployment-request-validators) => []
+       (environments/environments) => {:environment {}}
        (util/generate-id) => "id"
        (deployments/begin {:application "application"
                            :environment "environment"
                            :id "id"
                            :message "message"
                            :new-state {:hash "hash"
-                                       :image-details {:id "ami"}}
+                                       :image-details {:id "ami-00000000"}}
                            :region "eu-west-1"
                            :silent false
-                           :user default-user}) => ..begin-result..))
+                           :user "user"}) => ..begin-result..))
+
+(fact "that attempting to undo a deployment while Maestro is locked gives a 409"
+      (request :post "/applications/application/environment/undo" (json-body {:message "message"
+                                                                              :silent false
+                                                                              :user "user"}))
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
 
 (fact "that undoing a deployment calls through to deployments"
       (request :post "/applications/application/environment/undo" (json-body {:message "message"
@@ -395,6 +443,14 @@
                           :region "eu-west-1"
                           :silent false
                           :user "user"}) => ..undo-result..))
+
+(fact "that attempting to redeploy an application while Maestro is locked gives a 409"
+      (request :post "/applications/application/environment/redeploy" (json-body {:message "message"
+                                                                                  :silent false
+                                                                                  :user "user"}))
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
 
 (fact "that redeploying an application calls through to deployments"
       (request :post "/applications/application/environment/redeploy" (json-body {:message "message"
@@ -411,6 +467,14 @@
                               :region "eu-west-1"
                               :silent false
                               :user "user"}) => ..redeploy-result..))
+
+(fact "that attempting to roll-back a deployment while Maestro is locked gives a 409"
+      (request :post "/applications/application/environment/rollback" (json-body {:message "message"
+                                                                                  :silent false
+                                                                                  :user "user"}))
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
 
 (fact "that rolling-back a deployment calls through to deployments"
       (request :post "/applications/application/environment/rollback" (json-body {:message "message"
@@ -455,6 +519,12 @@
        (deployments/pause-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/unregister-pause {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
 
+(fact "that attempting to resume a deployment while Maestro is locked gives a 409"
+      (request :post "/applications/application/environment/resume")
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
+
 (fact "that attempting to resume a deployment which isn't paused gives a 409"
       (request :post "/applications/application/environment/resume")
       => (contains {:status 409})
@@ -469,6 +539,27 @@
        (deployments/locked?) => false
        (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/resume {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that attempting to retry a deployment while Maestro is locked gives a 409"
+      (request :post "/applications/application/environment/retry")
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
+
+(fact "that attempting to retry a deployment which cannot be retried gives a 409"
+      (request :post "/applications/application/environment/retry")
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => false
+       (deployments/can-retry? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
+
+(fact "that attempting to retry a deployment which can be retried gives a 200"
+      (request :post "/applications/application/environment/retry")
+      => (contains {:status 200})
+      (provided
+       (deployments/locked?) => false
+       (deployments/can-retry? {:application "application" :environment "environment" :region "eu-west-1"}) => true
+       (deployments/retry {:application "application" :environment "environment" :region "eu-west-1"}) => ..retry-result..))
 
 (fact "that getting the list of environments works"
       (request :get "/environments")

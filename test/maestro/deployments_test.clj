@@ -69,6 +69,86 @@
       (provided
        (redis/in-progress) => ..in-progress..))
 
+(fact "that a deployment isn't stopped on a retryable task if there isn't a last failed deployment"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => falsey
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => nil))
+
+(fact "that waiting for instances to be healthy isn't a retryable task when it isn't failed"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => falsey
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-this-one
+            :status "completed"}
+           {:action :maestro.messages.health/wait-for-instances-to-be-healthy
+            :status "running"}]))
+
+(fact "that waiting for instances to be healthy is a retryable task when it has failed"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => truthy
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-this-one
+            :status "completed"}
+           {:action :maestro.messages.health/wait-for-instances-to-be-healthy
+            :status "failed"}]))
+
+(fact "that another action isn't a retryable task"
+      (stopped-on-retryable-task? {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+      => falsey
+      (provided
+       (es/last-failed-deployment {:application "application"
+                                   :environment "environment"
+                                   :region "region"})
+       => {:id "deployment-id"}
+       (es/deployment-tasks "deployment-id")
+       => [{:action :not-retryable
+            :status "failed"}]))
+
+(def can-retry-parameters
+  {:application "application"
+   :environment "environment"
+   :region "region"})
+
+(fact "that a deployment cannot be retried when nothing is in progress"
+      (can-retry? can-retry-parameters) => falsey
+      (provided
+       (in-progress? can-retry-parameters) => false))
+
+(fact "that a deployment cannot be retried when it is paused"
+      (can-retry? can-retry-parameters) => falsey
+      (provided
+       (in-progress? can-retry-parameters) => true
+       (paused? can-retry-parameters) => true))
+
+(fact "that a deployment cannot be retried when it isn't stopped on a retryable task"
+      (can-retry? can-retry-parameters) => falsey
+      (provided
+       (in-progress? can-retry-parameters) => true
+       (paused? can-retry-parameters) => false
+       (stopped-on-retryable-task? can-retry-parameters) => false))
+
 (def begin-params
   {:application "application"
    :environment "environment"
@@ -201,30 +281,24 @@
 (fact "that redeploying an application when no suitable completed deployment exists throws an exception"
       (redeploy redeploy-params) => (throws ExceptionInfo "No previous completed deployment could be found")
       (provided
-       (es/get-deployments {:application "application"
-                            :environment "environment"
-                            :from 0
-                            :region "region"
-                            :size 1
-                            :status "completed"}) => []))
+       (es/last-completed-deployment {:application "application"
+                                      :environment "environment"
+                                      :region "region"}) => nil))
 
 (fact "that redeploying an application with a suitable previous deployment does the right thing"
       (redeploy redeploy-params) => ..begin-result..
       (provided
-       (es/get-deployments {:application "application"
-                            :environment "environment"
-                            :from 0
-                            :region "region"
-                            :size 1
-                            :status "completed"})
-       => [{:application "application"
-            :environment "environment"
-            :id "old-id"
-            :new-state {:hash "old-hash"
-                        :image-details {:id "image"}}
-            :region "region"
-            :status "completed"
-            :user "original-user"}]
+       (es/last-completed-deployment {:application "application"
+                                      :environment "environment"
+                                      :region "region"})
+       => {:application "application"
+           :environment "environment"
+           :id "old-id"
+           :new-state {:hash "old-hash"
+                       :image-details {:id "image"}}
+           :region "region"
+           :status "completed"
+           :user "original-user"}
        (begin {:application "application"
                :environment "environment"
                :id "id"
@@ -245,31 +319,25 @@
 (fact "that rolling back a deployment when no suitable completed deployment exists throws an exception"
       (rollback rollback-params) => (throws ExceptionInfo "No previous completed deployment could be found")
       (provided
-       (es/get-deployments {:application "application"
-                            :environment "environment"
-                            :from 0
-                            :region "region"
-                            :size 1
-                            :status "completed"}) => []))
+       (es/last-completed-deployment {:application "application"
+                                      :environment "environment"
+                                      :region "region"}) => nil))
 
 (fact "that rolling back a deployment with a suitable previous deployment does the right thing"
       (rollback rollback-params) => ..begin-result..
       (provided
-       (es/get-deployments {:application "application"
-                            :environment "environment"
-                            :from 0
-                            :region "region"
-                            :size 1
-                            :status "completed"})
-       => [{:application "application"
-            :environment "environment"
-            :id "old-id"
-            :previous-state {:hash "hash"
-                             :image-details {:id "image"}}
-            :region "region"
-            :rollback true
-            :status "completed"
-            :user "original-user"}]
+       (es/last-completed-deployment {:application "application"
+                                      :environment "environment"
+                                      :region "region"})
+       => {:application "application"
+           :environment "environment"
+           :id "old-id"
+           :previous-state {:hash "hash"
+                            :image-details {:id "image"}}
+           :region "region"
+           :rollback true
+           :status "completed"
+           :user "original-user"}
        (begin {:application "application"
                :environment "environment"
                :id "id"
@@ -301,3 +369,32 @@
        (log/write* "id" "Resuming deployment") => anything
        (redis/enqueue {:action ..action.. :parameters ..deployment..}) => ..enqueue-result..
        (redis/resume "application" "environment" "region") => ..resume-result..))
+
+(fact "that retrying a deployment throws up when the deployment isn't in progress"
+      (retry {:application "application" :environment "environment" :region "region"}) => (throws ExceptionInfo "Deployment is not in progress")
+      (provided
+       (redis/in-progress? "application" "environment" "region") => nil))
+
+(fact "that retrying a deployment throws up whe the deployment cannot be found"
+      (retry {:application "application" :environment "environment" :region "region"}) => (throws ExceptionInfo "Deployment could not be found")
+      (provided
+       (redis/in-progress? "application" "environment" "region") => "id"
+       (es/deployment "id") => nil))
+
+(fact "that retrying a deployment throws up when we can't find the last task"
+      (retry {:application "application" :environment "environment" :region "region"}) => (throws ExceptionInfo "Unable to find last task")
+      (provided
+       (redis/in-progress? "application" "environment" "region") => "id"
+       (es/deployment "id") => {:id "id" :status "failed"}
+       (es/deployment-tasks "id") => []))
+
+(fact "that retrying a deployment kicks off the last task"
+      (retry {:application "application" :environment "environment" :region "region"}) => ..enqueue-result..
+      (provided
+       (redis/in-progress? "application" "environment" "region") => "id"
+       (es/deployment "id") => {:id "id" :status "failed"}
+       (es/deployment-tasks "id") => [{:action :not-this-one} {:action :some-action}]
+       (log/write* "id" "Retrying deployment") => nil
+       (es/upsert-deployment "id" {:id "id" :status "running"}) => ..upsert-result..
+       (redis/enqueue {:action :some-action
+                       :parameters {:id "id" :status "running"}}) => ..enqueue-result..))

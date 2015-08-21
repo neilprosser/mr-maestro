@@ -132,6 +132,24 @@
          esrsp/hits-from
          map-to-source-with-id)))
 
+(defn last-completed-deployment
+  [{:keys [application environment region]}]
+  (first (get-deployments {:application application
+                           :environment environment
+                           :from 0
+                           :region region
+                           :size 1
+                           :status "completed"})))
+
+(defn last-failed-deployment
+  [{:keys [application environment region]}]
+  (first (get-deployments {:application application
+                           :environment environment
+                           :from 0
+                           :region region
+                           :size 1
+                           :status "failed"})))
+
 (defn create-task
   [task-id deployment-id document]
   (esd/put @conn index-name task-type task-id (dissoc document :id) :parent deployment-id :refresh true))
@@ -155,7 +173,8 @@
   (nil-if-no-deployment deployment-id (->> (esd/search @conn index-name task-type :query (q/match-all) :filter (parent-filter deployment-type deployment-id) :sort {:sequence "asc"} :size 10000)
                                            esrsp/hits-from
                                            map-to-source-with-id
-                                           (map #(dissoc % :sequence)))))
+                                           (map #(dissoc % :sequence))
+                                           (map #(update-in % [:action] keyword)))))
 
 (defn deployment-logs
   [deployment-id since]

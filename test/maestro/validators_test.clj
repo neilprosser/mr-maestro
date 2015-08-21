@@ -268,7 +268,8 @@
   {:ami "ami-cdea1270"
    :application "application"
    :environment "environment"
-   :message "message"})
+   :message "message"
+   :user "user"})
 
 (fact "that our valid deployment request passes validation"
       (first (b/validate deployment-request deployment-request-validators)) => falsey
@@ -295,6 +296,11 @@
 
 (fact "that validating a deployment request spots that we need a message"
       (first (b/validate (dissoc deployment-request :message) deployment-request-validators)) => truthy
+      (provided
+       (environments/environments) => {:environment {}}))
+
+(fact "that validating a deployment request spots that we need a user"
+      (first (b/validate (dissoc deployment-request :user) deployment-request-validators)) => truthy
       (provided
        (environments/environments) => {:environment {}}))
 

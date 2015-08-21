@@ -17,9 +17,9 @@
       (sequence-number :maestro.messages.health/wait-for-load-balancers-to-be-healthy) => 55)
 
 (fact "that getting the resume action for a running task gives the action of that task"
-      (resume-action [{} {:action "action" :status "running"}]) => :action)
+      (resume-action [{} {:action :action :status "running"}]) => :action)
 
 (fact "that getting the resume action for a complete task gives the next action"
-      (resume-action [{:action "action" :status "completed"}]) => :next-action
+      (resume-action [{:action :action :status "completed"}]) => :next-action
       (provided
        (action-after :action) => :next-action))

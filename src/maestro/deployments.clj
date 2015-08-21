@@ -6,6 +6,10 @@
              [log :as log]
              [redis :as redis]]))
 
+(def ^:private retryable-tasks
+  #{:maestro.messages.health/wait-for-instances-to-be-healthy
+    :maestro.messages.health/wait-for-load-balancers-to-be-healthy})
+
 (defn locked?
   []
   (redis/locked?))
@@ -50,6 +54,21 @@
   []
   (redis/in-progress))
 
+(defn stopped-on-retryable-task?
+  [{:keys [application environment region]}]
+  (when-let [{:keys [id]} (es/last-failed-deployment {:application application
+                                                      :environment environment
+                                                      :region region})]
+    (when-let [{:keys [action status]} (last (es/deployment-tasks id))]
+      (and (contains? retryable-tasks action)
+           (= status "failed")))))
+
+(defn can-retry?
+    [{:keys [application environment region] :as parameters}]
+    (and (in-progress? parameters)
+         (not (paused? parameters))
+         (stopped-on-retryable-task? parameters)))
+
 (defn begin
   [{:keys [application environment id region] :as deployment}]
   (if (redis/begin-deployment deployment)
@@ -91,12 +110,9 @@
 
 (defn redeploy
   [{:keys [application environment id message region user]}]
-  (if-let [previous (first (es/get-deployments {:application application
-                                                :environment environment
-                                                :from 0
-                                                :region region
-                                                :size 1
-                                                :status "completed"}))]
+  (if-let [previous (es/last-completed-deployment {:application application
+                                                   :environment environment
+                                                   :region region})]
     (begin {:application application
             :environment environment
             :id id
@@ -110,12 +126,9 @@
 
 (defn rollback
   [{:keys [application environment id message region user]}]
-  (if-let [previous (first (es/get-deployments {:application application
-                                                :environment environment
-                                                :from 0
-                                                :region region
-                                                :size 1
-                                                :status "completed"}))]
+  (if-let [previous (es/last-completed-deployment {:application application
+                                                   :environment environment
+                                                   :region region})]
     (begin {:application application
             :environment environment
             :id id
@@ -143,3 +156,22 @@
       (redis/enqueue {:action action
                       :parameters deployment})
       (redis/resume application environment region))))
+
+(defn retry
+  [{:keys [application environment region] :as parameters}]
+  (if-let [id (in-progress? parameters)]
+    (if-let [deployment (es/deployment id)]
+      (if-let [action (:action (last (es/deployment-tasks id)))]
+        (let [updated-deployment (assoc deployment :status "running")]
+          (log/write* id "Retrying deployment")
+          (es/upsert-deployment id updated-deployment)
+          (redis/enqueue {:action action
+                          :parameters updated-deployment}))
+        (throw (ex-info "Unable to find last task" {:type ::last-task-not-found
+                                                    :deployment-id id})))
+      (throw (ex-info "Deployment could not be found" {:type ::deployment-not-found
+                                                       :id id})))
+    (throw (ex-info "Deployment is not in progress" {:type ::deployment-not-in-progress
+                                                     :application application
+                                                     :environment environment
+                                                     :region region}))))

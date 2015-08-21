@@ -50,10 +50,6 @@
   "The default region we'll deploy to (temporarily)."
   "eu-west-1")
 
-(def default-user
-  "The default user we'll say deployments came from (if one isn't provided)."
-  "maestro")
-
 (def application-regex
   "The regular expression which we'll use to determine whether an application
    name is valid."
@@ -219,7 +215,7 @@
                                                :image-details {:id ami}}
                                    :region default-region
                                    :silent (true? silent)
-                                   :user (or user default-user)})
+                                   :user user})
                (response {:id id}))))))
 
   (POST "/applications/:application/:environment/undo"
@@ -293,6 +289,18 @@
                (deployments/resume parameters)
                (response "Deployment resumed" "text/plain" 200))
              (response "No deployment is paused" "text/plain" 409)))))
+
+  (POST "/applications/:application/:environment/retry"
+        [application environment]
+        (guarded
+         (let [parameters {:application application
+                           :environment environment
+                           :region default-region}]
+           (if (deployments/can-retry? parameters)
+             (do
+               (deployments/retry parameters)
+               (response "Deployment retried" "text/plain" 200))
+             (response "Deployment cannot be retried at this stage" "text/plain" 409)))))
 
   (GET "/environments"
        []
