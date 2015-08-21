@@ -187,6 +187,7 @@
         {:keys [tyranitar]} state
         {:keys [deployment-params]} tyranitar
         {:keys [desired-capacity max min]} deployment-params]
+    (log/write "Validating capacity.")
     (cond (< max min)
           (error-with (ex-info "Maximum capacity is lower than minimum capacity." {:type ::invalid-capacity}))
           (< desired-capacity min)
@@ -344,6 +345,7 @@
         image-id (get-in state [:image-details :id])
         {:keys [tags]} image-details
         {:keys [embargo]} tags]
+    (log/write "Checking for embargo.")
     (if (and (seq embargo) (some #(= environment %) (str/split embargo #",")))
       (do
         (log/write (format "Image '%s' is embargoed in '%s'" image-id environment))
@@ -361,6 +363,7 @@
         {:keys [deployment-params]} tyranitar
         {:keys [instance-type]} deployment-params
         allowed-instances (v/allowed-instances virt-type)]
+    (log/write "Checking instance type compatibility.")
     (if (contains? allowed-instances instance-type)
       (success parameters)
       (error-with (ex-info (format "Instance type %s is incompatible with virtualisation type %s" instance-type virt-type) {:type ::unknown-virtualisation-type})))))
