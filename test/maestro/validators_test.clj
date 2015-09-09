@@ -360,3 +360,47 @@
       (first (b/validate (dissoc deployment :user) deployment-validators)) => truthy
       (provided
        (environments/environments) => {:environment {}}))
+
+(def resize
+  {:desired-capacity 2
+   :max 3
+   :min 1})
+
+(fact "that validating a resize request spots that we need a desired-capacity"
+      (first (b/validate (dissoc resize :desired-capacity) resize-request-validators)) => truthy)
+
+(fact "that validating a resize request spots when desired-capacity isn't a number"
+      (first (b/validate (assoc resize :desired-capacity "a") resize-request-validators)) => truthy)
+
+(fact "that validating a resize request spots when desired-capacity is negative"
+      (first (b/validate (assoc resize :desired-capacity -1) resize-request-validators)) => truthy)
+
+(fact "that validating a resize request lets desired-capacity have a value of 0"
+      (first (b/validate (assoc resize :desired-capacity 0) resize-request-validators)) => falsey)
+
+(fact "that validating a resize request spots that we need a max"
+      (first (b/validate (dissoc resize :max) resize-request-validators)) => truthy)
+
+(fact "that validating a resize request spots when max isn't a number"
+      (first (b/validate (assoc resize :max "a") resize-request-validators)) => truthy)
+
+(fact "that validating a resize request spots when max is negative"
+      (first (b/validate (assoc resize :max -1) resize-request-validators)) => truthy)
+
+(fact "that validating a resize request lets max have a value of 0"
+      (first (b/validate (assoc resize :max 0) resize-request-validators)) => falsey)
+
+(fact "that validating a resize request spots that we need a min"
+      (first (b/validate (dissoc resize :min) resize-request-validators)) => truthy)
+
+(fact "that validating a resize request spots when min isn't a number"
+      (first (b/validate (assoc resize :min "a") resize-request-validators)) => truthy)
+
+(fact "that validating a resize request spots when min is negative"
+      (first (b/validate (assoc resize :min -1) resize-request-validators)) => truthy)
+
+(fact "that validating a resize request lets min have a value of 0"
+      (first (b/validate (assoc resize :min 0) resize-request-validators)) => falsey)
+
+(fact "that validating a valid resize request is all good"
+      (first (b/validate resize resize-request-validators)) => falsey)

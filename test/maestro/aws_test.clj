@@ -244,3 +244,25 @@
       => [..instance-one.. ..instance-two..]
       (provided
        (ec2/describe-instances anything :instance-ids [..id-one.. ..id-two..]) => {:reservations [{:instances [..instance-one..]} {:instances [..instance-two..]}]}))
+
+(fact "that resizing the last auto-scaling group does nothing when there is no last group"
+      (resize-last-auto-scaling-group "environment" "application" "region" ..desired-capacity.. ..max.. ..min..)
+      => nil
+      (provided
+       (last-application-auto-scaling-group "application" "environment" "region") => nil
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name anything
+                                       :desired-capacity anything
+                                       :max anything
+                                       :min anything) => nil :times 0))
+
+(fact "that resizing the last auto-scaling group works when there is a last group"
+      (resize-last-auto-scaling-group "environment" "application" "region" ..desired-capacity.. ..max.. ..min..)
+      => ..resize-result..
+      (provided
+       (last-application-auto-scaling-group "application" "environment" "region") => {:auto-scaling-group-name "last-asg"}
+       (auto/update-auto-scaling-group anything
+                                       :auto-scaling-group-name "last-asg"
+                                       :desired-capacity ..desired-capacity..
+                                       :max ..max..
+                                       :min ..min..) => ..resize-result..))

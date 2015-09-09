@@ -561,6 +561,31 @@
        (deployments/can-retry? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/retry {:application "application" :environment "environment" :region "eu-west-1"}) => ..retry-result..))
 
+(fact "that attempting to resize an auto-scaling group while Maestro is locks gives a 409"
+      (request :post "/applications/application/environment/resize" (json-body {:desiredCapacity 2
+                                                                                :max 2
+                                                                                :min 2}))
+      => (contains {:status 409})
+      (provided
+       (deployments/locked?) => true))
+
+(fact "that attempting to resize an auto-scaling group using non-integers gives a 400"
+      (request :post "/applications/application/environment/resize" (json-body {:desiredCapacity "a"
+                                                                                :max 3
+                                                                                :min 1}))
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false))
+
+(fact "that attempting to resize an auto-scaling group does what it should"
+      (request :post "/applications/application/environment/resize" (json-body {:desiredCapacity 2
+                                                                                :max 3
+                                                                                :min 1}))
+      => (contains {:status 201})
+      (provided
+       (deployments/locked?) => false
+       (aws/resize-last-auto-scaling-group "environment" "application" "eu-west-1" 2 3 1) => ..resize-result..))
+
 (fact "that getting the list of environments works"
       (request :get "/environments")
       => (contains {:body {:environments ["env1" "env2"]}

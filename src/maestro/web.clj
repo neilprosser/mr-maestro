@@ -302,6 +302,21 @@
                (response "Deployment retried" "text/plain" 200))
              (response "Deployment cannot be retried at this stage" "text/plain" 409)))))
 
+  (POST "/applications/:application/:environment/resize"
+        [application environment desiredCapacity max min]
+        (guarded
+         (let [result (b/validate
+                       {:desired-capacity desiredCapacity
+                        :max max
+                        :min min}
+                       v/resize-request-validators)]
+           (if-let [details (first result)]
+             (response {:message "Resize request validation failed"
+                        :details details} nil 400)
+             (do
+               (aws/resize-last-auto-scaling-group environment application default-region desiredCapacity max min)
+               (response "Resize requested" "text/plain" 201))))))
+
   (GET "/environments"
        []
        (response {:environments (apply sorted-set (keys (environments/environments)))}))

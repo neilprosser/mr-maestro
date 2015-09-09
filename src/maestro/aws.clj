@@ -229,3 +229,12 @@
   [environment region instance-ids]
   (flatten (map :instances (flatten (:reservations (ec2/describe-instances (config environment region)
                                                                            :instance-ids (vec instance-ids)))))))
+
+(defn resize-last-auto-scaling-group
+  [environment application region desired-capacity max min]
+  (when-let [last-asg (last-application-auto-scaling-group application environment region)]
+    (auto/update-auto-scaling-group (config environment region)
+                                    :auto-scaling-group-name (:auto-scaling-group-name last-asg)
+                                    :desired-capacity desired-capacity
+                                    :max max
+                                    :min min)))

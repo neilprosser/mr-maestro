@@ -198,3 +198,9 @@
    [:new-state :image-details :id] [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
    :region v/required
    :user v/required})
+
+(def resize-request-validators
+  "The validators we should use to validate resize requests"
+  {:desired-capacity [v/required zero-or-more?]
+   :max [v/required zero-or-more?]
+   :min [v/required zero-or-more?]})
