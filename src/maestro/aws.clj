@@ -236,5 +236,5 @@
     (auto/update-auto-scaling-group (config environment region)
                                     :auto-scaling-group-name (:auto-scaling-group-name last-asg)
                                     :desired-capacity desired-capacity
-                                    :max max
-                                    :min min)))
+                                    :max-size max
+                                    :min-size min)))

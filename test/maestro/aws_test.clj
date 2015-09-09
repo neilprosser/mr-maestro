@@ -253,8 +253,8 @@
        (auto/update-auto-scaling-group anything
                                        :auto-scaling-group-name anything
                                        :desired-capacity anything
-                                       :max anything
-                                       :min anything) => nil :times 0))
+                                       :max-size anything
+                                       :min-size anything) => nil :times 0))
 
 (fact "that resizing the last auto-scaling group works when there is a last group"
       (resize-last-auto-scaling-group "environment" "application" "region" ..desired-capacity.. ..max.. ..min..)
@@ -264,5 +264,5 @@
        (auto/update-auto-scaling-group anything
                                        :auto-scaling-group-name "last-asg"
                                        :desired-capacity ..desired-capacity..
-                                       :max ..max..
-                                       :min ..min..) => ..resize-result..))
+                                       :max-size ..max..
+                                       :min-size ..min..) => ..resize-result..))
