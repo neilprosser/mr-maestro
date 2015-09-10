@@ -11,6 +11,12 @@
              [util :as util]]
             [ninjakoala.lamarck :as lam]))
 
+(def application-regex
+  #"[a-z]+")
+
+(def hash-regex
+  #"[0-9a-f]{40}")
+
 (def healthcheck-types
   #{"EC2" "ELB" "EC2+healthy"})
 
@@ -37,6 +43,9 @@
         "hi1.4xlarge"
         "hs1.8xlarge"))
 
+(def regions
+  (into (hash-set) (map #(.getName %) (com.amazonaws.regions.Regions/values))))
+
 (defn allowed-instances
   [virtualisation-type]
   (cond (= (name virtualisation-type) "para") para-instance-types
@@ -48,6 +57,9 @@
 
 (def availability-zones
   #{"a" "b" "c"})
+
+(def statuses
+  #{"completed" "failed" "invalid" "running"})
 
 (def subnet-purposes
   #{"internal" "mgmt" "publiceip" "publicnat"})
@@ -73,6 +85,13 @@
       false)
     true))
 
+(v/defvalidator valid-application?
+  {:default-message-format "%s must be a valid application"}
+  [input]
+  (if input
+    (re-matches application-regex input)
+    true))
+
 (v/defvalidator valid-date?
   {:default-message-format "%s must be a valid date"}
   [input]
@@ -89,6 +108,24 @@
   (if input
     (or (= (str input) "true")
         (= (str input) "false"))
+    true))
+
+(v/defvalidator valid-hash?
+  {:default-message-format "%s must be a valid Git hash"}
+  [input]
+  (if input
+    (re-matches hash-regex input)
+    true))
+
+(v/defvalidator valid-uuid?
+  {:default-message-format "%s must be a valid UUID"}
+  [input]
+  (if input
+    (try
+      (java.util.UUID/fromString input)
+      true
+      (catch Exception _
+        false))
     true))
 
 (v/defvalidator valid-healthcheck-type?
@@ -120,6 +157,13 @@
       (valid-availability-zone? input))
     true))
 
+(v/defvalidator valid-region?
+  {:default-message-format "%s must be a valid region"}
+  [input]
+  (if input
+    (contains? regions input)
+    true))
+
 (v/defvalidator valid-subnet-purpose?
   {:default-message-format "%s must be a known purpose"}
   [input]
@@ -137,7 +181,16 @@
 (v/defvalidator known-environment?
   {:default-message-format "environment %s is not known"}
   [input]
-  (contains? (apply hash-set (keys (environments/environments))) (keyword input)))
+  (if input
+    (contains? (apply hash-set (keys (environments/environments))) (keyword input))
+    true))
+
+(v/defvalidator known-status?
+  {:default-message-format "status %s is not known"}
+  [input]
+  (if input
+    (contains? statuses input)
+    true))
 
 (def scheduled-action-validators
   {:cron v/required
@@ -150,17 +203,30 @@
   [input]
   (nil? (seq (remove nil? (map (fn [[name description]] (first (b/validate description scheduled-action-validators))) input)))))
 
-(def query-param-validators
-  "The validators we should use to validate query parameters."
-  {:from zero-or-more?
+(def application-name-validators
+  "The validators we should use to validate an application name"
+  {:application [v/required valid-application?]})
+
+(def deployments-param-validators
+  "The validators we should use to validate deployments query parameters."
+  {:application valid-application?
+   :environment known-environment?
+   :from zero-or-more?
    :full valid-boolean?
+   :region valid-region?
    :size positive?
    :start-from valid-date?
-   :start-to valid-date?})
+   :start-to valid-date?
+   :status known-status?})
 
-(def log-param-validators
+(def deployment-id-validators
+  "The validators we should use to validate a deployment-id"
+  {:id [v/required valid-uuid?]})
+
+(def deployment-log-validators
   "The validators we should use to validate deployment log parameters."
-  {:since valid-date?})
+  {:id [v/required valid-uuid?]
+   :since valid-date?})
 
 (def deployment-params-validators
   "The validators we should use to validate Tyranitar deployment parameters."
@@ -186,6 +252,7 @@
   {:ami [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
    :application v/required
    :environment [v/required known-environment?]
+   :hash valid-hash?
    :message v/required
    :user v/required})
 
@@ -204,3 +271,34 @@
   {:desired-capacity [v/required zero-or-more?]
    :max [v/required zero-or-more?]
    :min [v/required zero-or-more?]})
+
+(def undo-request-validators
+  "The validators we should use to validate undo requests"
+  {:application [v/required valid-application?]
+   :environment [v/required known-environment?]
+   :message v/required
+   :user v/required})
+
+(def redeploy-request-validators
+  "The validators we should use to validate redeploy requests"
+  {:application [v/required valid-application?]
+   :environment [v/required known-environment?]
+   :message v/required
+   :user v/required})
+
+(def rollback-request-validators
+  "The validators we should use to validate rollback requests"
+  {:application [v/required valid-application?]
+   :environment [v/required known-environment?]
+   :message v/required
+   :user v/required})
+
+(def pause-request-validators
+  "The validators we should use to validate pause requests"
+  {:application [v/required valid-application?]
+   :environment [v/required known-environment?]
+   :region [v/required valid-region?]})
+
+(def environment-stats-validators
+  "The validators we should use to validate per-environment stats requests"
+  {:environment [v/required known-environment?]})

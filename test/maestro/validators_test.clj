@@ -78,6 +78,18 @@
       (positive? "a")
       => falsey)
 
+(fact "that `valid-application?` is happy with nil"
+      (valid-application? nil)
+      => truthy)
+
+(fact "that `valid-application? is happy with all letters"
+      (valid-application? "application")
+      => truthy)
+
+(fact "that `valid-application?` is unhappy about something with characters which aren't letters"
+      (valid-application? "hello-world")
+      => falsey)
+
 (fact "that `valid-date?` is happy with nil input"
       (valid-date? nil)
       => truthy)
@@ -105,6 +117,30 @@
 (fact "that `valid-boolean?` is unhappy with garbage"
       (valid-boolean? "tfaafse")
       => falsey)
+
+(fact "that `valid-hash?` is happy with nil"
+      (valid-hash? nil)
+      => truthy)
+
+(fact "that `valid-hash?` is unhappy with something invalid"
+      (valid-hash? "not a hash")
+      => falsey)
+
+(fact "that `valid-hash?` is happy with a valid hash"
+      (valid-hash? "db0adbdcf61e4237e1d116834e185aa06cb682ff")
+      => truthy)
+
+(fact "that `valid-uuid?` is happy with nil"
+      (valid-uuid? nil)
+      => truthy)
+
+(fact "that `valid-uuid?` is unhappy with something invalid"
+      (valid-uuid? "hello")
+      => falsey)
+
+(fact "that `valid-uuid?` is happy with a valid UUID"
+      (valid-uuid? "a7ceb675-dd1c-4e71-bde9-0bc44df714bf")
+      => truthy)
 
 (fact "that `valid-healthcheck-type?` is happy with `EC2`"
       (valid-healthcheck-type? "EC2")
@@ -166,6 +202,18 @@
       (valid-availability-zones? ["a" "fkajdks"])
       => falsey)
 
+(fact "that `valid-region?` is happy with `nil`"
+      (valid-region? nil)
+      => truthy)
+
+(fact "that `valid-region?` is unhappy about an unknown region"
+      (valid-region? "unknown")
+      => falsey)
+
+(fact "that `valid-region?` is happy with a known region"
+      (valid-region? "eu-west-1")
+      => truthy)
+
 (fact "that `valid-subnet-purpose?` is happy with `nil`"
       (valid-subnet-purpose? nil)
       => truthy)
@@ -189,6 +237,34 @@
 (fact "that `valid-termination-policy?` is unhappy with garbage"
       (valid-termination-policy? "askjlkasjdks")
       => falsey)
+
+(fact "that `known-environment?` is happy with nil"
+      (known-environment? nil)
+      => truthy)
+
+(fact "that `known-environment?` is unhappy with something unknown"
+      (known-environment? "unknown")
+      => falsey
+      (provided
+       (environments/environments) => {}))
+
+(fact "that `known-environment?` is happy with something known"
+      (known-environment? "known")
+      => truthy
+      (provided
+       (environments/environments) => {:known {}}))
+
+(fact "that `known-status?` is happy with nil"
+      (known-status? nil)
+      => truthy)
+
+(fact "that `known-status?` is unhappy with something unknown"
+      (known-status? "unknown")
+      => falsey)
+
+(fact "that `known-status?` is happy with something known"
+      (known-status? "running")
+      => truthy)
 
 (fact "that `valid-scheduled-actions?` is happy with a single good scheduled action"
       (valid-scheduled-actions? {:action-1 {:cron "hello"

@@ -17,6 +17,9 @@
             [midje.sweet :refer :all]
             [ring.util.io :refer [string-input-stream]]))
 
+(def valid-deployment-id
+  "6e653196-3b52-4ac8-a273-96a8ebd74060")
+
 (defn- json-body
   [raw-body]
   {:body (string-input-stream (json/encode raw-body))
@@ -261,71 +264,95 @@
       (request :get "/deployments" {:params {:full "fdasdsdas"}})
       => (contains {:status 400}))
 
-(fact "that getting an individual deployment gives a 404 if it doesn't exist"
+(fact "that getting an individual deployment with an invalid ID gives a 400"
       (request :get "/deployments/id")
+      => (contains {:status 400})
+      (provided
+       (es/deployment anything) => nil :times 0))
+
+(fact "that getting an individual deployment gives a 404 if it doesn't exist"
+      (request :get (str "/deployments/" valid-deployment-id))
       => (contains {:status 404})
       (provided
-       (es/deployment "id") => nil))
+       (es/deployment valid-deployment-id) => nil))
 
 (fact "that getting an individual deployment gives it back when it exists"
-      (request :get "/deployments/id")
-      => (contains {:body {:id "id"
+      (request :get (str "/deployments/" valid-deployment-id))
+      => (contains {:body {:id valid-deployment-id
                            :something "deployment-like"}
                     :status 200})
       (provided
-       (es/deployment "id") => {:id "id"
-                                :something "deployment-like"}))
+       (es/deployment valid-deployment-id) => {:id valid-deployment-id
+                                               :something "deployment-like"}))
+
+(fact "that deleting a deployment using an invalid ID gives a 400"
+      (request :delete "/deployments/id")
+      => (contains {:status 400})
+      (provided
+       (es/delete-deployment anything) => nil :times 0))
 
 (fact "that deleting a deployment gives the right response"
-      (request :delete "/deployments/id")
+      (request :delete (str "/deployments/" valid-deployment-id))
       => (contains {:status 204})
       (provided
-       (es/delete-deployment "id") => anything))
+       (es/delete-deployment valid-deployment-id) => anything))
+
+(fact "that getting deployment tasks using an invalid ID gives a 400"
+      (request :get "/deployments/id/tasks")
+      => (contains {:status 400})
+      (provided
+       (es/deployment-tasks anything) => nil :times 0))
 
 (fact "that getting deployment tasks for a deployment which doesn't exist gives a 404"
-      (request :get "/deployments/id/tasks")
+      (request :get (str "/deployments/" valid-deployment-id "/tasks"))
       => (contains {:status 404})
       (provided
-       (es/deployment-tasks "id") => nil))
+       (es/deployment-tasks valid-deployment-id) => nil))
 
 (fact "that getting deployment tasks for a deployment with no tasks gives a 200"
-      (request :get "/deployments/id/tasks")
+      (request :get (str "/deployments/" valid-deployment-id "/tasks"))
       => (contains {:body {:tasks []}
                     :status 200})
       (provided
-       (es/deployment-tasks "id") => []))
+       (es/deployment-tasks valid-deployment-id) => []))
 
 (fact "that getting deployment tasks for a deployment with some tasks gives a 200"
-      (request :get "/deployments/id/tasks")
+      (request :get (str "/deployments/" valid-deployment-id "/tasks"))
       => (contains {:body {:tasks [{:some "task"}
                                    {:some "other-task"}]}
                     :status 200})
       (provided
-       (es/deployment-tasks "id") => [{:some "task"}
-                                      {:some "other-task"}]))
+       (es/deployment-tasks valid-deployment-id) => [{:some "task"}
+                                                     {:some "other-task"}]))
+
+(fact "that getting deployment logs using an invalid ID gives a 400"
+      (request :get "/deployments/id/logs")
+      => (contains {:status 400})
+      (provided
+       (es/deployment-logs anything anything) => nil :times 0))
 
 (fact "that getting deployment logs for a deployment which doesn't exist gives a 404"
-      (request :get "/deployments/id/logs")
+      (request :get (str "/deployments/" valid-deployment-id "/logs"))
       => (contains {:status 404})
       (provided
-       (es/deployment-logs "id" nil) => nil))
+       (es/deployment-logs valid-deployment-id nil) => nil))
 
 (fact "that getting deployment logs without a since date passes nil to the underlying function"
-      (request :get "/deployments/id/logs" {:params {}})
+      (request :get (str "/deployments/" valid-deployment-id "/logs") {:params {}})
       => (contains {:body {:logs [{:a "log"}]}})
       (provided
-       (es/deployment-logs "id" nil) => [{:a "log"}]))
+       (es/deployment-logs valid-deployment-id nil) => [{:a "log"}]))
 
 (fact "that getting deployment logs with an invalid since date returns 400"
-      (request :get "/deployments/id/logs" {:params {:since "garbage"}})
+      (request :get (str "/deployments/" valid-deployment-id "/logs") {:params {:since "garbage"}})
       => (contains {:status 400}))
 
 (fact "that getting deployment logs with a valid since date does the right thing"
-      (request :get "/deployments/id/logs" {:params {:since "2003-01-04T00:02:01Z"}})
+      (request :get (str "/deployments/" valid-deployment-id "/logs") {:params {:since "2003-01-04T00:02:01Z"}})
       => (contains {:body {:logs [{:a "log"}]}})
       (provided
        (fmt/parse "2003-01-04T00:02:01Z") => ..date..
-       (es/deployment-logs "id" ..date..) => [{:a "log"}]))
+       (es/deployment-logs valid-deployment-id ..date..) => [{:a "log"}]))
 
 (fact "that getting the list of applications does the right thing"
       (request :get "/applications")
@@ -333,6 +360,12 @@
                     :status 200})
       (provided
        (info/applications) => {:applications ["applications"]}))
+
+(fact "that getting an application gives a 400 if the application name is invalid"
+      (request :get "/applications/has-hyphen")
+      => (contains {:status 400})
+      (provided
+       (info/application anything) => nil :times 0))
 
 (fact "that getting an application gives a 404 if the application doesn't exist"
       (request :get "/applications/application")
@@ -346,6 +379,12 @@
                     :status 200})
       (provided
        (info/application "application") => {:application "details"}))
+
+(fact "that getting the prohibited images for an invalid application gives a 400"
+      (request :get "/applications/has-hyphen/prohibited-images")
+      => (contains {:status 400})
+      (provided
+       (images/prohibited-images anything anything) => nil :times 0))
 
 (fact "that getting the prohibited images for an application does what we expect"
       (request :get "/applications/application/prohibited-images")
@@ -403,7 +442,7 @@
 
 (fact "that starting a deployment works"
       (request :post "/applications/application/environment/deploy" (json-body {:ami "ami-00000000"
-                                                                                :hash "hash"
+                                                                                :hash "db0adbdcf61e4237e1d116834e185aa06cb682ff"
                                                                                 :message "message"
                                                                                 :silent false
                                                                                 :user "user"}))
@@ -416,7 +455,7 @@
                            :environment "environment"
                            :id "id"
                            :message "message"
-                           :new-state {:hash "hash"
+                           :new-state {:hash "db0adbdcf61e4237e1d116834e185aa06cb682ff"
                                        :image-details {:id "ami-00000000"}}
                            :region "eu-west-1"
                            :silent false
@@ -430,6 +469,15 @@
       (provided
        (deployments/locked?) => true))
 
+(fact "that attempting to undo a deployment using an invalid application name gives a 400"
+      (request :post "/applications/has-hyphen/environment/undo" (json-body {:message "message"
+                                                                             :silent false
+                                                                             :user "user"}))
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false
+       (environments/environments) => {:environment {}}))
+
 (fact "that undoing a deployment calls through to deployments"
       (request :post "/applications/application/environment/undo" (json-body {:message "message"
                                                                               :silent false
@@ -437,6 +485,7 @@
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (deployments/undo {:application "application"
                           :environment "environment"
                           :message "message"
@@ -452,6 +501,15 @@
       (provided
        (deployments/locked?) => true))
 
+(fact "that attempting to redeploy an application using an invalid application name gives a 400"
+      (request :post "/applications/with-hyphen/environment/redeploy" (json-body {:message "message"
+                                                                                  :silent false
+                                                                                  :user false}))
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false
+       (environments/environments) => {:environment {}}))
+
 (fact "that redeploying an application calls through to deployments"
       (request :post "/applications/application/environment/redeploy" (json-body {:message "message"
                                                                                   :silent false
@@ -459,6 +517,7 @@
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (util/generate-id) => "id"
        (deployments/redeploy {:application "application"
                               :environment "environment"
@@ -476,6 +535,15 @@
       (provided
        (deployments/locked?) => true))
 
+(fact "that attempting to roll-back a deployment using an invalid application name gives a 400"
+      (request :post "/applications/has-hyphen/environment/rollback" (json-body {:message "message"
+                                                                                 :silent false
+                                                                                 :user "user"}))
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false
+       (environments/environments) => {:environment {}}))
+
 (fact "that rolling-back a deployment calls through to deployments"
       (request :post "/applications/application/environment/rollback" (json-body {:message "message"
                                                                                   :silent false
@@ -483,6 +551,7 @@
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (util/generate-id) => "id"
        (deployments/rollback {:application "application"
                               :environment "environment"
@@ -493,29 +562,45 @@
                               :silent false
                               :user "user"}) => ..rollback-result..))
 
+(fact "that attempting to pause a deployment using an invalid application name gives a 400"
+      (request :post "/applications/with-hyphen/environment/pause")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {:environment {}}))
+
 (fact "that attempting to pause a deployment for something which isn't deploying gives a 409"
       (request :post "/applications/application/environment/pause")
       => (contains {:status 409})
       (provided
+       (environments/environments) => {:environment {}}
        (deployments/in-progress? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
 
 (fact "that attempting to pause a deployment which is in-progress works"
       (request :post "/applications/application/environment/pause")
       => (contains {:status 200})
       (provided
+       (environments/environments) => {:environment {}}
        (deployments/in-progress? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/register-pause {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that attempting to unregister a pause for an invalid application gives a 400"
+      (request :delete "/applications/with-hyphen/environment/pause")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {:environment {}}))
 
 (fact "that attempting to unregister a pause for something which isn't paused gives a 409"
       (request :delete "/applications/application/environment/pause")
       => (contains {:status 409})
       (provided
+       (environments/environments) => {:environment {}}
        (deployments/pause-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
 
 (fact "that attempting to unregister a pause for something which is paused gives a 200"
       (request :delete "/applications/application/environment/pause")
       => (contains {:status 200})
       (provided
+       (environments/environments) => {:environment {}}
        (deployments/pause-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/unregister-pause {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
 
@@ -525,11 +610,19 @@
       (provided
        (deployments/locked?) => true))
 
+(fact "that attempting to resume a deployment using an invalid application name gives a 400"
+      (request :post "/applications/with-hyphen/environment/resume")
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false
+       (environments/environments) => {:environment {}}))
+
 (fact "that attempting to resume a deployment which isn't paused gives a 409"
       (request :post "/applications/application/environment/resume")
       => (contains {:status 409})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
 
 (fact "that attempting to resume a deployment which is paused gives a 200"
@@ -537,6 +630,7 @@
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/resume {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
 
@@ -546,11 +640,19 @@
       (provided
        (deployments/locked?) => true))
 
+(fact "that attempting to retry a deployment using an invalid application name gives a 400"
+      (request :post "/applications/with-hyphen/envivronment/retry")
+      => (contains {:status 400})
+      (provided
+       (deployments/locked?) => false
+       (environments/environments) => {:environment {}}))
+
 (fact "that attempting to retry a deployment which cannot be retried gives a 409"
       (request :post "/applications/application/environment/retry")
       => (contains {:status 409})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (deployments/can-retry? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
 
 (fact "that attempting to retry a deployment which can be retried gives a 200"
@@ -558,6 +660,7 @@
       => (contains {:status 200})
       (provided
        (deployments/locked?) => false
+       (environments/environments) => {:environment {}}
        (deployments/can-retry? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/retry {:application "application" :environment "environment" :region "eu-west-1"}) => ..retry-result..))
 
@@ -612,22 +715,37 @@
       (provided
        (deployments/awaiting-pause) => ["deployment1" "deployment2"]))
 
+(fact "that attempting to remove an in-progress deployment using an invalid application name gives a 400"
+      (request :delete "/in-progress/with-hyphen/environment")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {:environment {}}))
+
 (fact "that we can remove an in-progress deployment"
       (request :delete "/in-progress/application/environment")
       => (contains {:status 204})
       (provided
+       (environments/environments) => {:environment {}}
        (redis/end-deployment {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that attempting to describe instances using an invalid application name gives a 400"
+      (request :get "/describe-instances/with-hyphen/poke")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {:poke {}}))
 
 (fact "that describe instances returns 200 text/plain when text/plain requested"
       (request :get "/describe-instances/ditto/poke" {:headers {"accept" "text/plain"}})
       => (contains {:status 200 :headers (contains {"Content-Type" "text/plain"})})
       (provided
+       (environments/environments) => {:poke {}}
        (aws/describe-instances "poke" anything "ditto" nil) => ""))
 
 (fact "that optional state param is passed to describe instances, response is json when not requested"
       (request :get "/describe-instances/ditto/poke" {:params {:state "stopped"}})
       => (contains {:status 200 :headers (contains {"Content-Type" "application/json; charset=utf-8"})})
       (provided
+       (environments/environments) => {:poke {}}
        (aws/describe-instances "poke" anything "ditto" "stopped") => ""))
 
 (fact "that getting our by-user deployment stats works"
@@ -679,23 +797,44 @@
       (provided
        (es/deployments-by-day) => {:stats "business"}))
 
+(fact "that attempting to get by-year and environment stats using an unknown environment gives a 400"
+      (request :get "/stats/deployments/by-year/environment/unknown")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {}))
+
 (fact "that getting our by-year and environment deployment stats works"
       (request :get "/stats/deployments/by-year/environment/something")
       => (contains {:body {:result {:stats "business"}}
                     :status 200})
       (provided
+       (environments/environments) => {:something {}}
        (es/deployments-in-environment-by-year "something") => {:stats "business"}))
+
+(fact "that attempting to get by-month and environment stats using an unknown environment gives a 400"
+      (request :get "/stats/deployments/by-month/environment/unknown")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {}))
 
 (fact "that getting our by-month and environment deployment stats works"
       (request :get "/stats/deployments/by-month/environment/something")
       => (contains {:body {:result {:stats "business"}}
                     :status 200})
       (provided
+       (environments/environments) => {:something {}}
        (es/deployments-in-environment-by-month "something") => {:stats "business"}))
+
+(fact "that attempting to get by-day and environment stats using an unknown environment gives a 400"
+      (request :get "/stats/deployments/by-day/environment/unknown")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {}))
 
 (fact "that getting our by-day and environment deployment stats works"
       (request :get "/stats/deployments/by-day/environment/something")
       => (contains {:body {:result {:stats "business"}}
                     :status 200})
       (provided
+       (environments/environments) => {:something {}}
        (es/deployments-in-environment-by-day "something") => {:stats "business"}))
