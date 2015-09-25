@@ -649,7 +649,7 @@
       (if (zero? (count missing))
         (success parameters)
         (do
-          (log/write (format "One or more policies were referenced in alarms but are not configured to be created: [%s]" (str/join "," missing)))
+          (log/write (format "One or more policies were referenced in alarms but are not configured to be created: [%s]." (str/join "," missing)))
           (error-with (ex-info "Referencing non-existent policies." {:type ::missing-policies})))))))
 
 (defn complete-deployment-preparation

@@ -115,22 +115,35 @@
         :else false))
 
 (defn should-pause?
-  [details]
-  (or (should-pause-because-told-to? details)
-      (should-pause-because-of-deployment-params? details)))
+  [message]
+  (or (should-pause-because-told-to? message)
+      (should-pause-because-of-deployment-params? message)))
+
+(defn should-cancel?
+  [{:keys [message result]}]
+  (and (= :retry (:status result))
+       (deployments/cancel-registered? (:parameters message))))
 
 (defn enqueue-next-task
   [{:keys [message next-action result] :as details}]
-  (when (and (successful? result)
+  (if (and (successful? result)
              next-action)
     (let [{:keys [parameters]} message]
       (if-not (should-pause? message)
-        (redis/enqueue {:action next-action
-                        :parameters parameters})
+        (if-not (should-cancel? details)
+          (do
+            (redis/enqueue {:action next-action
+                            :parameters parameters})
+            details)
+          (do
+            (log/write "Cancelling deployment.")
+            (deployments/cancel parameters)
+            (assoc-in details [:result :status] :error)))
         (do
-          (log/write "Pausing deployment")
-          (deployments/pause parameters)))))
-  details)
+          (log/write "Pausing deployment.")
+          (deployments/pause parameters)
+          details)))
+    details))
 
 (defn finishing?
   [{:keys [next-action]}]
@@ -168,5 +181,5 @@
              end-deployment-if-allowed
              :result)
         (do
-          (log/write "Unknown action")
+          (log/write "Unknown action.")
           (capped-retry-after 5000 attempt 10))))))

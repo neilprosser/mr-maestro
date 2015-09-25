@@ -288,6 +288,19 @@
        (should-pause-because-told-to? anything) => false
        (should-pause-because-of-deployment-params? anything) => false))
 
+(fact "that we shouldn't cancel if we're not retrying the action"
+      (should-cancel? {:message ..message.. :result {:status :success}}) => false)
+
+(fact "that we shouldn't cancel if there's no cancel registered"
+      (should-cancel? {:message {:parameters ..parameters..} :result {:status :retry}}) => false
+      (provided
+       (deployments/cancel-registered? ..parameters..) => false))
+
+(fact "that we should cancel if we're retrying and there's a cancel registered"
+      (should-cancel? {:message {:parameters ..parameters..} :result {:status :retry}}) => true
+      (provided
+       (deployments/cancel-registered? ..parameters..) => true))
+
 (fact "that we enqueue the next task correctly"
       (def params {:message {:parameters ..parameters..}
                    :next-action :some-action
@@ -296,6 +309,7 @@
       (provided
        (successful? ..result..) => true
        (should-pause? anything) => false
+       (should-cancel? params) => false
        (redis/enqueue {:action :some-action
                        :parameters ..parameters..}) => ..enqueue..))
 
@@ -325,6 +339,20 @@
        (successful? ..result..) => true
        (should-pause? {:parameters ..parameters..}) => true
        (deployments/pause ..parameters..) => ..pause..
+       (redis/enqueue anything) => ..enqueue.. :times 0))
+
+(fact "that we don't enqueue the next task if we should cancel"
+      (def params {:message {:parameters ..parameters..}
+                   :next-action :some-action
+                   :result {:status :success}})
+      (enqueue-next-task params) => {:message {:parameters ..parameters..}
+                                     :next-action :some-action
+                                     :result {:status :error}}
+      (provided
+       (successful? {:status :success}) => true
+       (should-pause? {:parameters ..parameters..}) => false
+       (should-cancel? params) => true
+       (deployments/cancel ..parameters..) => ..cancel..
        (redis/enqueue anything) => ..enqueue.. :times 0))
 
 (fact "that we're finishing if there's no next action"
@@ -374,7 +402,7 @@
       => {:backoff-ms 5000
           :status :retry}
       (provided
-       (log/write "Unknown action") => nil
+       (log/write "Unknown action.") => nil
        (actions/to-function "action") => nil))
 
 (fact "that our handler goes through all the functions in the correct order"

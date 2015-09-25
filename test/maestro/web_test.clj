@@ -634,6 +634,48 @@
        (deployments/paused? {:application "application" :environment "environment" :region "eu-west-1"}) => true
        (deployments/resume {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
 
+(fact "that attempting to cancel a deployment using an invalid application name gives a 400"
+      (request :post "/applications/with-hyphen/environment/cancel")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {:environment {}}))
+
+(fact "that attempting to cancel a deployment for something which isn't deploying gives a 409"
+      (request :post "/applications/application/environment/cancel")
+      => (contains {:status 409})
+      (provided
+       (environments/environments) => {:environment {}}
+       (deployments/in-progress? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
+
+(fact "that attempting to cancel a deployment which is in-progress works"
+      (request :post "/applications/application/environment/cancel")
+      => (contains {:status 200})
+      (provided
+       (environments/environments) => {:environment {}}
+       (deployments/in-progress? {:application "application" :environment "environment" :region "eu-west-1"}) => true
+       (deployments/register-cancel {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
+(fact "that attempting to unregister a cancellation for an invalid application gives a 400"
+      (request :delete "/applications/with-hyphen/environment/cancel")
+      => (contains {:status 400})
+      (provided
+       (environments/environments) => {:environment {}}))
+
+(fact "that attempting to unregister a cancellation for something which isn't cancelled gives a 409"
+      (request :delete "/applications/application/environment/cancel")
+      => (contains {:status 409})
+      (provided
+       (environments/environments) => {:environment {}}
+       (deployments/cancel-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => false))
+
+(fact "that attempting to unregister a cancellation for something which is cancelled gives a 200"
+      (request :delete "/applications/application/environment/cancel")
+      => (contains {:status 200})
+      (provided
+       (environments/environments) => {:environment {}}
+       (deployments/cancel-registered? {:application "application" :environment "environment" :region "eu-west-1"}) => true
+       (deployments/unregister-cancel {:application "application" :environment "environment" :region "eu-west-1"}) => anything))
+
 (fact "that attempting to retry a deployment while Maestro is locked gives a 409"
       (request :post "/applications/application/environment/retry")
       => (contains {:status 409})

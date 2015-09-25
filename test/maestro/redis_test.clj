@@ -109,6 +109,47 @@
         (provided
          (car/srem "maestro:deployments:awaiting-pause" "app-env-region") => 0))
 
+  (fact "that determining whether a cancellation is registered is truthy when present"
+        (cancel-registered? "app" "env" "region") => truthy
+        (provided
+         (car/sismember "maestro:deployments:awaiting-cancel" "app-env-region") => 1))
+
+  (fact "that determining whether a cancellation is registered is falsey when not present"
+        (cancel-registered? "app" "env" "region") => falsey
+        (provided
+         (car/sismember "maestro:deployments:awaiting-cancel" "app-env-region") => 0))
+
+  (fact "that getting all deployments awaiting a cancellation works"
+        (awaiting-cancel) => [{:application "app1" :environment "env1" :region "region1"}
+                              {:application "app2" :environment "env2" :region "region2"}]
+        (provided
+         (car/smembers "maestro:deployments:awaiting-cancel") => ["app1-env1-region1" "app2-env2-region2"]))
+
+  (fact "that getting all deployments awaiting a cancellation works when there aren't any"
+        (awaiting-cancel) => []
+        (provided
+         (car/smembers "maestro:deployments:awaiting-cancel") => []))
+
+  (fact "that registering a cancellation is truthy when one wasn't already present"
+        (register-cancel "app" "env" "region") => truthy
+        (provided
+         (car/sadd "maestro:deployments:awaiting-cancel" "app-env-region") => 1))
+
+  (fact "that registering a cancellation is falsey when one was already present"
+        (register-cancel  "app" "env" "region") => falsey
+        (provided
+         (car/sadd "maestro:deployments:awaiting-cancel" "app-env-region") => 0))
+
+  (fact "that unregistering a cancellation is truthy when one was present"
+        (unregister-cancel "app" "env" "region") => truthy
+        (provided
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 1))
+
+  (fact "that unregistering a cancellation is truthy when one was present"
+        (unregister-cancel "app" "env" "region") => falsey
+        (provided
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 0))
+
   (fact "that a deployment is not in-progress when not present"
         (in-progress? "app" "env" "region") => falsey
         (provided
@@ -150,13 +191,30 @@
         (end-deployment end-deployment-params) => true
         (provided
          (car/srem "maestro:deployments:awaiting-pause" "app-env-region") => 0
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 0
          (car/hdel "maestro:deployments:in-progress" "app-env-region") => 1))
 
   (fact "that ending a deployment which didn't exist returns false"
         (end-deployment end-deployment-params) => false
         (provided
          (car/srem "maestro:deployments:awaiting-pause" "app-env-region") => 0
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 0
          (car/hdel "maestro:deployments:in-progress" "app-env-region") => 0))
+
+  (def cancel-deployment-params
+    {:application "app"
+     :environment "env"
+     :region "region"})
+
+  (fact "that cancelling a deployment which had a cancellation registered returns true"
+        (cancel-deployment cancel-deployment-params) => true
+        (provided
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 1))
+
+  (fact "that cancelling a deployment which doesn't have a cancellation registered returns false"
+        (cancel-deployment cancel-deployment-params) => false
+        (provided
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 0))
 
   (fact "that obtaining the queue status works"
         (queue-status) => ..status..

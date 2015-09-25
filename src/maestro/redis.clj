@@ -17,6 +17,9 @@
 (def ^:private awaiting-pause-key
   (str/join ":" [key-prefix "deployments:awaiting-pause"]))
 
+(def ^:private awaiting-cancel-key
+  (str/join ":" [key-prefix "deployments:awaiting-cancel"]))
+
 (def ^:private lock-key
   (str/join ":" [key-prefix "lock"]))
 
@@ -107,6 +110,22 @@
   [application environment region]
   (pos? (using-redis (car/srem awaiting-pause-key (field-for application environment region)))))
 
+(defn cancel-registered?
+  [application environment region]
+  (pos? (using-redis (car/sismember awaiting-cancel-key (field-for application environment region)))))
+
+(defn awaiting-cancel
+  []
+  (map create-description (using-redis (car/smembers awaiting-cancel-key))))
+
+(defn register-cancel
+  [application environment region]
+  (pos? (using-redis (car/sadd awaiting-cancel-key (field-for application environment region)))))
+
+(defn unregister-cancel
+  [application environment region]
+  (pos? (using-redis (car/srem awaiting-cancel-key (field-for application environment region)))))
+
 (defn in-progress?
   [application environment region]
   (using-redis (car/hget in-progress-key (field-for application environment region))))
@@ -122,7 +141,12 @@
 (defn end-deployment
   [{:keys [application environment region]}]
   (unregister-pause application environment region)
+  (unregister-cancel application environment region)
   (pos? (using-redis (car/hdel in-progress-key (field-for application environment region)))))
+
+(defn cancel-deployment
+  [{:keys [application environment region]}]
+  (unregister-cancel application environment region))
 
 (defn queue-status
   []

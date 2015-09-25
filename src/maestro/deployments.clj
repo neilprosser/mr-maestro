@@ -58,6 +58,22 @@
   []
   (redis/awaiting-pause))
 
+(defn register-cancel
+  [{:keys [application environment region]}]
+  (redis/register-cancel application environment region))
+
+(defn unregister-cancel
+  [{:keys [application environment region]}]
+  (redis/unregister-cancel application environment region))
+
+(defn cancel-registered?
+  [{:keys [application environment region]}]
+  (redis/cancel-registered? application environment region))
+
+(defn awaiting-cancel
+  []
+  (redis/awaiting-cancel))
+
 (defn in-progress?
   [{:keys [application environment region]}]
   (redis/in-progress? application environment region))
@@ -97,6 +113,11 @@
 (defn end
   [parameters]
   (redis/end-deployment parameters)
+  parameters)
+
+(defn cancel
+  [parameters]
+  (redis/cancel-deployment parameters)
   parameters)
 
 (defn undo

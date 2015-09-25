@@ -23,7 +23,7 @@
 
 (defn create-policy
   [environment region {:keys [policy-name] :as policy}]
-  (log/write (format "Creating scaling policy %s" (:policy-name policy)))
+  (log/write (format "Creating scaling policy %s." (:policy-name policy)))
   (let [result (apply autoscaling/put-scaling-policy (cons (aws/config environment region) (util/to-params policy)))]
     [policy-name (:policy-arn result)]))
 

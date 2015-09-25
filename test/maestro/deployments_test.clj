@@ -54,6 +54,26 @@
       (provided
        (redis/awaiting-pause) => ..result..))
 
+(fact "that registering a cancellation works"
+      (register-cancel {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/register-cancel "application" "environment" "region") => ..result..))
+
+(fact "that unregistering a cancellation works"
+      (unregister-cancel {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/unregister-cancel "application" "environment" "region") => ..result..))
+
+(fact "that asking whether a cancellation is registered works"
+      (cancel-registered? {:application "application" :environment "environment" :region "region"}) => ..result..
+      (provided
+       (redis/cancel-registered? "application" "environment" "region") => ..result..))
+
+(fact "that getting the list of deployments awaiting a cancellation works"
+      (awaiting-cancel) => ..result..
+      (provided
+       (redis/awaiting-cancel) => ..result..))
+
 (def in-progress-params
   {:application "application"
    :environment "environment"
@@ -252,6 +272,16 @@
       (end end-params) => end-params
       (provided
        (redis/end-deployment end-params) => ..result..))
+
+(def cancel-params
+  {:application "application"
+   :environment "environment"
+   :region "region"})
+
+(fact "that cancelling a deployment does what we expect"
+      (cancel cancel-params) => cancel-params
+      (provided
+       (redis/cancel-deployment cancel-params) => ..result..))
 
 (def undo-params
   {:application "application"

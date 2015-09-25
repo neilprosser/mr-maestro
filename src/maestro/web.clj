@@ -310,6 +310,30 @@
                           (response "Deployment resumed" "text/plain" 200))
                         (response "No deployment is paused" "text/plain" 409))))))
 
+  (POST "/applications/:application/:environment/cancel"
+        [application environment]
+        (let [parameters {:application application
+                          :environment environment
+                          :region default-region}]
+          (validated parameters v/pause-request-validators
+                     (if (deployments/in-progress? parameters)
+                       (do
+                         (deployments/register-cancel parameters)
+                         (response "Cancellation registered and will take effect during the next retryable task" "text/plain" 200))
+                       (response "No deployment is in progress" "text/plain" 409)))))
+
+  (DELETE "/applications/:application/:environment/cancel"
+          [application environment]
+          (let [parameters {:application application
+                            :environment environment
+                            :region default-region}]
+            (validated parameters v/pause-request-validators
+                       (if (deployments/cancel-registered? parameters)
+                         (do
+                           (deployments/unregister-cancel parameters)
+                           (response "Cancel unregistered" "text/plain" 200))
+                         (response "No cancel was registered" "text/plain" 409)))))
+
   (POST "/applications/:application/:environment/retry"
         [application environment]
         (guarded
