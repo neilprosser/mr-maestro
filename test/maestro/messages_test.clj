@@ -133,6 +133,33 @@
       (provided
        (actions/action-after ..action..) => ..next-action..))
 
+(fact "that we shouldn't cancel if we're not retrying the action"
+      (should-cancel? {:message ..message.. :result {:status :success}}) => false)
+
+(fact "that we shouldn't cancel if there's no cancel registered"
+      (should-cancel? {:message {:parameters ..parameters..} :result {:status :retry}}) => false
+      (provided
+       (deployments/cancel-registered? ..parameters..) => false))
+
+(fact "that we should cancel if we're retrying and there's a cancel registered"
+      (should-cancel? {:message {:parameters ..parameters..} :result {:status :retry}}) => true
+      (provided
+       (deployments/cancel-registered? ..parameters..) => true))
+
+(fact "that we don't do anything if the task shouldn't cancel"
+      (def params {:message ..message.. :result ..result..})
+      (fail-if-cancelled params) => params
+      (provided
+       (should-cancel? params) => false
+       (deployments/cancel anything) => nil :times 0))
+
+(fact "that we cancel a deployment if we should by switching in a failed result"
+      (def params {:message {:parameters ..parameters..} :result {:status :retry}})
+      (fail-if-cancelled params) => {:message {:parameters ..parameters..} :result {:status :error}}
+      (provided
+       (should-cancel? params) => true
+       (deployments/cancel ..parameters..) => ..cancel-result..))
+
 (fact "that updating a task when the result isn't terminal does nothing"
       (update-task {:result ..result..})
       => {:result ..result..}
@@ -203,6 +230,12 @@
 (fact "that updating a deployment after a task which needs to retry does nothing"
       (update-deployment {:result {:status :retry}})
       => {:result {:status :retry}}
+      (provided
+       (es/upsert-deployment anything anything) => nil :times 0))
+
+(fact "that updating a deployment with an unknown status gives back the parameters"
+      (update-deployment {:result {:status :unknown}})
+      => {:result {:status :unknown}}
       (provided
        (es/upsert-deployment anything anything) => nil :times 0))
 
@@ -288,19 +321,6 @@
        (should-pause-because-told-to? anything) => false
        (should-pause-because-of-deployment-params? anything) => false))
 
-(fact "that we shouldn't cancel if we're not retrying the action"
-      (should-cancel? {:message ..message.. :result {:status :success}}) => false)
-
-(fact "that we shouldn't cancel if there's no cancel registered"
-      (should-cancel? {:message {:parameters ..parameters..} :result {:status :retry}}) => false
-      (provided
-       (deployments/cancel-registered? ..parameters..) => false))
-
-(fact "that we should cancel if we're retrying and there's a cancel registered"
-      (should-cancel? {:message {:parameters ..parameters..} :result {:status :retry}}) => true
-      (provided
-       (deployments/cancel-registered? ..parameters..) => true))
-
 (fact "that we enqueue the next task correctly"
       (def params {:message {:parameters ..parameters..}
                    :next-action :some-action
@@ -309,7 +329,6 @@
       (provided
        (successful? ..result..) => true
        (should-pause? anything) => false
-       (should-cancel? params) => false
        (redis/enqueue {:action :some-action
                        :parameters ..parameters..}) => ..enqueue..))
 
@@ -339,20 +358,6 @@
        (successful? ..result..) => true
        (should-pause? {:parameters ..parameters..}) => true
        (deployments/pause ..parameters..) => ..pause..
-       (redis/enqueue anything) => ..enqueue.. :times 0))
-
-(fact "that we don't enqueue the next task if we should cancel"
-      (def params {:message {:parameters ..parameters..}
-                   :next-action :some-action
-                   :result {:status :success}})
-      (enqueue-next-task params) => {:message {:parameters ..parameters..}
-                                     :next-action :some-action
-                                     :result {:status :error}}
-      (provided
-       (successful? {:status :success}) => true
-       (should-pause? {:parameters ..parameters..}) => false
-       (should-cancel? params) => true
-       (deployments/cancel ..parameters..) => ..cancel..
        (redis/enqueue anything) => ..enqueue.. :times 0))
 
 (fact "that we're finishing if there's no next action"
@@ -421,7 +426,8 @@
        (perform-action ..action.. ..after-ensure..) => ..after-perform..
        (log-error-if-necessary ..after-perform..) => ..after-log..
        (determine-next-action ..after-log..) => ..after-determine..
-       (update-task ..after-determine..) => ..after-update-task..
+       (fail-if-cancelled ..after-determine..) => ..after-fail..
+       (update-task ..after-fail..) => ..after-update-task..
        (update-deployment ..after-update-task..) => ..after-update-deployment..
        (enqueue-next-task ..after-update-deployment..) => ..after-enqueue..
        (end-deployment-if-allowed ..after-enqueue..) => {:result ..result..}))

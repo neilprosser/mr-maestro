@@ -1,5 +1,7 @@
 (ns maestro.messages
   (:require [clj-time.core :as time]
+            [clojure.tools.logging :refer [error]]
+            [io.clj.logging :refer [with-logging-context]]
             [maestro
              [actions :as actions]
              [bindings :refer :all]
@@ -72,6 +74,21 @@
   (let [{:keys [action]} message]
     (assoc details :next-action (actions/action-after action))))
 
+(defn should-cancel?
+  [{:keys [message result]}]
+  (and (= :retry (:status result))
+       (deployments/cancel-registered? (:parameters message))))
+
+(defn fail-if-cancelled
+  [{:keys [message result] :as details}]
+  (let [{:keys [parameters]} message]
+    (if (should-cancel? details)
+      (do
+        (log/write "Cancelling deployment.")
+        (deployments/cancel parameters)
+        (assoc-in details [:result :status] :error))
+      details)))
+
 (defn update-task
   [{:keys [result] :as details}]
   (when (terminal? result)
@@ -88,17 +105,23 @@
 
 (defn update-deployment
   [{:keys [message result] :as details}]
-  (case (:status result)
-    :success (let [status (if (:next-action details) "running" "completed")
-                   new-parameters (assoc (:parameters result) :status status)]
-               (es/upsert-deployment *deployment-id* new-parameters)
-               (assoc-in details [:message :parameters] new-parameters))
-    :error (let [new-parameters (assoc (:parameters message)
-                                  :end (time/now)
-                                  :status (failure-status details))]
-             (es/upsert-deployment *deployment-id* new-parameters)
-             (assoc-in details [:message :parameters] new-parameters))
-    :retry details))
+  (let [{:keys [status]} result]
+    (try
+      (case status
+        :success (let [status (if (:next-action details) "running" "completed")
+                       new-parameters (assoc (:parameters result) :status status)]
+                   (es/upsert-deployment *deployment-id* new-parameters)
+                   (assoc-in details [:message :parameters] new-parameters))
+        :error (let [new-parameters (assoc (:parameters message)
+                                           :end (time/now)
+                                           :status (failure-status details))]
+                 (es/upsert-deployment *deployment-id* new-parameters)
+                 (assoc-in details [:message :parameters] new-parameters))
+        :retry details)
+      (catch IllegalArgumentException e
+        (with-logging-context {:status status}
+          (error e "Unknown result status"))
+        details))))
 
 (defn should-pause-because-told-to?
   [{:keys [parameters]}]
@@ -119,31 +142,18 @@
   (or (should-pause-because-told-to? message)
       (should-pause-because-of-deployment-params? message)))
 
-(defn should-cancel?
-  [{:keys [message result]}]
-  (and (= :retry (:status result))
-       (deployments/cancel-registered? (:parameters message))))
-
 (defn enqueue-next-task
   [{:keys [message next-action result] :as details}]
-  (if (and (successful? result)
+  (when (and (successful? result)
              next-action)
     (let [{:keys [parameters]} message]
       (if-not (should-pause? message)
-        (if-not (should-cancel? details)
-          (do
-            (redis/enqueue {:action next-action
-                            :parameters parameters})
-            details)
-          (do
-            (log/write "Cancelling deployment.")
-            (deployments/cancel parameters)
-            (assoc-in details [:result :status] :error)))
+        (redis/enqueue {:action next-action
+                        :parameters parameters})
         (do
           (log/write "Pausing deployment.")
-          (deployments/pause parameters)
-          details)))
-    details))
+          (deployments/pause parameters)))))
+  details)
 
 (defn finishing?
   [{:keys [next-action]}]
@@ -175,6 +185,7 @@
              (perform-action action-fn)
              log-error-if-necessary
              determine-next-action
+             fail-if-cancelled
              update-task
              update-deployment
              enqueue-next-task
