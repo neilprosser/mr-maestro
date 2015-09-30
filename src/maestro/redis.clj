@@ -86,14 +86,6 @@
   []
   (map create-description-with-id (apply hash-map (using-redis (car/hgetall paused-key)))))
 
-(defn pause
-  [application environment id region]
-  (pos? (using-redis (car/hsetnx paused-key (field-for application environment region) id))))
-
-(defn resume
-  [application environment region]
-  (pos? (using-redis (car/hdel paused-key (field-for application environment region)))))
-
 (defn pause-registered?
   [application environment region]
   (pos? (using-redis (car/sismember awaiting-pause-key (field-for application environment region)))))
@@ -133,6 +125,15 @@
 (defn in-progress
   []
   (map create-description-with-id (apply hash-map (using-redis (car/hgetall in-progress-key)))))
+
+(defn pause
+  [application environment id region]
+  (pos? (using-redis (car/hsetnx paused-key (field-for application environment region) id))))
+
+(defn resume
+  [application environment region]
+  (unregister-cancel application environment region)
+  (pos? (using-redis (car/hdel paused-key (field-for application environment region)))))
 
 (defn begin-deployment
   [{:keys [application environment id region]}]

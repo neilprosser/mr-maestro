@@ -48,26 +48,6 @@
         (provided
          (car/hgetall "maestro:deployments:paused") => []))
 
-  (fact "that pausing a deployment is truthy when it wasn't already paused"
-        (pause "app" "env" "id" "region") => truthy
-        (provided
-         (car/hsetnx "maestro:deployments:paused" "app-env-region" "id") => 1))
-
-  (fact "that pausing a deployment is falsey when it wasn't already paused"
-        (pause "app" "env" "id" "region") => falsey
-        (provided
-         (car/hsetnx "maestro:deployments:paused" "app-env-region" "id") => 0))
-
-  (fact "that unpausing a deployment is truthy when it was already paused"
-        (resume "app" "env" "region") => truthy
-        (provided
-         (car/hdel "maestro:deployments:paused" "app-env-region") => 1))
-
-  (fact "that unpausing a deployment is falsey when it wasn't already paused"
-        (resume "app" "env" "region") => falsey
-        (provided
-         (car/hdel "maestro:deployments:paused" "app-env-region") => 0))
-
   (fact "that determining whether a pause is registered is truthy when present"
         (pause-registered? "app" "env" "region") => truthy
         (provided
@@ -165,6 +145,28 @@
                           {:application "ppa" :environment "vne" :id "di" :region "ger"}]
         (provided
          (car/hgetall "maestro:deployments:in-progress") => ["app-env-reg" "id" "ppa-vne-ger" "di"]))
+
+  (fact "that pausing a deployment is truthy when it wasn't already paused"
+        (pause "app" "env" "id" "region") => truthy
+        (provided
+         (car/hsetnx "maestro:deployments:paused" "app-env-region" "id") => 1))
+
+  (fact "that pausing a deployment is falsey when it wasn't already paused"
+        (pause "app" "env" "id" "region") => falsey
+        (provided
+         (car/hsetnx "maestro:deployments:paused" "app-env-region" "id") => 0))
+
+  (fact "that unpausing a deployment is truthy when it was already paused"
+        (resume "app" "env" "region") => truthy
+        (provided
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 0
+         (car/hdel "maestro:deployments:paused" "app-env-region") => 1))
+
+  (fact "that unpausing a deployment is falsey when it wasn't already paused"
+        (resume "app" "env" "region") => falsey
+        (provided
+         (car/srem "maestro:deployments:awaiting-cancel" "app-env-region") => 0
+         (car/hdel "maestro:deployments:paused" "app-env-region") => 0))
 
   (def begin-deployment-params
     {:application "app"
