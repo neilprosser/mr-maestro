@@ -18,7 +18,7 @@
   #"[0-9a-f]{40}")
 
 (def healthcheck-types
-  #{"EC2" "ELB" "EC2+healthy"})
+  #{"EC2" "ELB"})
 
 (def para-instance-types
   (conj (set (map :instance-type (filter (fn [i] (contains? (set (:linux-virtualization-types i)) "PV")) lam/instances)))

@@ -6,8 +6,8 @@
              [util :as util]]))
 
 (defn- uses-healthy?
-  [{:keys [health-check-type]}]
-  (= health-check-type "EC2+healthy"))
+  [{:keys [healthy]}]
+  (some? healthy))
 
 (defn register-with-healthy
   [{:keys [parameters]}]

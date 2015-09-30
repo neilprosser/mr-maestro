@@ -7,7 +7,7 @@
   {:environment "environment"
    :new-state {:auto-scaling-group-name "new-asg"
                :tyranitar {:application-properties {:service.port "1234"}
-                           :deployment-params {:health-check-type "EC2+healthy"
+                           :deployment-params {:health-check-type "EC2"
                                                :healthy {:scheme "scheme"
                                                          :path "path"
                                                          :port "2345"
@@ -15,7 +15,7 @@
    :region "region"})
 
 (fact "that we don't register anything with Healthy if we've not asked for it"
-      (let [params (assoc-in register-with-healthy-params [:new-state :tyranitar :deployment-params :health-check-type] "EC2")]
+      (let [params (assoc-in register-with-healthy-params [:new-state :tyranitar :deployment-params :healthy] nil)]
         (register-with-healthy {:parameters params}) => (contains {:status :success})
         (provided
          (healthy/register-auto-scaling-group "environment" "region" "new-asg" anything anything anything anything) => nil :times 0)))
@@ -39,11 +39,15 @@
 (def deregister-from-healthy-params
   {:environment "environment"
    :previous-state {:auto-scaling-group-name "previous-asg"
-                    :tyranitar {:deployment-params {:health-check-type "EC2+healthy"}}}
+                    :tyranitar {:deployment-params {:health-check-type "EC2"
+                                                    :healthy {:scheme "scheme"
+                                                              :path "path"
+                                                              :port "2345"
+                                                              :timeout 100}}}}
    :region "region"})
 
 (fact "that we don't deregister from Healthy if the previous state wasn't using Healthy"
-      (let [params (assoc-in deregister-from-healthy-params [:previous-state :tyranitar :deployment-params :health-check-type] "EC2")]
+      (let [params (assoc-in deregister-from-healthy-params [:previous-state :tyranitar :deployment-params :healthy] nil)]
         (deregister-from-healthy {:parameters params}) => (contains {:status :success})
         (provided
          (healthy/deregister-auto-scaling-group anything anything anything) => nil :times 0)))
