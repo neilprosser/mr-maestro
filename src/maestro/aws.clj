@@ -231,10 +231,10 @@
                                                                            :instance-ids (vec instance-ids)))))))
 
 (defn resize-last-auto-scaling-group
-  [environment application region desired-capacity max min]
+  [environment application region desired-capacity max-size min-size]
   (when-let [last-asg (last-application-auto-scaling-group application environment region)]
     (auto/update-auto-scaling-group (config environment region)
                                     :auto-scaling-group-name (:auto-scaling-group-name last-asg)
                                     :desired-capacity desired-capacity
-                                    :max-size max
-                                    :min-size min)))
+                                    :max-size max-size
+                                    :min-size min-size)))

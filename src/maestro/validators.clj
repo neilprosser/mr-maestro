@@ -122,8 +122,7 @@
   [input]
   (if input
     (try
-      (java.util.UUID/fromString input)
-      true
+      (some? (java.util.UUID/fromString input))
       (catch Exception _
         false))
     true))
