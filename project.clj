@@ -48,6 +48,8 @@
   :env {:aws-key-name "maestro"
         :aws-required-security-groups "maestro-healthcheck"
         :aws-role-name "maestro"
+        :default-instances-healthy-attempts 100
+        :default-load-balancer-healthy-attempts 50
         :disable-caching true
         :elasticsearch-index-name "maestro"
         :elasticsearch-url "http://localhost:9200"

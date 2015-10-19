@@ -2,6 +2,7 @@
   (:require [clojure
              [set :refer [superset?]]
              [string :as str]]
+            [environ.core :refer [env]]
             [maestro
              [aws :as aws]
              [http :as http]
@@ -19,10 +20,10 @@
   false)
 
 (def default-instances-maximum-attempts
-  100)
+  (Integer/valueOf (env :default-instances-healthy-attempts)))
 
 (def default-load-balancer-maximum-attempts
-  50)
+  (Integer/valueOf (env :default-load-balancer-healthy-attempts)))
 
 (defn- create-url
   [ip port healthcheck-path]
