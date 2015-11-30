@@ -92,7 +92,7 @@
 (defn speak-about-deployment-start
   [{:keys [environment rollback silent] :as deployment}]
   (when (notify? environment silent)
-    (let [rooms (get-in deployment [:new-state :onix :rooms])]
+    (let [rooms (get-in deployment [:new-state :onix :deployment-rooms (keyword environment)])]
       (if-not rollback
         (speak rooms (deployment-start-message deployment true))
         (speak rooms (rollback-start-message deployment true))))))
@@ -100,19 +100,19 @@
 (defn speak-about-undo-start
   [{:keys [environment undo-silent] :as deployment}]
   (when (notify? environment undo-silent)
-    (let [rooms (get-in deployment [:new-state :onix :rooms])]
+    (let [rooms (get-in deployment [:new-state :onix :deployment-rooms (keyword environment)])]
       (speak rooms (undo-start-message deployment true)))))
 
 (defn speak-about-deployment-completion
   [{:keys [environment silent] :as deployment}]
   (when (notify? environment silent)
     (speak [deployments-room] (deployment-completion-message deployment true))
-    (let [rooms (get-in deployment [:new-state :onix :rooms])]
+    (let [rooms (get-in deployment [:new-state :onix :deployment-rooms (keyword environment)])]
       (speak rooms (deployment-completion-message deployment false)))))
 
 (defn speak-about-undo-completion
   [{:keys [environment undo-silent] :as deployment}]
   (when (notify? environment undo-silent)
     (speak [deployments-room] (undo-completion-message deployment true))
-    (let [rooms (get-in deployment [:new-state :onix :rooms])]
+    (let [rooms (get-in deployment [:new-state :onix :deployment-rooms (keyword environment)])]
       (speak rooms (undo-completion-message deployment false)))))
