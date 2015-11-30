@@ -41,7 +41,7 @@
                                      :id "id"
                                      :message "Some message."
                                      :new-state {:image-details {:version "1.34"}
-                                                 :onix {:deployment-rooms {:environment ["room"]}}}
+                                                 :onix {:deploymentRooms {:environment ["room"]}}}
                                      :user "user"})
       => nil
       (provided
@@ -53,7 +53,7 @@
                                      :id "id"
                                      :message "Some message."
                                      :new-state {:image-details {:version "1.34"}
-                                                 :onix {:deployment-rooms {:environment ["room"]}}}
+                                                 :onix {:deploymentRooms {:environment ["room"]}}}
                                      :user "user"})
       => nil
       (provided
@@ -71,7 +71,7 @@
                                      :id "id"
                                      :message "Some message."
                                      :new-state {:image-details {:version "1.34"}
-                                                 :onix {:deployment-rooms {:environment ["room"]}}}
+                                                 :onix {:deploymentRooms {:environment ["room"]}}}
                                      :rollback true
                                      :user "user"})
       => nil
@@ -94,7 +94,7 @@
       (speak-about-undo-start {:application "application"
                                :environment "environment"
                                :new-state {:image-details {:version "2.52"}
-                                           :onix {:deployment-rooms {:environment ["room"]}}}
+                                           :onix {:deploymentRooms {:environment ["room"]}}}
                                :previous-state {:image-details {:version "2.51"}}
                                :silent true
                                :undo-message "Some undo message."
@@ -109,7 +109,7 @@
       (speak-about-undo-start {:application "application"
                                :environment "environment"
                                :new-state {:image-details {:version "2.52"}
-                                           :onix {:deployment-rooms {:environment ["room"]}}}
+                                           :onix {:deploymentRooms {:environment ["room"]}}}
                                :silent true
                                :undo-message "Some undo message."
                                :undo-silent false
@@ -131,7 +131,7 @@
                                           :id "id"
                                           :message "Some message."
                                           :new-state {:image-details {:version "2.52"}
-                                                      :onix {:deployment-rooms {:environment ["room"]}}}
+                                                      :onix {:deploymentRooms {:environment ["room"]}}}
                                           :user "user"})
       => nil
       (provided
@@ -148,7 +148,7 @@
       (speak-about-undo-completion {:application "application"
                                     :environment "environment"
                                     :new-state {:image-details {:version "2.52"}
-                                                :onix {:deployment-rooms {:environment ["room"]}}}
+                                                :onix {:deploymentRooms {:environment ["room"]}}}
                                     :previous-state {:image-details {:version "2.51"}}
                                     :undo-message "Some undo message."
                                     :undo-user "undo-user"})
