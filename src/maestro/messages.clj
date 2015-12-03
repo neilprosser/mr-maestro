@@ -162,19 +162,6 @@
       (should-pause-because-of-deployment-params? message)
       (should-pause-because-of-instructions? message)))
 
-(defn display-instruction-if-needed
-  [{:keys [action parameters] :as message}]
-  (let [before-deployment (get-in parameters [:new-state :onix :instructions :beforeDeployment :message])
-        after-instances-healthy (get-in parameters [:new-state :onix :instructions :afterInstancesHealthy :message])
-        after-deployment (get-in parameters [:new-state :onix :instructions :afterDeployment :message])]
-    (cond (and (= action :maestro.messages.data/start-deployment) before-deployment)
-          (log/write before-deployment)
-          (and (= action :maestro.messages.health/wait-for-instances-to-be-healthy) after-instances-healthy)
-          (log/write after-instances-healthy)
-          (and (= action :maestro.messages.data/complete-deployment) after-deployment)
-          (log/write after-deployment)))
-  message)
-
 (defn enqueue-next-task
   [{:keys [message next-action result] :as details}]
   (when (and (successful? result)
@@ -186,6 +173,20 @@
         (do
           (log/write "Pausing deployment.")
           (deployments/pause parameters)))))
+  details)
+
+(defn display-instruction-if-needed
+  [{:keys [message] :as details}]
+  (let [{:keys [action parameters]} message
+        before-deployment (get-in parameters [:new-state :onix :instructions :beforeDeployment :message])
+        after-instances-healthy (get-in parameters [:new-state :onix :instructions :afterInstancesHealthy :message])
+        after-deployment (get-in parameters [:new-state :onix :instructions :afterDeployment :message])]
+    (cond (and (= action :maestro.messages.data/start-deployment) before-deployment)
+          (log/write before-deployment)
+          (and (= action :maestro.messages.health/wait-for-instances-to-be-healthy) after-instances-healthy)
+          (log/write after-instances-healthy)
+          (and (= action :maestro.messages.data/complete-deployment) after-deployment)
+          (log/write after-deployment)))
   details)
 
 (defn finishing?
