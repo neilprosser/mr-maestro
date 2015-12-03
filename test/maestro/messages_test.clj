@@ -304,6 +304,40 @@
                    :parameters {:new-state {:tyranitar {:deployment-params {}}}}})
       (should-pause-because-of-deployment-params? params) => falsey)
 
+(fact "that we shouldn't pause when there isn't a beforeDeployment instruction"
+      (def params {:action :maestro.messages.data/start-deployment
+                   :parameters {}})
+      (should-pause-because-of-instructions? params) => falsey)
+
+(fact "that we should pause when there is a beforeDeployment instruction"
+      (def params {:action :maestro.messages.data/start-deployment
+                   :parameters {:new-state {:onix {:instructions {:beforeDeployment {:message "Some instruction"}}}}}})
+      (should-pause-because-of-instructions? params) => truthy)
+
+(fact "that we shouldn't pause when there ins't an afterInstancesHealthy instruction"
+      (def params {:action :maestro.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {}})
+      (should-pause-because-of-instructions? params) => falsey)
+
+(fact "that we should pause when there is an afterInstancesHealthy instruction"
+      (def params {:action :maestro.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {:new-state {:onix {:instructions {:afterInstancesHealthy {:message "Some instruction"}}}}}})
+      (should-pause-because-of-instructions? params) => truthy)
+
+(fact "that we shouldn't pause when there isn't an afterDeployment instruction"
+      (def params {:action :maestro.messages.data/complete-deployment
+                   :parameters {}})
+      (should-pause-because-of-instructions? params) => falsey)
+
+(fact "that we should pause when there is an afterDeployment instruction"
+      (def params {:action :maestro.messages.data/complete-deployment
+                   :parameters {:new-state {:onix {:instructions {:afterDeployment {:message "Some instruction"}}}}}})
+      (should-pause-because-of-instructions? params) => truthy)
+
+(fact "that we shouldn't pause on a random action"
+      (def params {:action :maestro.messages.data/something})
+      (should-pause-because-of-instructions? params) => falsey)
+
 (fact "that we should pause if we're told to"
       (should-pause? {}) => true
       (provided
@@ -315,11 +349,61 @@
        (should-pause-because-told-to? anything) => false
        (should-pause-because-of-deployment-params? anything) => true))
 
-(fact "that we shouldn't pause if we're not told to or the deployment params don't let us"
+(fact "that we should pause because there are instructions"
+      (should-pause? {}) => true
+      (provided
+       (should-pause-because-told-to? anything) => false
+       (should-pause-because-of-deployment-params? anything) => false
+       (should-pause-because-of-instructions? anything) => true))
+
+(fact "that we shouldn't pause if we're not told to, the deployment params don't let us or there are no instructions"
       (should-pause? {}) => false
       (provided
        (should-pause-because-told-to? anything) => false
-       (should-pause-because-of-deployment-params? anything) => false))
+       (should-pause-because-of-deployment-params? anything) => false
+       (should-pause-because-of-instructions? anything) => false))
+
+(fact "that we don't display an instruction before deployment if there isn't one"
+      (def params {:action :maestro.messages.data/start-deployment
+                   :parameters {}})
+      (display-instruction-if-needed params) => params
+      (provided
+       (log/write anything) => nil :times 0))
+
+(fact "that we display an instruction before deployment"
+      (def params {:action :maestro.messages.data/start-deployment
+                   :parameters {:new-state {:onix {:instructions {:beforeDeployment {:message "Some instruction"}}}}}})
+      (display-instruction-if-needed params) => params
+      (provided
+       (log/write "Some instruction") => nil))
+
+(fact "that we don't display an instruction after instances are healthy if there isn't one"
+      (def params {:actions :maestro.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {}})
+      (display-instruction-if-needed params) => params
+      (provided
+       (log/write anything) => nil :times 0))
+
+(fact "that we display an instruction after instances are healthy"
+      (def params {:action :maestro.messages.health/wait-for-instances-to-be-healthy
+                   :parameters {:new-state {:onix {:instructions {:afterInstancesHealthy {:message "Some instruction"}}}}}})
+      (display-instruction-if-needed params) => params
+      (provided
+       (log/write "Some instruction") => nil))
+
+(fact "that we don't display an instruction after deployment if there isn't one"
+      (def params {:action :maestro.messages.data/complete-deployment
+                   :parameters {}})
+      (display-instruction-if-needed params) => params
+      (provided
+       (log/write anything) => nil :times 0))
+
+(fact "that we display an instruction after deployment"
+      (def params {:action :maestro.messages.data/complete-deployment
+                   :parameters {:new-state {:onix {:instructions {:afterDeployment {:message "Some instruction"}}}}}})
+      (display-instruction-if-needed params) => params
+      (provided
+       (log/write "Some instruction") => nil))
 
 (fact "that we enqueue the next task correctly"
       (def params {:message {:parameters ..parameters..}
@@ -430,4 +514,5 @@
        (update-task ..after-fail..) => ..after-update-task..
        (update-deployment ..after-update-task..) => ..after-update-deployment..
        (enqueue-next-task ..after-update-deployment..) => ..after-enqueue..
-       (end-deployment-if-allowed ..after-enqueue..) => {:result ..result..}))
+       (display-instruction-if-needed ..after-enqueue..) => ..after-instruction..
+       (end-deployment-if-allowed ..after-instruction..) => {:result ..result..}))

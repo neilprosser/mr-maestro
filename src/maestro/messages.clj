@@ -127,20 +127,53 @@
   [{:keys [parameters]}]
   (deployments/pause-registered? parameters))
 
+(defn matches-action-and-has-parameter?
+  [action parameters {:keys [desired-action parameter-path]}]
+  (when (= action desired-action)
+    (get-in parameters parameter-path)))
+
+(def pause-deployment-params
+  [{:desired-action :maestro.messages.health/wait-for-instances-to-be-healthy
+    :parameter-path [:new-state :tyranitar :deployment-params :pause-after-instances-healthy]}
+   {:desired-action :maestro.messages.health/wait-for-load-balancers-to-be-healthy
+    :parameter-path [:new-state :tyranitar :deployment-params :pause-after-load-balancers-healthy]}
+   {:desired-action :maestro.messages.asg/deregister-old-instances-from-load-balancers
+    :parameter-path [:new-state :tyranitar :deployment-params :pause-after-deregister-old-instances]}])
+
 (defn should-pause-because-of-deployment-params?
   [{:keys [action parameters]}]
-  (cond (= action :maestro.messages.health/wait-for-instances-to-be-healthy)
-        (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-instances-healthy])
-        (= action :maestro.messages.health/wait-for-load-balancers-to-be-healthy)
-        (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-load-balancers-healthy])
-        (= action :maestro.messages.asg/deregister-old-instances-from-load-balancers)
-        (get-in parameters [:new-state :tyranitar :deployment-params :pause-after-deregister-old-instances])
-        :else false))
+  (some (partial matches-action-and-has-parameter? action parameters) pause-deployment-params))
+
+(def instruction-params
+  [{:desired-action :maestro.messages.data/start-deployment
+    :parameter-path [:new-state :onix :instructions :beforeDeployment :message]}
+   {:desired-action :maestro.messages.health/wait-for-instances-to-be-healthy
+    :parameter-path [:new-state :onix :instructions :afterInstancesHealthy :message]}
+   {:desired-action :maestro.messages.data/complete-deployment
+    :parameter-path [:new-state :onix :instructions :afterDeployment :message]}])
+
+(defn should-pause-because-of-instructions?
+  [{:keys [action parameters]}]
+  (some (partial matches-action-and-has-parameter? action parameters) instruction-params))
 
 (defn should-pause?
   [message]
   (or (should-pause-because-told-to? message)
-      (should-pause-because-of-deployment-params? message)))
+      (should-pause-because-of-deployment-params? message)
+      (should-pause-because-of-instructions? message)))
+
+(defn display-instruction-if-needed
+  [{:keys [action parameters] :as message}]
+  (let [before-deployment (get-in parameters [:new-state :onix :instructions :beforeDeployment :message])
+        after-instances-healthy (get-in parameters [:new-state :onix :instructions :afterInstancesHealthy :message])
+        after-deployment (get-in parameters [:new-state :onix :instructions :afterDeployment :message])]
+    (cond (and (= action :maestro.messages.data/start-deployment) before-deployment)
+          (log/write before-deployment)
+          (and (= action :maestro.messages.health/wait-for-instances-to-be-healthy) after-instances-healthy)
+          (log/write after-instances-healthy)
+          (and (= action :maestro.messages.data/complete-deployment) after-deployment)
+          (log/write after-deployment)))
+  message)
 
 (defn enqueue-next-task
   [{:keys [message next-action result] :as details}]
@@ -189,6 +222,7 @@
              update-task
              update-deployment
              enqueue-next-task
+             display-instruction-if-needed
              end-deployment-if-allowed
              :result)
         (do
