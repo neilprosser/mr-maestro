@@ -50,7 +50,6 @@
         :aws-role-name "maestro"
         :default-instances-healthy-attempts 100
         :default-load-balancer-healthy-attempts 50
-        :disable-caching true
         :elasticsearch-index-name "maestro"
         :elasticsearch-url "http://localhost:9200"
         :environment-name "dev"
