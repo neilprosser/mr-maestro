@@ -11,11 +11,14 @@
              [util :as util]]
             [ninjakoala.lamarck :as lam]))
 
-(def application-regex
+(def application-pattern
   #"[a-z]+")
 
-(def hash-regex
+(def hash-pattern
   #"[0-9a-f]{40}")
+
+(def ami-pattern
+  #"^ami-[0-9a-f]+$")
 
 (def healthcheck-types
   #{"EC2" "ELB"})
@@ -85,11 +88,18 @@
       false)
     true))
 
+(v/defvalidator valid-ami?
+  {:default-message-format "%s must be a valid AMI"}
+  [input]
+  (if input
+    (re-matches ami-pattern input)
+    true))
+
 (v/defvalidator valid-application?
   {:default-message-format "%s must be a valid application"}
   [input]
   (if input
-    (re-matches application-regex input)
+    (re-matches application-pattern input)
     true))
 
 (v/defvalidator valid-date?
@@ -114,7 +124,7 @@
   {:default-message-format "%s must be a valid Git hash"}
   [input]
   (if input
-    (re-matches hash-regex input)
+    (re-matches hash-pattern input)
     true))
 
 (v/defvalidator valid-uuid?
@@ -248,7 +258,7 @@
 
 (def deployment-request-validators
   "The validators we should use to validate deployment requests."
-  {:ami [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
+  {:ami [v/required valid-ami?]
    :application v/required
    :environment [v/required known-environment?]
    :hash valid-hash?
@@ -261,7 +271,7 @@
    :environment [v/required known-environment?]
    :id v/required
    :message v/required
-   [:new-state :image-details :id] [v/required [v/matches #"^ami-[0-9a-f]{8}$"]]
+   [:new-state :image-details :id] [v/required valid-ami?]
    :region v/required
    :user v/required})
 

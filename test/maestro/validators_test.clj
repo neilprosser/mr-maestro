@@ -78,6 +78,22 @@
       (positive? "a")
       => falsey)
 
+(fact "that `valid-ami?` is happy with nil"
+      (valid-ami? nil)
+      => truthy)
+
+(fact "that `valid-ami?` is happy with a short AMI"
+      (valid-ami? "ami-12345678")
+      => truthy)
+
+(fact "that `valid-ami?` is happy with a long AMI"
+      (valid-ami? "ami-12345678901234567890")
+      => truthy)
+
+(fact "that `valid-ami?` is unhappy with garbage"
+      (valid-ami? "blaghblagasdasdkjsald")
+      => falsey)
+
 (fact "that `valid-application?` is happy with nil"
       (valid-application? nil)
       => truthy)
